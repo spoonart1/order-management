@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export type UserRole = 'superadmin' | 'marketing' | 'production' | 'finance' | 'client';
@@ -26,8 +26,8 @@ const AuthContext = createContext<AuthContextType>({
     session: null,
     profile: null,
     isLoading: true,
-    signOut: async () => {},
-    refreshProfile: async () => {}
+    signOut: async () => { },
+    refreshProfile: async () => { }
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -57,18 +57,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        // Ganti blok getSession menjadi seperti ini:
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
-                fetchProfile(session.user.id)
-                    .finally(() => setIsLoading(false));
+                await fetchProfile(session.user.id);
             }
             setIsLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
+            async (_event, session) => {
                 setSession(session);
                 setUser(session?.user ?? null);
                 if (session?.user) {
@@ -77,7 +77,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setProfile(null);
                 }
                 setIsLoading(false);
-            });
+            }
+        );
 
         return () => {
             subscription.unsubscribe();
@@ -112,7 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 refreshProfile
             }}>
             {children}
-        </AuthContext.Provider> 
+        </AuthContext.Provider>
     );
 };
 

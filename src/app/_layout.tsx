@@ -1,6 +1,7 @@
-import { useEffect } from "react";
-import { View, ActivityIndicator } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import "../../global.css";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 
 function InitialLayout() {
@@ -18,7 +19,8 @@ function InitialLayout() {
     // no session at all, redirect to login
     if (!session) {
       if (!inAuthGroup) {
-        router.replace("/(auth)/login-client");
+        //router.replace("/(auth)/login-client");
+        router.replace("/(auth)/login-admin");
       }
       return;
     }
@@ -27,13 +29,13 @@ function InitialLayout() {
     if (session && profile) {
       const isInternalStaff = ["superadmin", "marketing", "production", "finance"].includes(profile.role);
 
-      if (inAuthGroup) {
+      // Jika berada di form login ATAU belum berada di backoffice/client (misal di root index)
+      if (inAuthGroup || (!inBackofficeGroup && !inClientGroup)) {
         if (isInternalStaff) {
           router.replace("/(backoffice)/dashboard");
         } else {
           router.replace("/(client)/tracking");
         }
-
         return;
       }
 
