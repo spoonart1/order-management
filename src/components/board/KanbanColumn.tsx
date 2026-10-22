@@ -8,8 +8,10 @@ interface KanbanColumnProps {
   totalColumns: number;
   isColumnHovered: boolean;
   draggingCardId?: string;
+  deletingCardId?: string | null;
   onCardPress: (card: CardItem) => void;
   onCardDragStart: (card: CardItem) => void;
+  onDeleteCard: (card: CardItem) => void;
   onAddCard: () => void;
   onDragOver: (e: any) => void;
   onDragLeave: (e: any) => void;
@@ -21,8 +23,10 @@ export function KanbanColumn({
   totalColumns,
   isColumnHovered,
   draggingCardId,
+  deletingCardId,
   onCardPress,
   onCardDragStart,
+  onDeleteCard,
   onAddCard,
   onDragOver,
   onDragLeave,
@@ -62,8 +66,10 @@ export function KanbanColumn({
             columnColor={column.color_hex}
             progressPercent={progressPercent}
             isBeingDragged={draggingCardId === card.id}
+            isDeleting={deletingCardId === card.id}
             onPress={() => onCardPress(card)}
             onDragStart={() => onCardDragStart(card)}
+            onDelete={() => onDeleteCard(card)}
           />
         ))}
 

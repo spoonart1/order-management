@@ -124,7 +124,25 @@ export const createCard = createAsyncThunk<
     }
 );
 
-// 4. Thunk untuk menghapus lampiran/foto
+// 4. Thunk untuk menghapus kartu
+export const deleteCard = createAsyncThunk<
+    string,
+    string,
+    { rejectValue: string }
+>(
+    'board/deleteCard',
+    async (cardId, { rejectWithValue }) => {
+        try {
+            await boardService.deleteCard(cardId);
+            return cardId;
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Gagal menghapus kartu';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+// 5. Thunk untuk menghapus lampiran/foto
 export const deleteAttachment = createAsyncThunk<
     string,
     { attachmentId: string; filePath: string },
@@ -174,6 +192,15 @@ export const boardSlice = createSlice({
             // updateCardDetails Error
             .addCase(updateCardDetails.rejected, (state, action) => {
                 state.error = action.payload ?? "Gagal menyimpan detail kartu";
+            })
+            // deleteCard: buang kartu dari state lokal tanpa perlu refetch
+            .addCase(deleteCard.fulfilled, (state, action) => {
+                state.currentBoard?.board_columns.forEach((col) => {
+                    col.board_cards = col.board_cards.filter((c) => c.id !== action.payload);
+                });
+            })
+            .addCase(deleteCard.rejected, (state, action) => {
+                state.error = action.payload ?? "Gagal menghapus kartu";
             });
     },
 });

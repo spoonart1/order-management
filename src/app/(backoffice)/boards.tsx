@@ -1,11 +1,13 @@
 import { BoardHeader } from '@/components/board/BoardHeader';
 import { CardDetailModal } from '@/components/board/CardDetailModal';
 import { KanbanColumn } from '@/components/board/KanbanColumn';
+import { confirmDialog } from '@/lib/confirm';
 import { profileService } from '@/services/profileService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   CardItem,
   createCard,
+  deleteCard,
   fetchBoardByType,
   moveCard,
   Profile,
@@ -34,6 +36,8 @@ export default function BoardScreen() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   // Kolom tujuan saat menambah kartu baru (mode create)
   const [createColumnId, setCreateColumnId] = useState<string | null>(null);
+  // State ID kartu yang sedang dalam proses dihapus
+  const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchBoardByType('marketing'));
@@ -125,6 +129,27 @@ export default function BoardScreen() {
     setIsModalVisible(true);
   };
 
+  const handleDeleteCard = async (card: CardItem) => {
+    const confirmed = await confirmDialog({
+      title: 'Hapus Kartu',
+      message: `Apakah Anda yakin ingin menghapus kartu "${card.title}"?`,
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      destructive: true,
+    });
+
+    if (!confirmed) return;
+
+    setDeletingCardId(card.id);
+    try {
+      await dispatch(deleteCard(card.id)).unwrap();
+    } catch (err: any) {
+      Alert.alert('Gagal', err || 'Tidak dapat menghapus kartu.');
+    } finally {
+      setDeletingCardId(null);
+    }
+  };
+
   if (isLoading && !currentBoard) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-950">
@@ -158,11 +183,13 @@ export default function BoardScreen() {
             totalColumns={totalColumns}
             isColumnHovered={dragOverColumnId === col.id && draggingCard?.column_id !== col.id}
             draggingCardId={draggingCard?.id}
+            deletingCardId={deletingCardId}
             onCardPress={(card) => {
               setSelectedCard(card);
               setIsModalVisible(true);
             }}
             onCardDragStart={(card) => setDraggingCard(card)}
+            onDeleteCard={handleDeleteCard}
             onAddCard={() => handleOpenCreate(col.id)}
             onDragOver={() => {
               if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);

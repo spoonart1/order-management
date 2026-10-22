@@ -159,4 +159,41 @@ export const boardService = {
       throw error;
     }
   },
+
+  /**
+   * Menghapus kartu beserta seluruh lampiran (file di Storage + row card_attachments)
+   */
+  async deleteCard(cardId: string): Promise<void> {
+    // 1. Ambil daftar lampiran untuk dibersihkan dari Storage
+    const { data: attachments, error: fetchError } = await supabase
+      .from('card_attachments')
+      .select('id, file_url')
+      .eq('card_id', cardId);
+
+    if (fetchError) {
+      console.error('Error fetching card attachments:', fetchError);
+      throw fetchError;
+    }
+
+    const storagePaths = (attachments || [])
+      .map((a) => a.file_url.split('/attachments/')[1])
+      .filter((p): p is string => !!p);
+
+    if (storagePaths.length > 0) {
+      await supabase.storage.from('attachments').remove(storagePaths);
+    }
+
+    // 2. Hapus row lampiran, lalu kartunya
+    const { error: attError } = await supabase
+      .from('card_attachments')
+      .delete()
+      .eq('card_id', cardId);
+    if (attError) throw attError;
+
+    const { error } = await supabase.from('board_cards').delete().eq('id', cardId);
+    if (error) {
+      console.error('Error deleting card:', error);
+      throw error;
+    }
+  },
 };
