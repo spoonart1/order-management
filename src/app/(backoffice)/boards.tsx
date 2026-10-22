@@ -1,27 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { BoardHeader } from '@/components/board/BoardHeader';
+import { CardDetailModal } from '@/components/board/CardDetailModal';
+import { KanbanColumn } from '@/components/board/KanbanColumn';
+import { profileService } from '@/services/profileService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   CardItem,
   fetchBoardByType,
   moveCard,
-  updateCardDetails,
   Profile,
+  updateCardDetails,
 } from '@/store/slices/boardSlice';
-import { supabase } from '@/lib/supabase';
-import { BoardHeader } from '@/components/board/BoardHeader';
-import { KanbanColumn } from '@/components/board/KanbanColumn';
-import { CardDetailModal } from '@/components/board/CardDetailModal';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  View,
+} from 'react-native';
 
 export default function BoardScreen() {
   const dispatch = useAppDispatch();
-  const { currentBoard, isLoading, error } = useAppSelector((state) => state.board);
+  const { currentBoard, isLoading } = useAppSelector((state) => state.board);
 
   // Drag State (Web)
   const [draggingCard, setDraggingCard] = useState<CardItem | null>(null);
@@ -36,12 +35,14 @@ export default function BoardScreen() {
   useEffect(() => {
     dispatch(fetchBoardByType('marketing'));
 
-    // Ambil daftar user untuk dropdown PIC
-    supabase
-      .from('profiles')
-      .select('id, full_name')
-      .then(({ data }) => {
+    // Ambil daftar user untuk dropdown PIC via service
+    profileService
+      .getProfiles()
+      .then((data) => {
         if (data) setProfiles(data);
+      })
+      .catch((err) => {
+        console.error('Gagal mengambil daftar profiles:', err);
       });
   }, [dispatch]);
 
@@ -139,7 +140,7 @@ export default function BoardScreen() {
               setIsModalVisible(true);
             }}
             onCardDragStart={(card) => setDraggingCard(card)}
-            onDragOver={(e) => {
+            onDragOver={() => {
               if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);
             }}
             onDragLeave={() => setDragOverColumnId(null)}
@@ -148,7 +149,7 @@ export default function BoardScreen() {
         ))}
       </ScrollView>
 
-      {/* 3. Modal Overlay Edit Card */}
+      {/* 3. Modal Overlay Edit Card & Attachment Gallery */}
       <CardDetailModal
         visible={isModalVisible}
         card={selectedCard}
@@ -157,6 +158,7 @@ export default function BoardScreen() {
         saving={saving}
         onClose={() => setIsModalVisible(false)}
         onSave={handleSaveDetail}
+        onAttachmentChange={handleRefresh}
       />
     </View>
   );

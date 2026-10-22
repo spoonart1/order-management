@@ -24,6 +24,7 @@ export function KanbanCard({
   };
 
   const isDraggingRef = useRef(false);
+  const attachmentCount = card.card_attachments?.length || 0;
 
   // Konten kartu yang dirender di dalam wrapper
   const cardContent = (
@@ -58,19 +59,27 @@ export function KanbanCard({
         </View>
       </View>
 
-      {/* PIC Assignee */}
+      {/* Footer Kartu: PIC Assignee & Badge Attachment Foto */}
       <View className="flex-row items-center justify-between pt-2 border-t border-slate-900">
-        <Text className="text-slate-500 text-[10px]">PIC:</Text>
         <View className="bg-slate-800 px-2 py-0.5 rounded-md">
           <Text className="text-sky-300 text-[11px] font-medium">
-            {card.profiles?.full_name || 'Belum di-assign'}
+            👤 {card.profiles?.full_name || 'Belum di-assign'}
           </Text>
         </View>
+
+        {/* Badge Galeri Foto jika ada foto terlampir */}
+        {attachmentCount > 0 && (
+          <View className="bg-slate-800 px-2 py-0.5 rounded-md flex-row items-center">
+            <Text className="text-slate-300 text-[11px]">
+              📷 {attachmentCount}
+            </Text>
+          </View>
+        )}
       </View>
     </>
   );
 
-  // Jika Web Browser: Gunakan elemen HTML <div> langsung agar draggable bekerja 100% tanpa di-filter oleh React Native Web
+  // Jika Web Browser: Gunakan elemen HTML <div>
   if (Platform.OS === 'web') {
     return (
       <div
@@ -105,7 +114,7 @@ export function KanbanCard({
     );
   }
 
-  // Jika Mobile Native (Android & iOS): Gunakan Pressable
+  // Jika Mobile Native (Android & iOS)
   return (
     <Pressable
       onPress={onPress}
