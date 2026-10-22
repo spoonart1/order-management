@@ -1,25 +1,47 @@
-import { Text, TouchableOpacity, View } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
+import { Drawer } from 'expo-router/drawer';
+import { useAppSelector } from '../../store/hooks';
 
-export default function Dashboard() {
-    // Panggil hook di dalam komponen
-    const { signOut, profile } = useAuth();
+export default function BackofficeLayout() {
+    const { user, profile } = useAppSelector((state) => state.auth);
 
     return (
-        <View className="flex-1 justify-center items-center bg-slate-900 p-6">
-            <Text className="text-2xl font-bold text-white mb-2">
-                Alora Studio Backoffice
-            </Text>
-            <Text className="text-slate-400 text-base mb-6">
-                Selamat datang, <Text className="text-emerald-400 font-semibold">{profile?.full_name || 'Admin'}</Text>! (Role: {profile?.role})
-            </Text>
+        <Drawer
+            screenOptions={{
+                headerShown: true,
+                drawerItemStyle: {
+                    marginVertical: 5,
+                    marginHorizontal: 0,
+                    width: '100%',
+                    borderRadius: 0,
+                },
+                drawerActiveTintColor: '#fff',
+                drawerActiveBackgroundColor: '#1E293B',
+                drawerInactiveTintColor: '#38BDF8',
+                drawerStyle: {
+                    backgroundColor: '#0F172A',
+                },
+                headerStyle: {
+                    backgroundColor: '#0F172A',
+                },
+                headerTintColor: '#F8FAFC',
+            }}
+        >
+            {/* Rute ke dashboard.tsx */}
+            <Drawer.Screen
+                name="dashboard"
+                options={{
+                    drawerLabel: "Dashboard",
+                    title: "ALORA STUDIO - Dashboard",
+                }}
+            />
 
-            <TouchableOpacity
-                onPress={signOut}
-                className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl shadow-lg"
-            >
-                <Text className="text-white font-bold">Keluar / Logout</Text>
-            </TouchableOpacity>
-        </View>
+            <Drawer.Screen
+                name="boards"
+                options={{
+                    drawerLabel: "Boards",
+                    title: "ALORA STUDIO - Order Boards",
+                }}
+            />
+        </Drawer>
     );
 }

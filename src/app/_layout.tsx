@@ -1,11 +1,14 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { Provider } from "react-redux";
 import "../../global.css";
-import { AuthProvider, useAuth } from "../context/AuthContext";
+import { AuthProvider } from "../context/AuthContext";
+import { store } from "../store";
+import { useAppSelector } from "../store/hooks";
 
 function InitialLayout() {
-  const { session, profile, isLoading } = useAuth();
+  const { session, profile, isLoading } = useAppSelector((state) => state.auth);
   const segments = useSegments();
   const router = useRouter();
 
@@ -19,13 +22,12 @@ function InitialLayout() {
     // no session at all, redirect to login
     if (!session) {
       if (!inAuthGroup) {
-        //router.replace("/(auth)/login-client");
         router.replace("/(auth)/login-admin");
       }
       return;
     }
 
-    // has logged in session but no profile, redirect to profile creation
+    // has logged in session and profile, redirect based on role
     if (session && profile) {
       const isInternalStaff = ["superadmin", "marketing", "production", "finance"].includes(profile.role);
 
@@ -46,7 +48,6 @@ function InitialLayout() {
       if (isInternalStaff && inClientGroup) {
         router.replace("/(backoffice)/dashboard");
       }
-
     }
   }, [session, profile, isLoading, segments, router]);
 
@@ -67,8 +68,10 @@ function InitialLayout() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <InitialLayout />
-    </AuthProvider>
+    <Provider store={store}>
+      <AuthProvider>
+        <InitialLayout />
+      </AuthProvider>
+    </Provider>
   );
 }
