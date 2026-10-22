@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Platform } from 'react-native';
+import { View, Text, ScrollView, Platform, Pressable } from 'react-native';
 import { ColumnItem, CardItem } from '@/store/slices/boardSlice';
 import { KanbanCard } from './KanbanCard';
 
@@ -10,6 +10,7 @@ interface KanbanColumnProps {
   draggingCardId?: string;
   onCardPress: (card: CardItem) => void;
   onCardDragStart: (card: CardItem) => void;
+  onAddCard: () => void;
   onDragOver: (e: any) => void;
   onDragLeave: (e: any) => void;
   onDrop: (e: any) => void;
@@ -22,6 +23,7 @@ export function KanbanColumn({
   draggingCardId,
   onCardPress,
   onCardDragStart,
+  onAddCard,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -87,6 +89,17 @@ export function KanbanColumn({
           </View>
         )}
       </ScrollView>
+
+      {/* Tombol Tambah Kartu */}
+      <View className="p-3 border-t border-slate-800/80">
+        <Pressable
+          onPress={onAddCard}
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          className="py-2.5 rounded-xl border border-dashed border-slate-700 items-center justify-center"
+        >
+          <Text className="text-slate-400 text-xs font-semibold">+ Tambah Kartu</Text>
+        </Pressable>
+      </View>
     </>
   );
 

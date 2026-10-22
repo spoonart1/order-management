@@ -5,6 +5,7 @@ import { profileService } from '@/services/profileService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   CardItem,
+  createCard,
   fetchBoardByType,
   moveCard,
   Profile,
@@ -31,6 +32,8 @@ export default function BoardScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  // Kolom tujuan saat menambah kartu baru (mode create)
+  const [createColumnId, setCreateColumnId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchBoardByType('marketing'));
@@ -73,7 +76,7 @@ export default function BoardScreen() {
     setDragOverColumnId(null);
   };
 
-  // Save Modal Handler
+  // Save Modal Handler (Edit & Create)
   const handleSaveDetail = async (updatedData: {
     title: string;
     client_name: string;
@@ -82,16 +85,30 @@ export default function BoardScreen() {
     assigned_to: string | null;
     notes: string;
   }) => {
-    if (!selectedCard) return;
+    if (!currentBoard) return;
 
     setSaving(true);
     try {
-      await dispatch(
-        updateCardDetails({
-          cardId: selectedCard.id,
-          ...updatedData,
-        })
-      ).unwrap();
+      if (selectedCard) {
+        await dispatch(
+          updateCardDetails({
+            cardId: selectedCard.id,
+            ...updatedData,
+          })
+        ).unwrap();
+      } else {
+        // Mode create: taruh kartu di urutan paling bawah kolom tujuan
+        const targetColumn = currentBoard.board_columns.find((c) => c.id === updatedData.column_id);
+        const position = (targetColumn?.board_cards.length || 0) + 1;
+
+        await dispatch(
+          createCard({
+            board_id: currentBoard.id,
+            position,
+            ...updatedData,
+          })
+        ).unwrap();
+      }
 
       setIsModalVisible(false);
       dispatch(fetchBoardByType('marketing'));
@@ -100,6 +117,12 @@ export default function BoardScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleOpenCreate = (columnId: string) => {
+    setSelectedCard(null);
+    setCreateColumnId(columnId);
+    setIsModalVisible(true);
   };
 
   if (isLoading && !currentBoard) {
@@ -140,6 +163,7 @@ export default function BoardScreen() {
               setIsModalVisible(true);
             }}
             onCardDragStart={(card) => setDraggingCard(card)}
+            onAddCard={() => handleOpenCreate(col.id)}
             onDragOver={() => {
               if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);
             }}
@@ -159,6 +183,7 @@ export default function BoardScreen() {
         onClose={() => setIsModalVisible(false)}
         onSave={handleSaveDetail}
         onAttachmentChange={handleRefresh}
+        defaultColumnId={createColumnId}
       />
     </View>
   );

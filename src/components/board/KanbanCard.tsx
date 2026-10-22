@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import { Platform, Text, View, Pressable } from 'react-native';
 import { CardItem } from '@/store/slices/boardSlice';
+import { useRef } from 'react';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 interface KanbanCardProps {
   card: CardItem;
@@ -30,10 +30,12 @@ export function KanbanCard({
   const cardContent = (
     <>
       {/* Nama Project & Klien */}
-      <Text className="text-white font-bold text-sm mb-0.5">{card.title}</Text>
-      <Text className="text-slate-400 text-xs mb-3">
-        👤 {card.client_name || 'Tanpa Klien'}
-      </Text>
+      <View>
+        <Text className="text-white font-bold text-[14px] mb-3">{card.title}</Text>
+        <Text className="text-slate-400 text-[10px] mb-3">
+          👤 {card.client_name || 'Tanpa Klien'}
+        </Text>
+      </View>
 
       {/* Nilai Estimasi */}
       <View className="bg-slate-900 px-2.5 py-1.5 rounded-lg mb-3 flex-row justify-between items-center">
@@ -62,7 +64,7 @@ export function KanbanCard({
       {/* Footer Kartu: PIC Assignee & Badge Attachment Foto */}
       <View className="flex-row items-center justify-between pt-2 border-t border-slate-900">
         <View className="bg-slate-800 px-2 py-0.5 rounded-md">
-          <Text className="text-sky-300 text-[11px] font-medium">
+          <Text className="text-sky-300 text-[9px] font-medium p-1">
             👤 {card.profiles?.full_name || 'Belum di-assign'}
           </Text>
         </View>

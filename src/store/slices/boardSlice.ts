@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { boardService, MoveCardPayload, UpdateCardPayload } from "@/services/boardService";
+import { boardService, CreateCardPayload, MoveCardPayload, UpdateCardPayload } from "@/services/boardService";
 import { cardAttachmentService } from "@/services/cardAttachmentService";
 
 export interface Profile {
@@ -107,7 +107,24 @@ export const updateCardDetails = createAsyncThunk<
     }
 );
 
-// 3. Thunk untuk menghapus lampiran/foto
+// 3. Thunk untuk membuat kartu baru
+export const createCard = createAsyncThunk<
+    void,
+    CreateCardPayload,
+    { rejectValue: string }
+>(
+    'board/createCard',
+    async (payload, { rejectWithValue }) => {
+        try {
+            await boardService.createCard(payload);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Gagal membuat kartu';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+// 4. Thunk untuk menghapus lampiran/foto
 export const deleteAttachment = createAsyncThunk<
     string,
     { attachmentId: string; filePath: string },

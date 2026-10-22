@@ -17,6 +17,17 @@ export interface MoveCardPayload {
   newPosition: number;
 }
 
+export interface CreateCardPayload {
+  board_id: string;
+  column_id: string;
+  title: string;
+  client_name: string;
+  estimated_value: number;
+  assigned_to: string | null;
+  notes: string;
+  position: number;
+}
+
 /**
  * Service / Data Layer untuk Board & Kartu Kanban
  * Menangani query dan mutasi data ke Supabase
@@ -124,6 +135,27 @@ export const boardService = {
 
     if (error) {
       console.error('Error updating card details:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Membuat kartu baru di kolom tertentu
+   */
+  async createCard(payload: CreateCardPayload): Promise<void> {
+    const { error } = await supabase.from('board_cards').insert({
+      board_id: payload.board_id,
+      column_id: payload.column_id,
+      title: payload.title,
+      client_name: payload.client_name || null,
+      estimated_value: payload.estimated_value,
+      assigned_to: payload.assigned_to,
+      notes: payload.notes || null,
+      position: payload.position,
+    });
+
+    if (error) {
+      console.error('Error creating card:', error);
       throw error;
     }
   },

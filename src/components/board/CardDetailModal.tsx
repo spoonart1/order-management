@@ -31,6 +31,8 @@ interface CardDetailModalProps {
         notes: string;
     }) => void;
     onAttachmentChange?: () => void;
+    /** Kolom default saat membuat kartu baru (mode create, ketika card = null) */
+    defaultColumnId?: string | null;
 }
 
 export function CardDetailModal({
@@ -41,8 +43,11 @@ export function CardDetailModal({
     saving,
     onClose,
     onSave,
-    onAttachmentChange
+    onAttachmentChange,
+    defaultColumnId
 }: CardDetailModalProps) {
+    const isCreateMode = !card;
+
     const [title, setTitle] = useState('');
     const [clientName, setClientName] = useState('');
     const [value, setValue] = useState('');
@@ -56,6 +61,7 @@ export function CardDetailModal({
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!visible) return;
         if (card) {
             setTitle(card.title || '');
             setClientName(card.client_name || '');
@@ -64,10 +70,23 @@ export function CardDetailModal({
             setAssignedTo(card.assigned_to || null);
             setNotes(card.notes || '');
             setAttachments(card.card_attachments || []);
+        } else {
+            // Mode create: reset form
+            setTitle('');
+            setClientName('');
+            setValue('');
+            setColumnId(defaultColumnId || columns[0]?.id || '');
+            setAssignedTo(null);
+            setNotes('');
+            setAttachments([]);
         }
-    }, [card]);
+    }, [card, visible, defaultColumnId]);
 
     const handleSubmit = () => {
+        if (!title.trim()) {
+            Alert.alert('Data Belum Lengkap', 'Nama project wajib diisi.');
+            return;
+        }
         onSave({
             title: title.trim(),
             client_name: clientName.trim(),
@@ -133,8 +152,14 @@ export function CardDetailModal({
                     {/* Header Modal */}
                     <View className="flex-row justify-between items-center mb-5 pb-3 border-b border-slate-800">
                         <View>
-                            <Text className="text-white text-lg font-bold">Detail Kartu Pesanan</Text>
-                            <Text className="text-slate-400 text-xs">Edit informasi, alur tahapan & galeri foto</Text>
+                            <Text className="text-white text-lg font-bold">
+                                {isCreateMode ? 'Tambah Kartu Baru' : 'Detail Kartu Pesanan'}
+                            </Text>
+                            <Text className="text-slate-400 text-xs">
+                                {isCreateMode
+                                    ? 'Isi informasi pesanan baru'
+                                    : 'Edit informasi, alur tahapan & galeri foto'}
+                            </Text>
                         </View>
                         <Pressable
                             onPress={onClose}
@@ -228,6 +253,13 @@ export function CardDetailModal({
                         {/* ======================================================== */}
                         {/* BAGIAN GALERI FOTO & LAMPIRAN (TASK 3.8)                 */}
                         {/* ======================================================== */}
+                        {isCreateMode ? (
+                            <View className="mb-4 pt-3 border-t border-slate-800">
+                                <Text className="text-slate-500 text-[11px]">
+                                    📷 Foto & lampiran bisa diunggah setelah kartu disimpan.
+                                </Text>
+                            </View>
+                        ) : (
                         <View className="mb-4 pt-2 border-t border-slate-800">
                             <View className="flex-row justify-between items-center mb-2">
                                 <Text className="text-slate-300 text-xs font-semibold">
@@ -291,6 +323,7 @@ export function CardDetailModal({
                                 </View>
                             )}
                         </View>
+                        )}
 
                         {/* Catatan Proyek */}
                         <View className="mb-4">
@@ -326,7 +359,9 @@ export function CardDetailModal({
                             {saving ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
-                                <Text className="text-white font-bold text-xs">Simpan Perubahan</Text>
+                                <Text className="text-white font-bold text-xs">
+                                    {isCreateMode ? 'Tambah Kartu' : 'Simpan Perubahan'}
+                                </Text>
                             )}
                         </Pressable>
                     </View>
