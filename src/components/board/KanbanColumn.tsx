@@ -28,40 +28,13 @@ export function KanbanColumn({
 }: KanbanColumnProps) {
   const progressPercent = Math.round((column.position / totalColumns) * 100);
 
-  const webDropProps =
-    Platform.OS === 'web'
-      ? {
-          onDragOver: (e: any) => {
-            e.preventDefault();
-            if (e.dataTransfer) {
-              e.dataTransfer.dropEffect = 'move';
-            }
-            onDragOver(e);
-          },
-          onDragLeave: (e: any) => {
-            if (!e.currentTarget.contains(e.relatedTarget)) {
-              onDragLeave(e);
-            }
-          },
-          onDrop: (e: any) => {
-            e.preventDefault();
-            onDrop(e);
-          },
-        }
-      : {};
-
-  return (
-    <View
-      style={{ width: 290 }}
-      {...(webDropProps as any)}
-      className={`bg-slate-900 border rounded-2xl mr-4 flex-col max-h-full transition-all ${
-        isColumnHovered
-          ? 'border-sky-400 bg-slate-900/95 ring-2 ring-sky-500/20'
-          : 'border-slate-800'
-      }`}
-    >
+  const columnContent = (
+    <>
       {/* Header Kolom */}
-      <View className="p-4 border-b border-slate-800/80 flex-row items-center justify-between pointer-events-none">
+      <View
+        style={{ pointerEvents: 'none' } as any}
+        className="p-4 border-b border-slate-800/80 flex-row items-center justify-between"
+      >
         <View className="flex-row items-center flex-1 pr-2">
           <View
             style={{ backgroundColor: column.color_hex }}
@@ -92,9 +65,12 @@ export function KanbanColumn({
           />
         ))}
 
-        {/* PLACEHOLDER PREVIEW SAAT DRAG */}
+        {/* PLACEHOLDER PREVIEW SAAT DRAG MELAYANG */}
         {isColumnHovered && (
-          <View className="h-32 border-2 border-dashed border-sky-400 bg-sky-950/40 rounded-xl mb-3 items-center justify-center pointer-events-none">
+          <View
+            style={{ pointerEvents: 'none' } as any}
+            className="h-32 border-2 border-dashed border-sky-400 bg-sky-950/40 rounded-xl mb-3 items-center justify-center"
+          >
             <Text className="text-sky-300 text-xs font-bold">
               ⬇ Lepaskan kartu di sini
             </Text>
@@ -111,6 +87,48 @@ export function KanbanColumn({
           </View>
         )}
       </ScrollView>
+    </>
+  );
+
+  // Jika Web Browser: Render sebagai <div> langsung dengan event onDragOver, onDragLeave, onDrop native
+  if (Platform.OS === 'web') {
+    return (
+      <div
+        onDragOver={(e: any) => {
+          e.preventDefault();
+          if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'move';
+          }
+          onDragOver(e);
+        }}
+        onDragLeave={(e: any) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) {
+            onDragLeave(e);
+          }
+        }}
+        onDrop={(e: any) => {
+          e.preventDefault();
+          onDrop(e);
+        }}
+        style={{ width: 290 }}
+        className={`bg-slate-900 border rounded-2xl mr-4 flex flex-col max-h-full transition-all ${
+          isColumnHovered
+            ? 'border-sky-400 bg-slate-900/95 ring-2 ring-sky-500/20'
+            : 'border-slate-800'
+        }`}
+      >
+        {columnContent}
+      </div>
+    );
+  }
+
+  // Jika Native Mobile (Android & iOS)
+  return (
+    <View
+      style={{ width: 290 }}
+      className="bg-slate-900 border border-slate-800 rounded-2xl mr-4 flex-col max-h-full"
+    >
+      {columnContent}
     </View>
   );
 }

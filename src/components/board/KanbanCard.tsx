@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Text, View, Pressable } from 'react-native';
 import { CardItem } from '@/store/slices/boardSlice';
 
 interface KanbanCardProps {
@@ -25,43 +25,9 @@ export function KanbanCard({
 
   const isDraggingRef = useRef(false);
 
-  const webDragProps =
-    Platform.OS === 'web'
-      ? {
-          draggable: true,
-          onDragStart: (e: any) => {
-            isDraggingRef.current = true;
-            if (e.dataTransfer) {
-              e.dataTransfer.setData('text/plain', card.id);
-              e.dataTransfer.effectAllowed = 'move';
-            }
-            onDragStart();
-          },
-          onDragEnd: () => {
-            setTimeout(() => {
-              isDraggingRef.current = false;
-            }, 100);
-          },
-          onClick: (e: any) => {
-            if (!isDraggingRef.current) {
-              onPress();
-            }
-          },
-        }
-      : {};
-
-  return (
-    <View
-      {...(webDragProps as any)}
-      style={
-        {
-          opacity: isBeingDragged ? 0.35 : 1,
-          cursor: isBeingDragged ? 'grabbing' : 'grab',
-          userSelect: 'none',
-        } as any
-      }
-      className="bg-slate-950 border border-slate-800 hover:border-slate-600 p-4 rounded-xl mb-3 shadow-sm transition-all"
-    >
+  // Konten kartu yang dirender di dalam wrapper
+  const cardContent = (
+    <>
       {/* Nama Project & Klien */}
       <Text className="text-white font-bold text-sm mb-0.5">{card.title}</Text>
       <Text className="text-slate-400 text-xs mb-3">
@@ -101,6 +67,52 @@ export function KanbanCard({
           </Text>
         </View>
       </View>
-    </View>
+    </>
+  );
+
+  // Jika Web Browser: Gunakan elemen HTML <div> langsung agar draggable bekerja 100% tanpa di-filter oleh React Native Web
+  if (Platform.OS === 'web') {
+    return (
+      <div
+        draggable={true}
+        onDragStart={(e: any) => {
+          isDraggingRef.current = true;
+          if (e.dataTransfer) {
+            e.dataTransfer.setData('text/plain', card.id);
+            e.dataTransfer.effectAllowed = 'move';
+          }
+          onDragStart();
+        }}
+        onDragEnd={() => {
+          setTimeout(() => {
+            isDraggingRef.current = false;
+          }, 100);
+        }}
+        onClick={() => {
+          if (!isDraggingRef.current) {
+            onPress();
+          }
+        }}
+        style={{
+          opacity: isBeingDragged ? 0.35 : 1,
+          cursor: isBeingDragged ? 'grabbing' : 'grab',
+          userSelect: 'none',
+        }}
+        className="bg-slate-950 border border-slate-800 hover:border-slate-600 p-4 rounded-xl mb-3 shadow-sm transition-all"
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  // Jika Mobile Native (Android & iOS): Gunakan Pressable
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+      className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-3 shadow-sm"
+    >
+      {cardContent}
+    </Pressable>
   );
 }
