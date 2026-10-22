@@ -1,4 +1,4 @@
-import { BoardHeader } from '@/components/board/BoardHeader';
+import { BoardHeader, BoardType } from '@/components/board/BoardHeader';
 import { CardDetailModal } from '@/components/board/CardDetailModal';
 import { KanbanColumn } from '@/components/board/KanbanColumn';
 import { confirmDialog } from '@/lib/confirm';
@@ -25,6 +25,9 @@ export default function BoardScreen() {
   const dispatch = useAppDispatch();
   const { currentBoard, isLoading } = useAppSelector((state) => state.board);
 
+  // Active Board Tab ('marketing' | 'production' | 'general')
+  const [activeBoardType, setActiveBoardType] = useState<BoardType>('marketing');
+
   // Drag State (Web)
   const [draggingCard, setDraggingCard] = useState<CardItem | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
@@ -40,9 +43,7 @@ export default function BoardScreen() {
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
 
   useEffect(() => {
-    dispatch(fetchBoardByType('marketing'));
-
-    // Ambil daftar user untuk dropdown PIC via service
+    // Ambil daftar user untuk dropdown PIC via service (sekali saat mount)
     profileService
       .getProfiles()
       .then((data) => {
@@ -51,10 +52,14 @@ export default function BoardScreen() {
       .catch((err) => {
         console.error('Gagal mengambil daftar profiles:', err);
       });
-  }, [dispatch]);
+  }, []);
+
+  useEffect(() => {
+    dispatch(fetchBoardByType(activeBoardType));
+  }, [dispatch, activeBoardType]);
 
   const handleRefresh = () => {
-    dispatch(fetchBoardByType('marketing'));
+    dispatch(fetchBoardByType(activeBoardType));
   };
 
   // Drag Handlers
@@ -72,7 +77,7 @@ export default function BoardScreen() {
           newPosition,
         })
       ).then(() => {
-        dispatch(fetchBoardByType('marketing'));
+        dispatch(fetchBoardByType(activeBoardType));
       });
     }
 
@@ -115,7 +120,7 @@ export default function BoardScreen() {
       }
 
       setIsModalVisible(false);
-      dispatch(fetchBoardByType('marketing'));
+      dispatch(fetchBoardByType(activeBoardType));
     } catch (err: any) {
       Alert.alert('Gagal', err || 'Terjadi kesalahan saat menyimpan perubahan.');
     } finally {
@@ -162,43 +167,51 @@ export default function BoardScreen() {
 
   return (
     <View className="flex-1 bg-slate-950">
-      {/* 1. Header Board */}
+      {/* 1. Header Board & Multi-Board Switcher */}
       <BoardHeader
         title={currentBoard?.name}
         description={currentBoard?.description}
+        activeBoardType={activeBoardType}
+        onSelectBoardType={(type) => setActiveBoardType(type)}
         onRefresh={handleRefresh}
       />
 
       {/* 2. List Kolom Kanban */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={true}
-        className="flex-1 p-5"
-        contentContainerStyle={{ paddingRight: 40 }}
-      >
-        {currentBoard?.board_columns.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            column={col}
-            totalColumns={totalColumns}
-            isColumnHovered={dragOverColumnId === col.id && draggingCard?.column_id !== col.id}
-            draggingCardId={draggingCard?.id}
-            deletingCardId={deletingCardId}
-            onCardPress={(card) => {
-              setSelectedCard(card);
-              setIsModalVisible(true);
-            }}
-            onCardDragStart={(card) => setDraggingCard(card)}
-            onDeleteCard={handleDeleteCard}
-            onAddCard={() => handleOpenCreate(col.id)}
-            onDragOver={() => {
-              if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);
-            }}
-            onDragLeave={() => setDragOverColumnId(null)}
-            onDrop={() => handleDropOnColumn(col.id)}
-          />
-        ))}
-      </ScrollView>
+      {isLoading ? (
+        <View className="flex-1 justify-center items-center bg-slate-950">
+          <ActivityIndicator size="large" color="#38BDF8" />
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          className="flex-1 p-5"
+          contentContainerStyle={{ paddingRight: 40 }}
+        >
+          {currentBoard?.board_columns.map((col) => (
+            <KanbanColumn
+              key={col.id}
+              column={col}
+              totalColumns={totalColumns}
+              isColumnHovered={dragOverColumnId === col.id && draggingCard?.column_id !== col.id}
+              draggingCardId={draggingCard?.id}
+              deletingCardId={deletingCardId}
+              onCardPress={(card) => {
+                setSelectedCard(card);
+                setIsModalVisible(true);
+              }}
+              onCardDragStart={(card) => setDraggingCard(card)}
+              onDeleteCard={handleDeleteCard}
+              onAddCard={() => handleOpenCreate(col.id)}
+              onDragOver={() => {
+                if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);
+              }}
+              onDragLeave={() => setDragOverColumnId(null)}
+              onDrop={() => handleDropOnColumn(col.id)}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* 3. Modal Overlay Edit Card & Attachment Gallery */}
       <CardDetailModal
