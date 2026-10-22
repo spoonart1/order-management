@@ -1,23 +1,30 @@
 import { BoardHeader, BoardType } from '@/components/board/BoardHeader';
 import { CardDetailModal } from '@/components/board/CardDetailModal';
+import { ColumnFormModal } from '@/components/board/ColumnFormModal';
 import { KanbanColumn } from '@/components/board/KanbanColumn';
 import { confirmDialog } from '@/lib/confirm';
 import { profileService } from '@/services/profileService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   CardItem,
+  ColumnItem,
   createCard,
+  createColumn,
   deleteCard,
+  deleteColumn,
   fetchBoardByType,
   moveCard,
   Profile,
   updateCardDetails,
+  updateColumn,
 } from '@/store/slices/boardSlice';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   ScrollView,
+  Text,
   View,
 } from 'react-native';
 
@@ -41,6 +48,12 @@ export default function BoardScreen() {
   const [createColumnId, setCreateColumnId] = useState<string | null>(null);
   // State ID kartu yang sedang dalam proses dihapus
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+
+  // Column Modal State (Tambah & Edit Kolom)
+  const [isColumnModalVisible, setIsColumnModalVisible] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState<ColumnItem | null>(null);
+  const [savingColumn, setSavingColumn] = useState(false);
+  const [deletingColumnId, setDeletingColumnId] = useState<string | null>(null);
 
   useEffect(() => {
     // Ambil daftar user untuk dropdown PIC via service (sekali saat mount)
@@ -155,6 +168,77 @@ export default function BoardScreen() {
     }
   };
 
+  // Column Handlers (Tambah, Edit, Hapus Kolom)
+  const handleOpenCreateColumn = () => {
+    setSelectedColumn(null);
+    setIsColumnModalVisible(true);
+  };
+
+  const handleOpenEditColumn = (column: ColumnItem) => {
+    setSelectedColumn(column);
+    setIsColumnModalVisible(true);
+  };
+
+  const handleSaveColumn = async (data: { title: string; color_hex: string }) => {
+    if (!currentBoard) return;
+
+    setSavingColumn(true);
+    try {
+      if (selectedColumn) {
+        await dispatch(
+          updateColumn({
+            columnId: selectedColumn.id,
+            title: data.title,
+            color_hex: data.color_hex,
+          })
+        ).unwrap();
+      } else {
+        const nextPosition = (currentBoard.board_columns.length || 0) + 1;
+        await dispatch(
+          createColumn({
+            board_id: currentBoard.id,
+            title: data.title,
+            color_hex: data.color_hex,
+            position: nextPosition,
+          })
+        ).unwrap();
+        dispatch(fetchBoardByType(activeBoardType));
+      }
+      setIsColumnModalVisible(false);
+    } catch (err: any) {
+      Alert.alert('Gagal', err || 'Tidak dapat menyimpan kolom.');
+    } finally {
+      setSavingColumn(false);
+    }
+  };
+
+  const handleDeleteColumn = async (column: ColumnItem) => {
+    const cardCount = column.board_cards.length;
+    const warningMsg =
+      cardCount > 0
+        ? `Kolom "${column.title}" berisi ${cardCount} kartu. Menghapus kolom ini akan ikut menghapus seluruh kartu di dalamnya. Lanjutkan?`
+        : `Apakah Anda yakin ingin menghapus kolom "${column.title}"?`;
+
+    const confirmed = await confirmDialog({
+      title: 'Hapus Kolom',
+      message: warningMsg,
+      confirmText: 'Hapus Kolom',
+      cancelText: 'Batal',
+      destructive: true,
+    });
+
+    if (!confirmed) return;
+
+    setDeletingColumnId(column.id);
+    try {
+      await dispatch(deleteColumn(column.id)).unwrap();
+    } catch (err: any) {
+      Alert.alert('Gagal', err || 'Tidak dapat menghapus kolom.');
+    } finally {
+      setDeletingColumnId(null);
+    }
+  };
+
   if (isLoading && !currentBoard) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-950">
@@ -196,6 +280,7 @@ export default function BoardScreen() {
               isColumnHovered={dragOverColumnId === col.id && draggingCard?.column_id !== col.id}
               draggingCardId={draggingCard?.id}
               deletingCardId={deletingCardId}
+              isDeletingColumn={deletingColumnId === col.id}
               onCardPress={(card) => {
                 setSelectedCard(card);
                 setIsModalVisible(true);
@@ -203,6 +288,8 @@ export default function BoardScreen() {
               onCardDragStart={(card) => setDraggingCard(card)}
               onDeleteCard={handleDeleteCard}
               onAddCard={() => handleOpenCreate(col.id)}
+              onEditColumn={() => handleOpenEditColumn(col)}
+              onDeleteColumn={() => handleDeleteColumn(col)}
               onDragOver={() => {
                 if (dragOverColumnId !== col.id) setDragOverColumnId(col.id);
               }}
@@ -210,6 +297,17 @@ export default function BoardScreen() {
               onDrop={() => handleDropOnColumn(col.id)}
             />
           ))}
+
+          {/* Tombol Tambah Kolom di Ujung Kanan Board */}
+          <Pressable
+            onPress={handleOpenCreateColumn}
+            style={({ pressed }) => [{ width: 260, opacity: pressed ? 0.75 : 1 }]}
+            className="h-14 bg-slate-900/60 border border-dashed border-slate-700 rounded-2xl items-center justify-center mr-6"
+          >
+            <Text className="flex-row text-slate-300 text-xs font-bold px-3">
+              + Tambah Kolom Alur
+            </Text>
+          </Pressable>
         </ScrollView>
       )}
 
@@ -224,6 +322,15 @@ export default function BoardScreen() {
         onSave={handleSaveDetail}
         onAttachmentChange={handleRefresh}
         defaultColumnId={createColumnId}
+      />
+
+      {/* 4. Modal Tambah / Edit Kolom */}
+      <ColumnFormModal
+        visible={isColumnModalVisible}
+        column={selectedColumn}
+        saving={savingColumn}
+        onClose={() => setIsColumnModalVisible(false)}
+        onSave={handleSaveColumn}
       />
     </View>
   );

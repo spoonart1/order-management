@@ -1,5 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { boardService, CreateCardPayload, MoveCardPayload, UpdateCardPayload } from "@/services/boardService";
+import {
+    boardService,
+    CreateCardPayload,
+    CreateColumnPayload,
+    MoveCardPayload,
+    UpdateCardPayload,
+    UpdateColumnPayload,
+} from "@/services/boardService";
 import { cardAttachmentService } from "@/services/cardAttachmentService";
 
 export interface Profile {
@@ -142,7 +149,60 @@ export const deleteCard = createAsyncThunk<
     }
 );
 
-// 5. Thunk untuk menghapus lampiran/foto
+// 5. Thunk untuk menambah kolom baru
+export const createColumn = createAsyncThunk<
+    void,
+    CreateColumnPayload,
+    { rejectValue: string }
+>(
+    'board/createColumn',
+    async (payload, { rejectWithValue }) => {
+        try {
+            await boardService.createColumn(payload);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Gagal membuat kolom';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+// 6. Thunk untuk mengubah nama / warna kolom
+export const updateColumn = createAsyncThunk<
+    UpdateColumnPayload,
+    UpdateColumnPayload,
+    { rejectValue: string }
+>(
+    'board/updateColumn',
+    async (payload, { rejectWithValue }) => {
+        try {
+            await boardService.updateColumn(payload);
+            return payload;
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Gagal mengubah kolom';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+// 7. Thunk untuk menghapus kolom
+export const deleteColumn = createAsyncThunk<
+    string,
+    string,
+    { rejectValue: string }
+>(
+    'board/deleteColumn',
+    async (columnId, { rejectWithValue }) => {
+        try {
+            await boardService.deleteColumn(columnId);
+            return columnId;
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Gagal menghapus kolom';
+            return rejectWithValue(msg);
+        }
+    }
+);
+
+// 8. Thunk untuk menghapus lampiran/foto
 export const deleteAttachment = createAsyncThunk<
     string,
     { attachmentId: string; filePath: string },
@@ -201,6 +261,24 @@ export const boardSlice = createSlice({
             })
             .addCase(deleteCard.rejected, (state, action) => {
                 state.error = action.payload ?? "Gagal menghapus kartu";
+            })
+            // updateColumn: perbarui judul & warna kolom secara lokal
+            .addCase(updateColumn.fulfilled, (state, action) => {
+                const col = state.currentBoard?.board_columns.find(
+                    (c) => c.id === action.payload.columnId
+                );
+                if (col) {
+                    col.title = action.payload.title;
+                    col.color_hex = action.payload.color_hex;
+                }
+            })
+            // deleteColumn: buang kolom dari state lokal
+            .addCase(deleteColumn.fulfilled, (state, action) => {
+                if (state.currentBoard) {
+                    state.currentBoard.board_columns = state.currentBoard.board_columns.filter(
+                        (c) => c.id !== action.payload
+                    );
+                }
             });
     },
 });

@@ -28,6 +28,19 @@ export interface CreateCardPayload {
   position: number;
 }
 
+export interface CreateColumnPayload {
+  board_id: string;
+  title: string;
+  color_hex: string;
+  position: number;
+}
+
+export interface UpdateColumnPayload {
+  columnId: string;
+  title: string;
+  color_hex: string;
+}
+
 /**
  * Service / Data Layer untuk Board & Kartu Kanban
  * Menangani query dan mutasi data ke Supabase
@@ -193,6 +206,64 @@ export const boardService = {
     const { error } = await supabase.from('board_cards').delete().eq('id', cardId);
     if (error) {
       console.error('Error deleting card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Membuat kolom tahapan baru di dalam board
+   */
+  async createColumn(payload: CreateColumnPayload): Promise<void> {
+    const { error } = await supabase.from('board_columns').insert({
+      board_id: payload.board_id,
+      title: payload.title,
+      color_hex: payload.color_hex,
+      position: payload.position,
+    });
+
+    if (error) {
+      console.error('Error creating column:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mengubah judul dan/atau warna kolom
+   */
+  async updateColumn({ columnId, title, color_hex }: UpdateColumnPayload): Promise<void> {
+    const { error } = await supabase
+      .from('board_columns')
+      .update({
+        title,
+        color_hex,
+      })
+      .eq('id', columnId);
+
+    if (error) {
+      console.error('Error updating column:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Menghapus kolom beserta kartu-kartu di dalamnya
+   */
+  async deleteColumn(columnId: string): Promise<void> {
+    // Ambil kartu di dalam kolom ini untuk menghapus lampiran & kartunya terlebih dahulu
+    const { data: cards } = await supabase
+      .from('board_cards')
+      .select('id')
+      .eq('column_id', columnId);
+
+    if (cards && cards.length > 0) {
+      for (const card of cards) {
+        await this.deleteCard(card.id);
+      }
+    }
+
+    const { error } = await supabase.from('board_columns').delete().eq('id', columnId);
+    if (error) {
+      console.error('Error deleting column:', error);
       throw error;
     }
   },
