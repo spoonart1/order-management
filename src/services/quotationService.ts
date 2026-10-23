@@ -1,3 +1,4 @@
+import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
 import { getRomanMonth, terbilang } from '@/utils/terbilang';
 
@@ -141,27 +142,36 @@ export const quotationService = {
    * Mengambil surat penawaran yang terhubung ke kartu kanban tertentu
    */
   async getQuotationByCardId(cardId: string): Promise<Quotation | null> {
-    const { data, error } = await supabase
-      .from('quotations')
-      .select(`
-        *,
-        quotation_items (*)
-      `)
-      .eq('card_id', cardId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching quotation by card_id:', error);
-      throw error;
+    const isOnline = await checkIsOnline();
+    if (!isOnline) {
+      // Saat offline, lewati network call agar tidak memicu TypeError: Load failed
+      return null;
     }
 
-    if (data && data.quotation_items) {
-      data.quotation_items.sort((a: QuotationItem, b: QuotationItem) => a.item_no - b.item_no);
-    }
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          quotation_items (*)
+        `)
+        .eq('card_id', cardId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    return data as Quotation | null;
+      if (error) {
+        return null;
+      }
+
+      if (data && data.quotation_items) {
+        data.quotation_items.sort((a: QuotationItem, b: QuotationItem) => a.item_no - b.item_no);
+      }
+
+      return data as Quotation | null;
+    } catch {
+      return null;
+    }
   },
 
   /**

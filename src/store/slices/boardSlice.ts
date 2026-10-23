@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
     boardService,
     CreateCardPayload,
@@ -229,12 +229,81 @@ export const boardSlice = createSlice({
             state.currentBoard = null;
             state.error = null;
         },
+        optimisticMoveCard: (state, action: PayloadAction<MoveCardPayload>) => {
+            if (!state.currentBoard) return;
+            const { cardId, targetColumnId, newPosition } = action.payload;
+
+            let movedCard: CardItem | null = null;
+
+            // 1. Temukan dan hapus kartu dari kolom asal
+            state.currentBoard.board_columns.forEach((col) => {
+                const idx = col.board_cards.findIndex((c) => c.id === cardId);
+                if (idx !== -1) {
+                    movedCard = { ...col.board_cards[idx] };
+                    col.board_cards.splice(idx, 1);
+                }
+            });
+
+            // 2. Masukkan kartu ke kolom tujuan dengan posisi baru
+            if (movedCard) {
+                const targetCol = state.currentBoard.board_columns.find((c) => c.id === targetColumnId);
+                if (targetCol) {
+                    (movedCard as CardItem).column_id = targetColumnId;
+                    (movedCard as CardItem).position = newPosition;
+                    targetCol.board_cards.push(movedCard);
+                    targetCol.board_cards.sort((a, b) => a.position - b.position);
+                }
+            }
+        },
+        optimisticUpdateCard: (state, action: PayloadAction<UpdateCardPayload>) => {
+            if (!state.currentBoard) return;
+            const payload = action.payload;
+
+            let updatedCard: CardItem | null = null;
+            let currentColumnId: string | null = null;
+
+            state.currentBoard.board_columns.forEach((col) => {
+                const card = col.board_cards.find((c) => c.id === payload.cardId);
+                if (card) {
+                    currentColumnId = col.id;
+                    Object.assign(card, {
+                        title: payload.title,
+                        client_name: payload.client_name,
+                        client_phone: payload.client_phone,
+                        estimated_value: payload.estimated_value,
+                        assigned_to: payload.assigned_to,
+                        notes: payload.notes,
+                        column_id: payload.column_id,
+                    });
+                    updatedCard = { ...card };
+                }
+            });
+
+            // Jika kolom berubah, pindahkan ke kolom tujuan
+            if (updatedCard && currentColumnId && currentColumnId !== payload.column_id) {
+                const oldCol = state.currentBoard.board_columns.find((c) => c.id === currentColumnId);
+                const newCol = state.currentBoard.board_columns.find((c) => c.id === payload.column_id);
+                if (oldCol && newCol) {
+                    oldCol.board_cards = oldCol.board_cards.filter((c) => c.id !== payload.cardId);
+                    newCol.board_cards.push(updatedCard);
+                    newCol.board_cards.sort((a, b) => a.position - b.position);
+                }
+            }
+        },
+        optimisticDeleteCard: (state, action: PayloadAction<string>) => {
+            if (!state.currentBoard) return;
+            state.currentBoard.board_columns.forEach((col) => {
+                col.board_cards = col.board_cards.filter((c) => c.id !== action.payload);
+            });
+        },
     },
     extraReducers: (builder) => {
         builder
-            // fetchBoardByType
+            // fetchBoardByType: Silent background refresh jika board sudah ada agar tidak memicu flicker/reload
             .addCase(fetchBoardByType.pending, (state) => {
-                state.isLoading = true;
+                if (!state.currentBoard) {
+                    state.isLoading = true;
+                }
                 state.error = null;
             })
             .addCase(fetchBoardByType.fulfilled, (state, action) => {
@@ -284,5 +353,10 @@ export const boardSlice = createSlice({
     },
 });
 
-export const { clearBoardState } = boardSlice.actions;
+export const {
+    clearBoardState,
+    optimisticMoveCard,
+    optimisticUpdateCard,
+    optimisticDeleteCard,
+} = boardSlice.actions;
 export default boardSlice.reducer;

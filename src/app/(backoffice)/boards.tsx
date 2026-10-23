@@ -3,7 +3,11 @@ import { CardDetailModal } from '@/components/board/CardDetailModal';
 import { ColumnFormModal } from '@/components/board/ColumnFormModal';
 import { KanbanColumn } from '@/components/board/KanbanColumn';
 import { confirmDialog } from '@/lib/confirm';
+import { useNetworkStatus } from '@/lib/network';
+import { boardCacheService } from '@/services/boardCacheService';
+import { offlineQueueService } from '@/services/offlineQueueService';
 import { profileService } from '@/services/profileService';
+import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   CardItem,
@@ -14,6 +18,9 @@ import {
   deleteColumn,
   fetchBoardByType,
   moveCard,
+  optimisticDeleteCard,
+  optimisticMoveCard,
+  optimisticUpdateCard,
   Profile,
   updateCardDetails,
   updateColumn,
@@ -31,6 +38,7 @@ import {
 export default function BoardScreen() {
   const dispatch = useAppDispatch();
   const { currentBoard, isLoading } = useAppSelector((state) => state.board);
+  const { isOnline } = useNetworkStatus();
 
   // Active Board Tab ('marketing' | 'production' | 'general')
   const [activeBoardType, setActiveBoardType] = useState<BoardType>('marketing');
@@ -55,7 +63,16 @@ export default function BoardScreen() {
   const [savingColumn, setSavingColumn] = useState(false);
   const [deletingColumnId, setDeletingColumnId] = useState<string | null>(null);
 
+  // Status Antrean Mutasi Offline
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  const refreshPendingCount = async () => {
+    const count = await offlineQueueService.getCount();
+    setPendingSyncCount(count);
+  };
+
   useEffect(() => {
+    refreshPendingCount();
     // Ambil daftar user untuk dropdown PIC via service (sekali saat mount)
     profileService
       .getProfiles()
@@ -63,7 +80,7 @@ export default function BoardScreen() {
         if (data) setProfiles(data);
       })
       .catch((err) => {
-        console.error('Gagal mengambil daftar profiles:', err);
+        console.warn('[boards] Info: daftar profiles dimuat dari cache lokal:', err?.message || err);
       });
   }, []);
 
@@ -71,11 +88,34 @@ export default function BoardScreen() {
     dispatch(fetchBoardByType(activeBoardType));
   }, [dispatch, activeBoardType]);
 
-  const handleRefresh = () => {
+  // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload halaman)
+  useEffect(() => {
+    if (isOnline) {
+      syncService
+        .processQueue((remaining) => {
+          setPendingSyncCount(remaining);
+        })
+        .then(() => {
+          refreshPendingCount();
+          // Simpan snapshot board lokal terbaru tanpa perlu me-reload / me-refresh halaman
+          if (currentBoard) {
+            boardCacheService.saveBoardCache(activeBoardType, currentBoard);
+          }
+        });
+    } else {
+      refreshPendingCount();
+    }
+  }, [isOnline, activeBoardType, currentBoard]);
+
+  const handleRefresh = async () => {
+    if (isOnline) {
+      await syncService.processQueue((remaining) => setPendingSyncCount(remaining));
+      await refreshPendingCount();
+    }
     dispatch(fetchBoardByType(activeBoardType));
   };
 
-  // Drag Handlers
+  // Drag Handlers dengan Optimistic UI
   const handleDropOnColumn = (targetColumnId: string) => {
     if (!draggingCard) return;
 
@@ -83,6 +123,16 @@ export default function BoardScreen() {
       const targetColumn = currentBoard?.board_columns.find((c) => c.id === targetColumnId);
       const newPosition = (targetColumn?.board_cards.length || 0) + 1;
 
+      // 1. Optimistic Update instan di UI lokal (0ms)
+      dispatch(
+        optimisticMoveCard({
+          cardId: draggingCard.id,
+          targetColumnId,
+          newPosition,
+        })
+      );
+
+      // 2. Kirim mutasi (online: Supabase; offline: disimpan ke antrean offline)
       dispatch(
         moveCard({
           cardId: draggingCard.id,
@@ -90,7 +140,7 @@ export default function BoardScreen() {
           newPosition,
         })
       ).then(() => {
-        dispatch(fetchBoardByType(activeBoardType));
+        refreshPendingCount();
       });
     }
 
@@ -98,7 +148,7 @@ export default function BoardScreen() {
     setDragOverColumnId(null);
   };
 
-  // Save Modal Handler (Edit & Create)
+  // Save Modal Handler (Edit & Create) dengan Optimistic UI
   const handleSaveDetail = async (updatedData: {
     title: string;
     client_name: string;
@@ -113,14 +163,25 @@ export default function BoardScreen() {
     setSaving(true);
     try {
       if (selectedCard) {
+        // 1. Optimistic Update seketika di layar
+        dispatch(
+          optimisticUpdateCard({
+            cardId: selectedCard.id,
+            ...updatedData,
+          })
+        );
+        setIsModalVisible(false);
+
+        // 2. Dispatch thunk (online: Supabase; offline: antrean offline)
         await dispatch(
           updateCardDetails({
             cardId: selectedCard.id,
             ...updatedData,
           })
-        ).unwrap();
+        );
+        await refreshPendingCount();
       } else {
-        // Mode create: taruh kartu di urutan paling bawah kolom tujuan
+        // Mode create
         const targetColumn = currentBoard.board_columns.find((c) => c.id === updatedData.column_id);
         const position = (targetColumn?.board_cards.length || 0) + 1;
 
@@ -131,10 +192,10 @@ export default function BoardScreen() {
             ...updatedData,
           })
         ).unwrap();
-      }
 
-      setIsModalVisible(false);
-      dispatch(fetchBoardByType(activeBoardType));
+        setIsModalVisible(false);
+        dispatch(fetchBoardByType(activeBoardType));
+      }
     } catch (err: any) {
       Alert.alert('Gagal', err || 'Terjadi kesalahan saat menyimpan perubahan.');
     } finally {
@@ -161,9 +222,14 @@ export default function BoardScreen() {
 
     setDeletingCardId(card.id);
     try {
-      await dispatch(deleteCard(card.id)).unwrap();
+      // 1. Optimistic Delete seketika
+      dispatch(optimisticDeleteCard(card.id));
+
+      // 2. Dispatch thunk delete (online: Supabase; offline: antrean offline)
+      await dispatch(deleteCard(card.id));
+      await refreshPendingCount();
     } catch (err: any) {
-      Alert.alert('Gagal', err || 'Tidak dapat menghapus kartu.');
+      Alert.alert('Gagal Menghapus', err || 'Gagal menghapus kartu.');
     } finally {
       setDeletingCardId(null);
     }
@@ -260,6 +326,26 @@ export default function BoardScreen() {
         onSelectBoardType={(type) => setActiveBoardType(type)}
         onRefresh={handleRefresh}
       />
+
+      {/* Banner Status Mode Offline */}
+      {!isOnline && (
+        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
+            <Text className="text-amber-200 text-xs font-semibold">
+              Mode Offline Aktif
+            </Text>
+            <Text className="text-amber-400/80 text-xs ml-2">
+              • {pendingSyncCount > 0
+                ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
+                : 'Menampilkan data tersimpan di perangkat lokal'}
+            </Text>
+          </View>
+          <Text className="text-amber-300 text-[11px] font-medium">
+            {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
+          </Text>
+        </View>
+      )}
 
       {/* 2. List Kolom Kanban */}
       {isLoading ? (

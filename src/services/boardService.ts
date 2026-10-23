@@ -1,4 +1,7 @@
+import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
+import { boardCacheService } from '@/services/boardCacheService';
+import { offlineQueueService } from '@/services/offlineQueueService';
 import { BoardData, ColumnItem } from '@/store/slices/boardSlice';
 
 export interface UpdateCardPayload {
@@ -50,100 +53,144 @@ export interface UpdateColumnPayload {
 export const boardService = {
   /**
    * Mengambil board lengkap berdasarkan tipe (misal: 'marketing', 'production')
-   * beserta relasi kolom, kartu, PIC profile, dan lampiran file
+   * beserta relasi kolom, kartu, PIC profile, dan lampiran file.
+   * Mendukung Offline-First: memuat dari cache lokal saat offline atau saat koneksi gagal.
    */
   async getBoardByType(boardType: string): Promise<BoardData> {
-    const { data, error } = await supabase
-      .from('boards')
-      .select(`
-        id,
-        name,
-        type,
-        description,
-        board_columns (
+    const isOnline = await checkIsOnline();
+
+    // 1. Jika terdeteksi offline, langsung kembalikan cache lokal tanpa menunggu timeout
+    if (!isOnline) {
+      console.log(`[boardService] Offline mode: mengambil board '${boardType}' dari local cache`);
+      const cached = await boardCacheService.getBoardCache(boardType);
+      if (cached) return cached;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('boards')
+        .select(`
           id,
-          board_id,
-          title,
-          position,
-          color_hex,
-          board_cards (
-            *,
-            profiles (
-              id,
-              full_name
-            ),
-            card_attachments (
-              id,
-              card_id,
-              file_name,
-              file_url,
-              file_type,
-              created_at
+          name,
+          type,
+          description,
+          board_columns (
+            id,
+            board_id,
+            title,
+            position,
+            color_hex,
+            board_cards (
+              *,
+              profiles (
+                id,
+                full_name
+              ),
+              card_attachments (
+                id,
+                card_id,
+                file_name,
+                file_url,
+                file_type,
+                created_at
+              )
             )
           )
-        )
-      `)
-      .eq('type', boardType)
-      .single();
+        `)
+        .eq('type', boardType)
+        .single();
 
-    if (error) {
-      console.error('Error fetching board by type:', error);
+      if (error) throw error;
+
+      // Urutkan kolom berdasarkan position (1, 2, 3...)
+      const sortedColumns = (data.board_columns as unknown as ColumnItem[]).sort(
+        (a, b) => a.position - b.position
+      );
+
+      // Urutkan kartu di setiap kolom berdasarkan position
+      sortedColumns.forEach((col) => {
+        col.board_cards.sort((a, b) => a.position - b.position);
+      });
+
+      const boardResult = { ...data, board_columns: sortedColumns } as unknown as BoardData;
+
+      // 2. Simpan snapshot data terbaru ke local cache secara background
+      await boardCacheService.saveBoardCache(boardType, boardResult);
+
+      return boardResult;
+    } catch (error) {
+      console.warn(
+        `[boardService] Fetch board '${boardType}' gagal, mencoba fallback ke local cache:`,
+        error
+      );
+      const cached = await boardCacheService.getBoardCache(boardType);
+      if (cached) {
+        return cached;
+      }
       throw error;
     }
-
-    // Urutkan kolom berdasarkan position (1, 2, 3...)
-    const sortedColumns = (data.board_columns as unknown as ColumnItem[]).sort(
-      (a, b) => a.position - b.position
-    );
-
-    // Urutkan kartu di setiap kolom berdasarkan position
-    sortedColumns.forEach((col) => {
-      col.board_cards.sort((a, b) => a.position - b.position);
-    });
-
-    return { ...data, board_columns: sortedColumns } as unknown as BoardData;
   },
 
   /**
-   * Memindahkan posisi dan/atau kolom kartu kanban
+   * Memindahkan posisi dan/atau kolom kartu kanban (Offline-First Resilient)
    */
-  async moveCard({ cardId, targetColumnId, newPosition }: MoveCardPayload): Promise<void> {
-    const { error } = await supabase
-      .from('board_cards')
-      .update({
-        column_id: targetColumnId,
-        position: newPosition,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', cardId);
+  async moveCard(payload: MoveCardPayload): Promise<void> {
+    const isOnline = await checkIsOnline();
 
-    if (error) {
-      console.error('Error moving card:', error);
-      throw error;
+    if (!isOnline) {
+      console.log(`[boardService] Offline: Menyimpan MOVE_CARD kartu ${payload.cardId} ke offline queue`);
+      await offlineQueueService.enqueue('MOVE_CARD', payload);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_cards')
+        .update({
+          column_id: payload.targetColumnId,
+          position: payload.newPosition,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.cardId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.warn('[boardService] Gagal memindahkan kartu secara online, simpan ke antrean offline:', error);
+      await offlineQueueService.enqueue('MOVE_CARD', payload);
     }
   },
 
   /**
-   * Mengubah data detail kartu (title, client, phone, value, PIC, notes, kolom)
+   * Mengubah data detail kartu (Offline-First Resilient)
    */
   async updateCardDetails(payload: UpdateCardPayload): Promise<void> {
-    const { error } = await supabase
-      .from('board_cards')
-      .update({
-        title: payload.title,
-        client_name: payload.client_name,
-        client_phone: payload.client_phone,
-        estimated_value: payload.estimated_value,
-        column_id: payload.column_id,
-        assigned_to: payload.assigned_to,
-        notes: payload.notes,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', payload.cardId);
+    const isOnline = await checkIsOnline();
 
-    if (error) {
-      console.error('Error updating card details:', error);
-      throw error;
+    if (!isOnline) {
+      console.log(`[boardService] Offline: Menyimpan UPDATE_CARD kartu ${payload.cardId} ke offline queue`);
+      await offlineQueueService.enqueue('UPDATE_CARD', payload);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_cards')
+        .update({
+          title: payload.title,
+          client_name: payload.client_name,
+          client_phone: payload.client_phone,
+          estimated_value: payload.estimated_value,
+          column_id: payload.column_id,
+          assigned_to: payload.assigned_to,
+          notes: payload.notes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payload.cardId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.warn('[boardService] Gagal update detail kartu secara online, simpan ke antrean offline:', error);
+      await offlineQueueService.enqueue('UPDATE_CARD', payload);
     }
   },
 
@@ -170,39 +217,39 @@ export const boardService = {
   },
 
   /**
-   * Menghapus kartu beserta seluruh lampiran (file di Storage + row card_attachments)
+   * Menghapus kartu (Offline-First Resilient)
    */
   async deleteCard(cardId: string): Promise<void> {
-    // 1. Ambil daftar lampiran untuk dibersihkan dari Storage
-    const { data: attachments, error: fetchError } = await supabase
-      .from('card_attachments')
-      .select('id, file_url')
-      .eq('card_id', cardId);
+    const isOnline = await checkIsOnline();
 
-    if (fetchError) {
-      console.error('Error fetching card attachments:', fetchError);
-      throw fetchError;
+    if (!isOnline) {
+      console.log(`[boardService] Offline: Menyimpan DELETE_CARD kartu ${cardId} ke offline queue`);
+      await offlineQueueService.enqueue('DELETE_CARD', { cardId });
+      return;
     }
 
-    const storagePaths = (attachments || [])
-      .map((a) => a.file_url.split('/attachments/')[1])
-      .filter((p): p is string => !!p);
+    try {
+      // 1. Ambil daftar lampiran untuk dibersihkan dari Storage
+      const { data: attachments } = await supabase
+        .from('card_attachments')
+        .select('id, file_url')
+        .eq('card_id', cardId);
 
-    if (storagePaths.length > 0) {
-      await supabase.storage.from('attachments').remove(storagePaths);
-    }
+      const storagePaths = (attachments || [])
+        .map((a) => a.file_url.split('/attachments/')[1])
+        .filter((p): p is string => !!p);
 
-    // 2. Hapus row lampiran, lalu kartunya
-    const { error: attError } = await supabase
-      .from('card_attachments')
-      .delete()
-      .eq('card_id', cardId);
-    if (attError) throw attError;
+      if (storagePaths.length > 0) {
+        await supabase.storage.from('attachments').remove(storagePaths);
+      }
 
-    const { error } = await supabase.from('board_cards').delete().eq('id', cardId);
-    if (error) {
-      console.error('Error deleting card:', error);
-      throw error;
+      // 2. Hapus row lampiran, lalu kartunya
+      await supabase.from('card_attachments').delete().eq('card_id', cardId);
+      const { error } = await supabase.from('board_cards').delete().eq('id', cardId);
+      if (error) throw error;
+    } catch (error) {
+      console.warn('[boardService] Gagal delete kartu secara online, simpan ke antrean offline:', error);
+      await offlineQueueService.enqueue('DELETE_CARD', { cardId });
     }
   },
 

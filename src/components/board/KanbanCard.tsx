@@ -30,6 +30,7 @@ export function KanbanCard({
   };
 
   const isDraggingRef = useRef(false);
+  const dragEndTimeRef = useRef(0);
   const attachmentCount = card.card_attachments?.length || 0;
 
   // Konten kartu yang dirender di dalam wrapper
@@ -154,15 +155,19 @@ export function KanbanCard({
           onDragStart();
         }}
         onDragEnd={() => {
+          dragEndTimeRef.current = Date.now();
           setTimeout(() => {
             isDraggingRef.current = false;
-          }, 100);
+          }, 300);
         }}
-        onClick={() => {
+        onClick={(e: any) => {
           if (isDeleting) return;
-          if (!isDraggingRef.current) {
-            onPress();
+          // Abaikan event klik jika kartu sedang di-drag atau baru saja selesai di-drag dalam 300ms
+          if (isDraggingRef.current || Date.now() - dragEndTimeRef.current < 300) {
+            e?.stopPropagation?.();
+            return;
           }
+          onPress();
         }}
         style={{
           opacity: isBeingDragged ? 0.35 : 1,
