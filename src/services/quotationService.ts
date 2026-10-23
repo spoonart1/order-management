@@ -11,6 +11,7 @@ export interface QuotationItem {
   id?: string;
   quotation_id?: string;
   item_no: number;
+  item_type?: 'kitchen_set' | 'other' | string;
   description: string;
   material?: string | null;
   accessories?: string | null;

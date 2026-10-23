@@ -8,7 +8,18 @@ import {
 } from '@/services/quotationService';
 import { useAppSelector } from '@/store/hooks';
 import { formatRupiah, terbilang } from '@/utils/terbilang';
-import { Check, Link, Phone, Plus, Search, Trash2, User, X } from 'lucide-react-native';
+import {
+  Check,
+  ChevronDown,
+  Link,
+  Lock,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,6 +31,188 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+export type QuotationItemType = 'kitchen_set' | 'other';
+
+export interface FormItem extends Omit<QuotationItem, 'id' | 'quotation_id'> {
+  item_type?: QuotationItemType;
+}
+
+// Data Hardcoded Suggestion Spesifikasi Alora Studio
+export const SPEC_SUGGESTIONS = {
+  material: [
+    'PVC board',
+    'Blockwood / Blockboard / Blocminto',
+  ],
+  finishing: [
+    'Cat Duco',
+    'HPL',
+  ],
+  accessories: [
+    'Engsel soft close',
+    'Rel Tandem',
+  ],
+};
+
+interface SpecFieldWithDropdownProps {
+  label: string;
+  value: string;
+  placeholder: string;
+  options: string[];
+  isMultiSelect?: boolean;
+  onChange: (val: string) => void;
+}
+
+function SpecFieldWithDropdown({
+  label,
+  value,
+  placeholder,
+  options,
+  isMultiSelect = false,
+  onChange,
+}: SpecFieldWithDropdownProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const handleSelectOption = (opt: string) => {
+    if (isMultiSelect) {
+      if (!value.trim()) {
+        onChange(opt);
+      } else {
+        const parts = value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (parts.includes(opt)) {
+          const filtered = parts.filter((p) => p !== opt);
+          onChange(filtered.join(', '));
+        } else {
+          onChange([...parts, opt].join(', '));
+        }
+      }
+    } else {
+      onChange(opt);
+      setDropdownOpen(false);
+    }
+  };
+
+  return (
+    <View className="w-full md:w-1/4 px-1.5 mb-2.5">
+      <View className="flex-row items-center justify-between mb-1">
+        <Text className="text-slate-400 text-[11px] font-medium">{label}</Text>
+        <Pressable
+          onPress={() => setDropdownOpen(true)}
+          className="flex-row items-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700"
+        >
+          <Text className="text-sky-400 text-[9px] font-semibold mr-0.5">▾ Dropdown</Text>
+        </Pressable>
+      </View>
+
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
+        placeholder={placeholder}
+        placeholderTextColor="#64748B"
+      />
+
+      {/* Suggestion Chips */}
+      <View className="flex-row flex-wrap gap-1 mt-1">
+        {options.map((opt) => {
+          const isSelected = isMultiSelect
+            ? value.toLowerCase().includes(opt.toLowerCase())
+            : value.toLowerCase() === opt.toLowerCase();
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => handleSelectOption(opt)}
+              className={`px-1.5 py-0.5 rounded border ${
+                isSelected
+                  ? 'bg-blue-600/30 border-blue-500'
+                  : 'bg-slate-950/80 border-slate-800'
+              }`}
+            >
+              <Text
+                className={`text-[9px] ${
+                  isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
+                }`}
+              >
+                {isSelected ? '✓ ' : '+ '}{opt}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Modal Dropdown Pilihan Spesifikasi */}
+      {dropdownOpen && (
+        <Modal
+          transparent
+          visible={dropdownOpen}
+          animationType="fade"
+          onRequestClose={() => setDropdownOpen(false)}
+        >
+          <Pressable
+            onPress={() => setDropdownOpen(false)}
+            className="flex-1 bg-black/60 items-center justify-center p-4"
+          >
+            <Pressable
+              onPress={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-4 shadow-2xl"
+            >
+              <View className="flex-row items-center justify-between pb-2 mb-3 border-b border-slate-800">
+                <Text className="text-white font-bold text-sm">
+                  Pilih {label}
+                </Text>
+                <Pressable onPress={() => setDropdownOpen(false)}>
+                  <Text className="text-slate-400 text-xs">✕ Tutup</Text>
+                </Pressable>
+              </View>
+
+              <View className="mb-3">
+                {options.map((opt) => {
+                  const isSelected = isMultiSelect
+                    ? value.toLowerCase().includes(opt.toLowerCase())
+                    : value.toLowerCase() === opt.toLowerCase();
+                  return (
+                    <Pressable
+                      key={opt}
+                      onPress={() => handleSelectOption(opt)}
+                      className={`p-3 rounded-xl border flex-row items-center justify-between mb-2 ${
+                        isSelected
+                          ? 'bg-blue-600/25 border-blue-500'
+                          : 'bg-slate-950 border-slate-800'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs ${
+                          isSelected ? 'text-blue-300 font-bold' : 'text-slate-200'
+                        }`}
+                      >
+                        {opt}
+                      </Text>
+                      {isSelected ? (
+                        <Text className="text-emerald-400 font-bold text-xs">✓ Dipilih</Text>
+                      ) : (
+                        <Text className="text-slate-500 text-xs">+ Pilih</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Pressable
+                onPress={() => setDropdownOpen(false)}
+                className="py-2.5 bg-blue-600 rounded-xl items-center shadow"
+              >
+                <Text className="text-white text-xs font-bold">Simpan / Selesai</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+    </View>
+  );
+}
 
 interface ClientSuggestion {
   id: string;
@@ -82,9 +275,10 @@ export function QuotationFormModal({
   ]);
 
   // Rincian Item Penawaran & Spesifikasi
-  const [items, setItems] = useState<Omit<QuotationItem, 'id' | 'quotation_id'>[]>([
+  const [items, setItems] = useState<FormItem[]>([
     {
       item_no: 1,
+      item_type: 'kitchen_set',
       description: '',
       material: '',
       finishing: '',
@@ -123,18 +317,22 @@ export function QuotationFormModal({
       }
       if (quotation.quotation_items && quotation.quotation_items.length > 0) {
         setItems(
-          quotation.quotation_items.map((it) => ({
-            item_no: it.item_no,
-            description: it.description,
-            material: it.material || '',
-            finishing: it.finishing || '',
-            accessories: it.accessories || '',
-            dimensions: it.dimensions || '',
-            quantity: it.quantity,
-            unit: it.unit,
-            unit_price: it.unit_price,
-            amount: it.amount,
-          }))
+          quotation.quotation_items.map((it) => {
+            const hasSpecs = Boolean(it.material || it.finishing || it.accessories || it.dimensions);
+            return {
+              item_no: it.item_no,
+              item_type: hasSpecs ? 'kitchen_set' : 'other',
+              description: it.description,
+              material: it.material || '',
+              finishing: it.finishing || '',
+              accessories: it.accessories || '',
+              dimensions: it.dimensions || '',
+              quantity: it.quantity,
+              unit: hasSpecs ? 'SET' : (it.unit || 'SET'),
+              unit_price: it.unit_price,
+              amount: it.amount,
+            };
+          })
         );
       }
     } else {
@@ -158,6 +356,7 @@ export function QuotationFormModal({
       setItems([
         {
           item_no: 1,
+          item_type: 'kitchen_set',
           description: '',
           material: '',
           finishing: '',
@@ -257,11 +456,12 @@ export function QuotationFormModal({
   const terbilangText = terbilang(subtotal);
 
   // Helper Item Actions
-  const handleAddItem = () => {
+  const handleAddItem = (type: QuotationItemType = 'kitchen_set') => {
     setItems((prev) => [
       ...prev,
       {
         item_no: prev.length + 1,
+        item_type: type,
         description: '',
         material: '',
         finishing: '',
@@ -273,6 +473,32 @@ export function QuotationFormModal({
         amount: 0,
       },
     ]);
+  };
+
+  const handleToggleItemType = (index: number, newType: QuotationItemType) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      const cur = updated[index];
+      if (newType === 'kitchen_set') {
+        updated[index] = {
+          ...cur,
+          item_type: 'kitchen_set',
+          unit: 'SET', // Lock satuan to SET
+        };
+      } else {
+        updated[index] = {
+          ...cur,
+          item_type: 'other',
+          material: '',
+          finishing: '',
+          accessories: '',
+          dimensions: '',
+          unit: cur.unit || 'SET',
+        };
+      }
+      return updated;
+    });
+    if (errorMessage) setErrorMessage(null);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -329,6 +555,20 @@ export function QuotationFormModal({
       setSaving(true);
       setErrorMessage(null);
 
+      // Bersihkan spesifikasi jika jenisnya bukan kitchen set
+      const itemsToSave = items.map((it, idx) => ({
+        item_no: idx + 1,
+        description: it.description,
+        material: it.item_type === 'kitchen_set' ? (it.material || null) : null,
+        accessories: it.item_type === 'kitchen_set' ? (it.accessories || null) : null,
+        finishing: it.item_type === 'kitchen_set' ? (it.finishing || null) : null,
+        dimensions: it.item_type === 'kitchen_set' ? (it.dimensions || null) : null,
+        quantity: Number(it.quantity) || 1,
+        unit: it.item_type === 'kitchen_set' ? 'SET' : (it.unit || 'SET'),
+        unit_price: Number(it.unit_price) || 0,
+        amount: Number(it.amount) || 0,
+      }));
+
       const payload: SaveQuotationPayload = {
         card_id: selectedCardId || cardId || quotation?.card_id || null,
         quotation_no: quotationNo.trim(),
@@ -342,7 +582,7 @@ export function QuotationFormModal({
         marketing_name: marketingName.trim() || 'Marketing Alora',
         status,
         terms,
-        items,
+        items: itemsToSave,
         notes: notes.trim() || null,
       };
 
@@ -374,7 +614,18 @@ export function QuotationFormModal({
       terms,
       issued_date: quotation?.issued_date || new Date().toISOString().split('T')[0],
       notes,
-      quotation_items: items.map((it, idx) => ({ ...it, item_no: idx + 1 })),
+      quotation_items: items.map((it, idx) => ({
+        item_no: idx + 1,
+        description: it.description,
+        material: it.item_type === 'kitchen_set' ? (it.material || null) : null,
+        accessories: it.item_type === 'kitchen_set' ? (it.accessories || null) : null,
+        finishing: it.item_type === 'kitchen_set' ? (it.finishing || null) : null,
+        dimensions: it.item_type === 'kitchen_set' ? (it.dimensions || null) : null,
+        quantity: Number(it.quantity) || 1,
+        unit: it.item_type === 'kitchen_set' ? 'SET' : (it.unit || 'SET'),
+        unit_price: Number(it.unit_price) || 0,
+        amount: Number(it.amount) || 0,
+      })),
     };
     onPreview(mockQuotation);
   };
@@ -712,17 +963,27 @@ export function QuotationFormModal({
                     3. RINCIAN PENAWARAN & SPESIFIKASI
                   </Text>
                   <Text className="text-slate-400 text-[11px] mt-0.5">
-                    Masukkan detail item pekerjaan, spesifikasi bahan, dimensi, volume, dan harga satuan
+                    Pilih jenis item (Kitchen Set / Lainnya) dan tentukan spesifikasi teknis
                   </Text>
                 </View>
 
-                <Pressable
-                  onPress={handleAddItem}
-                  className="flex-row items-center bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 rounded-xl"
-                >
-                  <Plus size={14} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold ml-1">+ Tambah Item</Text>
-                </Pressable>
+                <View className="flex-row items-center">
+                  <Pressable
+                    onPress={() => handleAddItem('kitchen_set')}
+                    className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3 py-1.5 rounded-xl mr-2"
+                  >
+                    <Plus size={13} color="#38BDF8" />
+                    <Text className="text-sky-300 text-xs font-semibold ml-1">+ Kitchen Set</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => handleAddItem('other')}
+                    className="flex-row items-center bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl"
+                  >
+                    <Plus size={13} color="#CBD5E1" />
+                    <Text className="text-slate-300 text-xs font-semibold ml-1">+ Lainnya</Text>
+                  </Pressable>
+                </View>
               </View>
 
               {/* List Item Form */}
@@ -731,11 +992,51 @@ export function QuotationFormModal({
                   key={index}
                   className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl mb-3.5 relative"
                 >
-                  {/* Item Header & Delete */}
-                  <View className="flex-row items-center justify-between mb-2 pb-2 border-b border-slate-800">
-                    <Text className="text-amber-400 font-bold text-xs">
-                      Item #{item.item_no}
-                    </Text>
+                  {/* Item Header, Jenis Item Selector & Delete */}
+                  <View className="flex-row flex-wrap items-center justify-between mb-3 pb-2.5 border-b border-slate-800 gap-2">
+                    <View className="flex-row items-center flex-wrap gap-2">
+                      <Text className="text-amber-400 font-bold text-xs">
+                        Item #{item.item_no}
+                      </Text>
+
+                      {/* Selector Jenis Item: Kitchen Set vs Lainnya */}
+                      <View className="flex-row bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                        <Pressable
+                          onPress={() => handleToggleItemType(index, 'kitchen_set')}
+                          className={`px-2.5 py-1 rounded-md flex-row items-center ${
+                            item.item_type === 'kitchen_set'
+                              ? 'bg-blue-600 shadow'
+                              : 'bg-transparent'
+                          }`}
+                        >
+                          <Text
+                            className={`text-[10px] font-bold ${
+                              item.item_type === 'kitchen_set' ? 'text-white' : 'text-slate-400'
+                            }`}
+                          >
+                            🍳 Kitchen Set
+                          </Text>
+                        </Pressable>
+
+                        <Pressable
+                          onPress={() => handleToggleItemType(index, 'other')}
+                          className={`px-2.5 py-1 rounded-md flex-row items-center ${
+                            item.item_type === 'other'
+                              ? 'bg-blue-600 shadow'
+                              : 'bg-transparent'
+                          }`}
+                        >
+                          <Text
+                            className={`text-[10px] font-bold ${
+                              item.item_type === 'other' ? 'text-white' : 'text-slate-400'
+                            }`}
+                          >
+                            📦 Lainnya
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+
                     {items.length > 1 && (
                       <Pressable
                         onPress={() => handleRemoveItem(index)}
@@ -748,65 +1049,84 @@ export function QuotationFormModal({
                   </View>
 
                   {/* Deskripsi Pekerjaan */}
-                  <View className="mb-2.5">
+                  <View className="mb-3">
                     <Text className="text-slate-300 text-xs font-semibold mb-1">
                       Deskripsi Pekerjaan <Text className="text-rose-400">*</Text>
                     </Text>
                     <TextInput
                       value={item.description}
                       onChangeText={(t) => handleUpdateItem(index, 'description', t)}
-                      className="bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs"
-                      placeholder="Contoh: Kitchen Set Atas & Bawah, Meja Kerja Custom"
+                      className="bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                      placeholder={
+                        item.item_type === 'kitchen_set'
+                          ? 'Contoh: KABINET ATAS & PINTU FRAME / KABINET BAWAH'
+                          : 'Contoh: Downlight, LED Strip, Rak Piring, Rak Bumbu'
+                      }
                       placeholderTextColor="#64748B"
                     />
                   </View>
 
-                  {/* Spesifikasi Teknis: Bahan, Finishing, Aksesoris, Dimensi */}
-                  <View className="flex-row flex-wrap -mx-1.5 mb-2.5">
-                    <View className="w-1/2 md:w-1/4 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Bahan</Text>
-                      <TextInput
-                        value={item.material || ''}
-                        onChangeText={(t) => handleUpdateItem(index, 'material', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
-                        placeholder="Multiplek 18mm / Blockboard"
-                        placeholderTextColor="#64748B"
-                      />
-                    </View>
+                  {/* Spesifikasi Teknis: Hanya muncul jika item_type === 'kitchen_set' */}
+                  {item.item_type === 'kitchen_set' ? (
+                    <View className="mb-3 bg-slate-950/80 border border-slate-800/80 p-3 rounded-xl">
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-sky-400 text-[10px] font-bold uppercase tracking-wider">
+                          Spesifikasi Teknis Kitchen Set
+                        </Text>
+                        <Text className="text-slate-500 text-[9px]">
+                          Pilih chip atau tombol dropdown untuk mengisi opsi
+                        </Text>
+                      </View>
 
-                    <View className="w-1/2 md:w-1/4 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Finishing</Text>
-                      <TextInput
-                        value={item.finishing || ''}
-                        onChangeText={(t) => handleUpdateItem(index, 'finishing', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
-                        placeholder="HPL Taco / Cat Duco"
-                        placeholderTextColor="#64748B"
-                      />
-                    </View>
+                      <View className="flex-row flex-wrap -mx-1.5">
+                        {/* Bahan */}
+                        <SpecFieldWithDropdown
+                          label="Bahan"
+                          value={item.material || ''}
+                          placeholder="PVC board / Blockboard..."
+                          options={SPEC_SUGGESTIONS.material}
+                          onChange={(val) => handleUpdateItem(index, 'material', val)}
+                        />
 
-                    <View className="w-1/2 md:w-1/4 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Aksesoris</Text>
-                      <TextInput
-                        value={item.accessories || ''}
-                        onChangeText={(t) => handleUpdateItem(index, 'accessories', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
-                        placeholder="Engsel Soft Close, Rel Tandem"
-                        placeholderTextColor="#64748B"
-                      />
-                    </View>
+                        {/* Finishing */}
+                        <SpecFieldWithDropdown
+                          label="Finishing"
+                          value={item.finishing || ''}
+                          placeholder="Cat Duco / HPL..."
+                          options={SPEC_SUGGESTIONS.finishing}
+                          onChange={(val) => handleUpdateItem(index, 'finishing', val)}
+                        />
 
-                    <View className="w-1/2 md:w-1/4 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Dimensi</Text>
-                      <TextInput
-                        value={item.dimensions || ''}
-                        onChangeText={(t) => handleUpdateItem(index, 'dimensions', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
-                        placeholder="P 240 x L 60 x T 220 cm"
-                        placeholderTextColor="#64748B"
-                      />
+                        {/* Aksesoris */}
+                        <SpecFieldWithDropdown
+                          label="Aksesoris"
+                          value={item.accessories || ''}
+                          placeholder="Engsel soft close, Rel Tandem..."
+                          options={SPEC_SUGGESTIONS.accessories}
+                          isMultiSelect
+                          onChange={(val) => handleUpdateItem(index, 'accessories', val)}
+                        />
+
+                        {/* Dimensi */}
+                        <View className="w-full md:w-1/4 px-1.5 mb-2.5">
+                          <Text className="text-slate-400 text-[11px] font-medium mb-1">Dimensi</Text>
+                          <TextInput
+                            value={item.dimensions || ''}
+                            onChangeText={(t) => handleUpdateItem(index, 'dimensions', t)}
+                            className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
+                            placeholder="1,44 m / P 240 x L 60 x T 220 cm"
+                            placeholderTextColor="#64748B"
+                          />
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                  ) : (
+                    <View className="mb-3 px-3 py-2 bg-slate-950/50 border border-dashed border-slate-800 rounded-xl">
+                      <Text className="text-slate-500 text-[10px]">
+                        ℹ️ Item Lainnya: Kolom spesifikasi (Bahan, Finishing, Aksesoris, Dimensi) disembunyikan.
+                      </Text>
+                    </View>
+                  )}
 
                   {/* Volume, Satuan, Harga Satuan & Subtotal Item */}
                   <View className="flex-row flex-wrap items-center -mx-1.5 pt-2 border-t border-slate-800/80">
@@ -824,13 +1144,24 @@ export function QuotationFormModal({
                       />
                     </View>
 
+                    {/* Satuan: SET & locked khusus Kitchen Set */}
                     <View className="w-1/4 px-1.5">
-                      <Text className="text-slate-400 text-[11px] mb-1">Satuan</Text>
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-slate-400 text-[11px]">Satuan</Text>
+                        {item.item_type === 'kitchen_set' && (
+                          <Text className="text-amber-400 text-[9px] font-bold">🔒 Terkunci</Text>
+                        )}
+                      </View>
                       <TextInput
-                        value={item.unit}
+                        value={item.item_type === 'kitchen_set' ? 'SET' : item.unit}
+                        editable={item.item_type !== 'kitchen_set'}
                         onChangeText={(t) => handleUpdateItem(index, 'unit', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs text-center font-semibold"
-                        placeholder="SET / M1 / M2"
+                        className={`border text-xs text-center font-semibold p-2 rounded-xl ${
+                          item.item_type === 'kitchen_set'
+                            ? 'bg-slate-900 border-slate-800 text-slate-400 opacity-90'
+                            : 'bg-slate-950 border-slate-800 text-white'
+                        }`}
+                        placeholder="SET / PCS / M1"
                         placeholderTextColor="#64748B"
                       />
                     </View>
