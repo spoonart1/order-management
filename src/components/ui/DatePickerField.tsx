@@ -199,24 +199,24 @@ export function DatePickerField({
   return (
     <View className="w-full">
       {label ? (
-        <Text className="text-slate-300 text-xs font-semibold mb-1">
-          {label} {required && <Text className="text-rose-400">*</Text>}
+        <Text className="text-[#70787C] text-xs font-semibold mb-1">
+          {label} {required && <Text className="text-rose-500">*</Text>}
         </Text>
       ) : null}
 
       <View className="relative">
         <Pressable
           onPress={handleOpenModal}
-          className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl flex-row items-center justify-between hover:border-sky-500/50 active:bg-slate-800"
+          className="bg-[#FAF8F5] border border-[#DDD6C8] p-2.5 rounded-[3px] flex-row items-center justify-between hover:border-[#968363] active:bg-[#F2ECE1]"
         >
           <View className="flex-row items-center flex-1 mr-2">
-            <CalendarIcon size={14} color="#38BDF8" />
+            <CalendarIcon size={14} color="#968363" />
             <Text
               className={`text-xs ml-2 ${
-                value ? 'text-white font-medium' : 'text-slate-500'
+                value ? 'text-[#1B2225] font-medium' : 'text-[#8A9296]'
               }`}
             >
-              {value ? `${displayText} (${value})` : placeholder}
+              {value ? displayText : placeholder}
             </Text>
           </View>
         </Pressable>
@@ -224,9 +224,9 @@ export function DatePickerField({
         {allowClear && value ? (
           <Pressable
             onPress={() => onChange('')}
-            className="absolute right-2.5 top-2.5 p-1 rounded-full bg-slate-800 hover:bg-slate-700"
+            className="absolute right-2 top-2 p-1 rounded-[2px] bg-white border border-[#DDD6C8] hover:bg-[#FAF8F5]"
           >
-            <X size={12} color="#94A3B8" />
+            <X size={12} color="#70787C" />
           </Pressable>
         ) : null}
       </View>
@@ -238,36 +238,36 @@ export function DatePickerField({
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 bg-black/80 justify-center items-center p-4">
-          <View className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
+        <View className="flex-1 bg-black/60 justify-center items-center p-4">
+          <View className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-sm rounded-[4px] p-4 shadow-2xl">
             {/* Modal Header: Month & Year Selector */}
-            <View className="flex-row items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+            <View className="flex-row items-center justify-between pb-3 border-b border-[#E3DDCF] mb-3 bg-white px-3 py-2 rounded-[3px]">
               <Pressable
                 onPress={handlePrevMonth}
-                className="w-8 h-8 rounded-lg bg-slate-800 items-center justify-center hover:bg-slate-700 active:bg-slate-700"
+                className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1] active:bg-[#F2ECE1]"
               >
-                <ChevronLeft size={16} color="#CBD5E1" />
+                <ChevronLeft size={15} color="#70787C" />
               </Pressable>
 
-              <Text className="text-white font-bold text-sm tracking-wide">
+              <Text className="text-[#1B2225] font-bold text-sm tracking-wide font-mono">
                 {MONTH_NAMES[viewMonth]} {viewYear}
               </Text>
 
               <Pressable
                 onPress={handleNextMonth}
-                className="w-8 h-8 rounded-lg bg-slate-800 items-center justify-center hover:bg-slate-700 active:bg-slate-700"
+                className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1] active:bg-[#F2ECE1]"
               >
-                <ChevronRight size={16} color="#CBD5E1" />
+                <ChevronRight size={15} color="#70787C" />
               </Pressable>
             </View>
 
             {/* Day of Week Labels */}
-            <View className="flex-row justify-between mb-2">
+            <View className="flex-row justify-between mb-1 px-1">
               {DAY_LABELS.map((d, idx) => (
                 <Text
                   key={idx}
-                  className={`w-9 text-center text-[11px] font-bold ${
-                    idx === 0 ? 'text-rose-400' : 'text-slate-400'
+                  className={`w-9 text-center text-[10px] font-mono font-bold uppercase tracking-wider ${
+                    idx === 0 ? 'text-[#9E2A2B]' : 'text-[#70787C]'
                   }`}
                 >
                   {d}
@@ -276,7 +276,7 @@ export function DatePickerField({
             </View>
 
             {/* Calendar Days Grid */}
-            <View className="flex-row flex-wrap justify-between">
+            <View className="flex-row flex-wrap justify-between bg-white border border-[#E3DDCF] p-1.5 rounded-[3px]">
               {daysGrid.map((item, idx) => {
                 const isCurrentMonth = item.monthType === 'current';
 
@@ -289,29 +289,29 @@ export function DatePickerField({
                       }
                     }}
                     disabled={item.isDisabled}
-                    className={`w-9 h-9 items-center justify-center rounded-xl mb-1.5 ${
+                    className={`w-9 h-8 items-center justify-center rounded-[2px] mb-1 ${
                       item.isSelected
-                        ? 'bg-sky-500 shadow-md shadow-sky-500/30'
+                        ? 'bg-[#1B2225]'
                         : item.isDisabled
                         ? 'opacity-20'
                         : item.isToday
-                        ? 'border border-sky-400/80 bg-sky-950/40'
+                        ? 'border border-[#968363] bg-[#FAF8F5]'
                         : isCurrentMonth
-                        ? 'hover:bg-slate-800 active:bg-slate-800'
+                        ? 'hover:bg-[#FAF8F5] active:bg-[#F2ECE1]'
                         : 'opacity-30'
                     }`}
                   >
                     <Text
-                      className={`text-xs font-semibold ${
+                      className={`text-xs font-mono ${
                         item.isSelected
-                          ? 'text-white font-black'
+                          ? 'text-white font-bold'
                           : item.isDisabled
-                          ? 'text-slate-600 line-through'
+                          ? 'text-[#8A9296] line-through'
                           : item.isToday
-                          ? 'text-sky-300 font-bold'
+                          ? 'text-[#968363] font-bold'
                           : isCurrentMonth
-                          ? 'text-slate-200'
-                          : 'text-slate-500'
+                          ? 'text-[#1B2225] font-medium'
+                          : 'text-[#8A9296]'
                       }`}
                     >
                       {item.day}
@@ -323,41 +323,41 @@ export function DatePickerField({
 
             {/* Presets Cepat (Hari Ini, +7 Hari, +14 Hari, +30 Hari) */}
             {showPresets && (
-              <View className="mt-3 pt-3 border-t border-slate-800/80 flex-row flex-wrap gap-1.5 justify-center">
+              <View className="mt-3 pt-2.5 border-t border-[#E3DDCF] flex-row flex-wrap gap-1.5 justify-center">
                 <Pressable
                   onPress={() => handleApplyPreset(0)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700"
+                  className="px-2.5 py-1 bg-white hover:bg-[#FAF8F5] rounded-[3px] border border-[#DDD6C8]"
                 >
-                  <Text className="text-slate-300 text-[10px] font-semibold">Hari Ini</Text>
+                  <Text className="text-[#70787C] text-[10px] font-semibold font-mono">Hari Ini</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => handleApplyPreset(7)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700"
+                  className="px-2.5 py-1 bg-white hover:bg-[#FAF8F5] rounded-[3px] border border-[#DDD6C8]"
                 >
-                  <Text className="text-slate-300 text-[10px] font-semibold">+7 Hari</Text>
+                  <Text className="text-[#70787C] text-[10px] font-semibold font-mono">+7 Hari</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => handleApplyPreset(14)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700"
+                  className="px-2.5 py-1 bg-white hover:bg-[#FAF8F5] rounded-[3px] border border-[#DDD6C8]"
                 >
-                  <Text className="text-slate-300 text-[10px] font-semibold">+14 Hari</Text>
+                  <Text className="text-[#70787C] text-[10px] font-semibold font-mono">+14 Hari</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => handleApplyPreset(30)}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700"
+                  className="px-2.5 py-1 bg-white hover:bg-[#FAF8F5] rounded-[3px] border border-[#DDD6C8]"
                 >
-                  <Text className="text-slate-300 text-[10px] font-semibold">+30 Hari</Text>
+                  <Text className="text-[#70787C] text-[10px] font-semibold font-mono">+30 Hari</Text>
                 </Pressable>
               </View>
             )}
 
             {/* Modal Footer */}
-            <View className="mt-4 pt-3 border-t border-slate-800 flex-row justify-end">
+            <View className="mt-3 pt-2.5 border-t border-[#E3DDCF] flex-row justify-end">
               <Pressable
                 onPress={() => setModalVisible(false)}
-                className="px-4 py-1.5 rounded-xl bg-slate-800 border border-slate-700"
+                className="px-3.5 py-1.5 rounded-[3px] bg-white border border-[#DDD6C8] hover:bg-[#FAF8F5]"
               >
-                <Text className="text-slate-300 text-xs font-semibold">Tutup</Text>
+                <Text className="text-[#70787C] text-xs font-semibold">Tutup</Text>
               </Pressable>
             </View>
           </View>

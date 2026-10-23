@@ -84,15 +84,15 @@ export function ReceiptPreviewModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/80 items-center justify-center p-3 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl h-[92%] flex-col overflow-hidden shadow-2xl">
+      <View className="flex-1 bg-black/60 items-center justify-center p-3 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] rounded-[4px] w-full max-w-4xl h-[92%] flex-col overflow-hidden shadow-2xl">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
             <View>
-              <Text className="text-white font-bold text-base">
+              <Text className="text-[#1B2225] font-bold font-mono text-base">
                 Preview Kwitansi Pembayaran
               </Text>
-              <Text className="text-slate-400 text-xs">
+              <Text className="text-[#70787C] text-xs">
                 Kwitansi #{receipt.receipt_no} • {invoice.client_name} ({receipt.stage_name})
               </Text>
             </View>
@@ -102,10 +102,10 @@ export function ReceiptPreviewModal({
               <Pressable
                 onPress={handlePrint}
                 disabled={loading}
-                className="flex-row items-center bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 mr-2"
+                className="flex-row items-center bg-[#FAF8F5] px-3 py-1.5 rounded-[3px] border border-[#DDD6C8] mr-2"
               >
-                <Printer size={15} color="#34D399" />
-                <Text className="text-emerald-300 text-xs font-semibold ml-1.5">
+                <Printer size={13} color="#968363" />
+                <Text className="text-[#1B2225] text-xs font-semibold ml-1.5">
                   Cetak Kwitansi
                 </Text>
               </Pressable>
@@ -114,14 +114,14 @@ export function ReceiptPreviewModal({
               <Pressable
                 onPress={handleShare}
                 disabled={loading}
-                className="flex-row items-center bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl mr-3 shadow-lg shadow-emerald-600/20"
+                className="flex-row items-center bg-[#1B2225] hover:bg-[#2C373C] px-3.5 py-1.5 rounded-[3px] mr-2 shadow-xs"
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <Share2 size={15} color="#FFFFFF" />
-                    <Text className="text-white text-xs font-bold ml-1.5">
+                    <Share2 size={13} color="#FFFFFF" />
+                    <Text className="text-white text-xs font-semibold ml-1.5">
                       {Platform.OS === 'web' ? 'Simpan PDF' : 'Kirim Kwitansi'}
                     </Text>
                   </>
@@ -130,15 +130,15 @@ export function ReceiptPreviewModal({
 
               <Pressable
                 onPress={onClose}
-                className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+                className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center"
               >
-                <X size={16} color="#94A3B8" />
+                <X size={15} color="#1B2225" />
               </Pressable>
             </View>
           </View>
 
           {/* Body Preview Document */}
-          <View className="flex-1 bg-slate-950 p-2 md:p-4 items-center justify-center">
+          <View className="flex-1 bg-[#F8F6F1] p-3 md:p-4 items-center justify-center">
             {Platform.OS === 'web' ? (
               <iframe
                 id="receipt-preview-iframe"
@@ -148,14 +148,14 @@ export function ReceiptPreviewModal({
                 style={{
                   width: '100%',
                   height: '100%',
-                  border: 'none',
-                  borderRadius: 8,
+                  border: '1px solid #DDD6C8',
+                  borderRadius: 3,
                   backgroundColor: '#ffffff',
                 }}
               />
             ) : (
-              <ScrollView className="w-full flex-1 p-4 bg-white rounded-xl">
-                <Text className="text-slate-800 text-xs">
+              <ScrollView className="w-full flex-1 p-4 bg-white rounded-[4px] border border-[#DDD6C8]">
+                <Text className="text-[#70787C] text-xs">
                   Pratinjau mobile aktif. Gunakan tombol "Cetak Kwitansi" atau "Kirim Kwitansi" di atas untuk mencetak atau menyimpan dokumen.
                 </Text>
               </ScrollView>

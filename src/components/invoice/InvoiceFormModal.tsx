@@ -429,19 +429,19 @@ export function InvoiceFormModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/75 justify-center items-center p-3 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 w-full max-w-4xl max-h-[92%] rounded-2xl overflow-hidden shadow-2xl flex-col">
+      <View className="flex-1 bg-black/60 justify-center items-center p-3 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-4xl max-h-[92%] rounded-[4px] overflow-hidden shadow-2xl flex-col">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950">
-            <View className="flex-row items-center space-x-2">
-              <View className="w-8 h-8 rounded-lg bg-sky-500/10 items-center justify-center mr-2">
-                <FileText size={18} color="#38BDF8" />
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center mr-2.5">
+                <FileText size={16} color="#968363" />
               </View>
               <View>
-                <Text className="text-white font-bold text-base">
+                <Text className="text-[#1B2225] font-bold text-sm tracking-wide">
                   {invoice ? 'Edit Invoice Penagihan' : 'Buat Invoice Baru'}
                 </Text>
-                <Text className="text-slate-400 text-xs">
+                <Text className="text-[#70787C] text-[11px] font-mono mt-0.5">
                   Format Resmi Alora Studio (INV-015)
                 </Text>
               </View>
@@ -452,10 +452,10 @@ export function InvoiceFormModal({
               {!invoice && (
                 <Pressable
                   onPress={handleOpenQuotationPicker}
-                  className="flex-row items-center bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 rounded-xl mr-2"
+                  className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-3 py-1.5 rounded-[3px] mr-2 hover:bg-[#F2ECE1]"
                 >
-                  <FileSpreadsheet size={13} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold ml-1.5">
+                  <FileSpreadsheet size={13} color="#968363" />
+                  <Text className="text-[#1B2225] text-xs font-semibold ml-1.5">
                     Import dari Surat Penawaran
                   </Text>
                 </Pressable>
@@ -463,43 +463,43 @@ export function InvoiceFormModal({
 
               <Pressable
                 onPress={onClose}
-                className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+                className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1]"
               >
-                <X size={16} color="#94A3B8" />
+                <X size={15} color="#70787C" />
               </Pressable>
             </View>
           </View>
 
           {/* Error Banner */}
           {errorMessage && (
-            <View className="bg-rose-500/15 border-b border-rose-500/30 px-5 py-2.5 flex-row items-center justify-between">
-              <Text className="text-rose-300 text-xs flex-1">{errorMessage}</Text>
+            <View className="bg-rose-50 border-b border-rose-200 px-5 py-2.5 flex-row items-center justify-between">
+              <Text className="text-rose-800 text-xs flex-1">{errorMessage}</Text>
               <Pressable onPress={() => setErrorMessage(null)}>
-                <X size={14} color="#FDA4AF" />
+                <X size={14} color="#9E2A2B" />
               </Pressable>
             </View>
           )}
 
           {/* Form Body Scrollable */}
-          <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+          <ScrollView className="flex-1 p-4 md:p-5" showsVerticalScrollIndicator={false}>
             {/* SEKSI 1: METADATA INVOICE */}
-            <View className="mb-5 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
+            <View className="mb-3.5 bg-white border border-[#E3DDCF] p-4 rounded-[3px] shadow-xs">
+              <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider mb-3">
                 1. Metadata Tagihan
               </Text>
 
               <View className="flex-row flex-wrap -mx-2">
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    Nomor Invoice <Text className="text-rose-400">*</Text>
+                  <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                    Nomor Invoice <Text className="text-rose-500">*</Text>
                   </Text>
                   <View className="flex-row items-center">
                     <TextInput
                       value={invoiceNo}
                       onChangeText={setInvoiceNo}
-                      className="flex-1 bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs font-mono"
+                      className="flex-1 bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-mono"
                       placeholder="INV-015"
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor="#8A9296"
                     />
                     {!invoice && (
                       <Pressable
@@ -507,9 +507,9 @@ export function InvoiceFormModal({
                           const no = await invoiceService.generateNextInvoiceNumber();
                           setInvoiceNo(no);
                         }}
-                        className="ml-2 p-2.5 bg-slate-800 border border-slate-700 rounded-xl"
+                        className="ml-2 p-2.5 bg-[#FAF8F5] border border-[#DDD6C8] rounded-[3px] hover:bg-[#F2ECE1]"
                       >
-                        <RefreshCw size={14} color="#38BDF8" />
+                        <RefreshCw size={14} color="#968363" />
                       </Pressable>
                     )}
                   </View>
@@ -548,8 +548,8 @@ export function InvoiceFormModal({
             </View>
 
             {/* SEKSI 2: INFORMASI KLIEN (BILL TO) */}
-            <View className="mb-5 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
+            <View className="mb-3.5 bg-white border border-[#E3DDCF] p-4 rounded-[3px] shadow-xs">
+              <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider mb-3">
                 2. Ditujukan Kepada (Bill To)
               </Text>
 
@@ -557,11 +557,11 @@ export function InvoiceFormModal({
                 {/* Nama Klien dengan Auto Search */}
                 <View className="w-full md:w-1/3 px-2 mb-3 relative">
                   <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-slate-300 text-xs font-semibold">
-                      Nama Klien <Text className="text-rose-400">*</Text>
+                    <Text className="text-[#70787C] text-xs font-semibold">
+                      Nama Klien <Text className="text-rose-500">*</Text>
                     </Text>
                     {isSearchingClient && (
-                      <ActivityIndicator size="small" color="#38BDF8" />
+                      <ActivityIndicator size="small" color="#968363" />
                     )}
                   </View>
 
@@ -578,9 +578,9 @@ export function InvoiceFormModal({
                           setShowClientDropdown(true);
                         }
                       }}
-                      className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs pr-8"
+                      className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs pr-8"
                       placeholder="Ketik nama klien (auto search)..."
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor="#8A9296"
                     />
                     {clientName.trim().length > 0 && (
                       <Pressable
@@ -592,25 +592,25 @@ export function InvoiceFormModal({
                         }}
                         className="absolute right-2.5 top-2.5"
                       >
-                        <X size={14} color="#94A3B8" />
+                        <X size={14} color="#8A9296" />
                       </Pressable>
                     )}
                   </View>
 
                   {/* Dropdown Suggestions */}
                   {showClientDropdown && clientSuggestions.length > 0 && (
-                    <View className="absolute top-[60px] left-2 right-2 bg-slate-900 border border-sky-500/40 rounded-xl z-50 shadow-2xl overflow-hidden">
+                    <View className="absolute top-[60px] left-2 right-2 bg-white border border-[#DDD6C8] rounded-[3px] z-50 shadow-2xl overflow-hidden">
                       <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled>
                         {clientSuggestions.map((item) => (
                           <Pressable
                             key={item.id}
                             onPress={() => handleSelectClient(item)}
-                            className="p-2.5 border-b border-slate-800/80 hover:bg-slate-800 active:bg-slate-800"
+                            className="p-2.5 border-b border-[#EFEAE1] hover:bg-[#FAF8F5] active:bg-[#FAF8F5]"
                           >
-                            <Text className="text-white text-xs font-bold">
+                            <Text className="text-[#1B2225] text-xs font-bold">
                               {item.client_name}
                             </Text>
-                            <Text className="text-slate-400 text-[10px]">
+                            <Text className="text-[#70787C] text-[10px]">
                               {item.title} {item.client_address ? `• ${item.client_address}` : ''}
                             </Text>
                           </Pressable>
@@ -622,47 +622,47 @@ export function InvoiceFormModal({
 
                 {/* No Telepon */}
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                  <Text className="text-[#70787C] text-xs font-semibold mb-1">
                     No. WhatsApp / HP
                   </Text>
                   <TextInput
                     value={clientPhone}
                     onChangeText={setClientPhone}
                     keyboardType="phone-pad"
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-mono"
                     placeholder="081234567890"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Alamat Klien */}
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                  <Text className="text-[#70787C] text-xs font-semibold mb-1">
                     Alamat / Wilayah Proyek
                   </Text>
                   <TextInput
                     value={clientAddress}
                     onChangeText={setClientAddress}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
                     placeholder="Contoh: Pleret, Bantul"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
               </View>
             </View>
 
             {/* SEKSI 3: RINCIAN ITEM TAGIHAN */}
-            <View className="mb-5 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
+            <View className="mb-3.5 bg-white border border-[#E3DDCF] p-4 rounded-[3px] shadow-xs">
               <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+                <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider">
                   3. Rincian Item Tagihan
                 </Text>
                 <Pressable
                   onPress={handleAddItem}
-                  className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3 py-1.5 rounded-xl"
+                  className="flex-row items-center bg-[#1B2225] hover:bg-[#2C3539] px-3 py-1.5 rounded-[3px]"
                 >
-                  <Plus size={13} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold ml-1">Tambah Item</Text>
+                  <Plus size={13} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-semibold ml-1">Tambah Item</Text>
                 </Pressable>
               </View>
 
@@ -670,76 +670,76 @@ export function InvoiceFormModal({
               {items.map((item, index) => (
                 <View
                   key={index}
-                  className="bg-slate-900 border border-slate-800 p-3 rounded-xl mb-3"
+                  className="bg-[#FAF8F5] border border-[#DDD6C8] p-3 rounded-[3px] mb-2.5"
                 >
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-slate-300 font-bold text-xs">
+                    <Text className="text-[#1B2225] font-bold text-xs font-mono">
                       Item #{item.item_no}
                     </Text>
                     {items.length > 1 && (
                       <Pressable
                         onPress={() => handleRemoveItem(index)}
-                        className="p-1 rounded hover:bg-rose-500/20"
+                        className="p-1 rounded-[2px] hover:bg-rose-100 bg-rose-50 border border-rose-200"
                       >
-                        <Trash2 size={14} color="#FB7185" />
+                        <Trash2 size={13} color="#9E2A2B" />
                       </Pressable>
                     )}
                   </View>
 
                   <View className="flex-row flex-wrap -mx-1.5">
                     <View className="w-full md:w-2/5 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Deskripsi Pekerjaan</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Deskripsi Pekerjaan</Text>
                       <TextInput
                         value={item.description}
                         onChangeText={(t) => handleUpdateItem(index, 'description', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
+                        className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs"
                         placeholder="Contoh: Kitchen Set Kabinet Bawah"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     <View className="w-1/4 md:w-1/5 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Qty</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Qty</Text>
                       <TextInput
                         value={String(item.quantity || '')}
                         onChangeText={(t) =>
                           handleUpdateItem(index, 'quantity', t.replace(/[^0-9.]/g, ''))
                         }
                         keyboardType="numeric"
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs text-center font-bold"
+                        className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs text-center font-mono font-bold"
                         placeholder="1"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     <View className="w-1/4 md:w-1/5 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Satuan</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Satuan</Text>
                       <TextInput
                         value={item.unit}
                         onChangeText={(t) => handleUpdateItem(index, 'unit', t)}
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs text-center"
+                        className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs text-center uppercase"
                         placeholder="SET / PCS"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     <View className="w-2/4 md:w-1/5 px-1.5 mb-2">
-                      <Text className="text-slate-400 text-[11px] mb-1">Harga Satuan (Rp)</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Harga Satuan (Rp)</Text>
                       <TextInput
                         value={String(item.unit_price || '')}
                         onChangeText={(t) =>
                           handleUpdateItem(index, 'unit_price', t.replace(/[^0-9]/g, ''))
                         }
                         keyboardType="numeric"
-                        className="bg-slate-950 border border-slate-800 text-emerald-400 p-2 rounded-xl text-xs font-bold"
+                        className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono font-bold"
                         placeholder="0"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
-                    <View className="w-full px-1.5 mt-1 flex-row justify-between items-center bg-slate-950/70 p-2 rounded-lg">
-                      <Text className="text-slate-400 text-[11px]">Jumlah Harga Item #{item.item_no}:</Text>
-                      <Text className="text-emerald-400 font-bold text-xs">
+                    <View className="w-full px-1.5 mt-1 flex-row justify-between items-center bg-white p-2 rounded-[2px] border border-[#EFEAE1]">
+                      <Text className="text-[#70787C] text-[11px]">Jumlah Harga Item #{item.item_no}:</Text>
+                      <Text className="text-[#1B2225] font-bold text-xs font-mono">
                         {formatRupiah(item.amount)}
                       </Text>
                     </View>
@@ -751,55 +751,55 @@ export function InvoiceFormModal({
               <View className="flex-row items-center justify-start mt-1 mb-2">
                 <Pressable
                   onPress={handleAddItem}
-                  className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3.5 py-2 rounded-xl shadow-sm"
+                  className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-3.5 py-1.5 rounded-[3px] hover:bg-[#F2ECE1]"
                 >
-                  <Plus size={14} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold ml-1.5">Tambah Item Lain</Text>
+                  <Plus size={13} color="#968363" />
+                  <Text className="text-[#1B2225] text-xs font-semibold ml-1.5">Tambah Item Lain</Text>
                 </Pressable>
               </View>
 
               {/* Ringkasan Total Box */}
-              <View className="mt-3 p-4 rounded-xl bg-slate-900 border border-emerald-900/60 shadow-lg">
+              <View className="mt-3 p-3.5 rounded-[3px] bg-white border border-[#DDD6C8]">
                 <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-slate-300 font-bold text-xs uppercase">
+                  <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider">
                     TOTAL TAGIHAN INVOICE:
                   </Text>
-                  <Text className="text-emerald-400 font-black text-lg">
+                  <Text className="text-[#1B2225] font-mono font-black text-lg">
                     {formatRupiah(subtotal)}
                   </Text>
                 </View>
-                <Text className="text-slate-400 text-xs italic">
+                <Text className="text-[#70787C] text-xs italic">
                   "{terbilangText}"
                 </Text>
               </View>
             </View>
 
             {/* SEKSI 4: REKENING & PENGESAHAN */}
-            <View className="mb-5 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
+            <View className="mb-2 bg-white border border-[#E3DDCF] p-4 rounded-[3px] shadow-xs">
               <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+                <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider">
                   4. Instruksi Pembayaran Bank & Pengesahan
                 </Text>
 
                 <Pressable
                   onPress={handleCopyBankInfo}
-                  className={`flex-row items-center px-3 py-1.5 rounded-xl border ${
+                  className={`flex-row items-center px-2.5 py-1 rounded-[2px] border ${
                     copiedBankInfo
-                      ? 'bg-emerald-600/30 border-emerald-500'
-                      : 'bg-slate-900 border-slate-700 hover:border-sky-500/50'
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : 'bg-[#FAF8F5] border-[#DDD6C8] hover:bg-[#F2ECE1]'
                   }`}
                 >
                   {copiedBankInfo ? (
                     <>
-                      <Check size={13} color="#34D399" />
-                      <Text className="text-emerald-300 text-xs font-semibold ml-1.5">
+                      <Check size={11} color="#059669" />
+                      <Text className="text-emerald-800 text-xs font-semibold ml-1.5">
                         Tersalin!
                       </Text>
                     </>
                   ) : (
                     <>
-                      <Copy size={13} color="#38BDF8" />
-                      <Text className="text-sky-300 text-xs font-semibold ml-1.5">
+                      <Copy size={11} color="#70787C" />
+                      <Text className="text-[#70787C] text-xs font-semibold ml-1.5">
                         Salin Rekening
                       </Text>
                     </>
@@ -809,49 +809,49 @@ export function InvoiceFormModal({
 
               <View className="flex-row flex-wrap -mx-2">
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-400 text-[11px] mb-1">Nama Bank</Text>
-                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
-                    <Text className="text-white text-xs font-bold">{bankName}</Text>
+                  <Text className="text-[#70787C] text-[11px] mb-1">Nama Bank</Text>
+                  <View className="bg-[#FAF8F5] border border-[#DDD6C8] p-2.5 rounded-[3px] justify-center">
+                    <Text className="text-[#1B2225] text-xs font-bold">{bankName}</Text>
                   </View>
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-400 text-[11px] mb-1">Nomor Rekening</Text>
-                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
-                    <Text className="text-emerald-400 font-mono text-xs font-bold tracking-wider">
+                  <Text className="text-[#70787C] text-[11px] mb-1">Nomor Rekening</Text>
+                  <View className="bg-[#FAF8F5] border border-[#DDD6C8] p-2.5 rounded-[3px] justify-center">
+                    <Text className="text-emerald-800 font-mono text-xs font-bold tracking-wider">
                       {bankAccountNo}
                     </Text>
                   </View>
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-400 text-[11px] mb-1">Atas Nama Rekening</Text>
-                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
-                    <Text className="text-slate-200 text-xs font-semibold">
+                  <Text className="text-[#70787C] text-[11px] mb-1">Atas Nama Rekening</Text>
+                  <View className="bg-[#FAF8F5] border border-[#DDD6C8] p-2.5 rounded-[3px] justify-center">
+                    <Text className="text-[#1B2225] text-xs font-semibold">
                       {bankAccountHolder}
                     </Text>
                   </View>
                 </View>
 
                 <View className="w-full md:w-1/2 px-2 mb-3">
-                  <Text className="text-slate-400 text-[11px] mb-1">Disahkan Oleh</Text>
+                  <Text className="text-[#70787C] text-[11px] mb-1">Disahkan Oleh</Text>
                   <TextInput
                     value={authorizedBy}
                     onChangeText={setAuthorizedBy}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
                     placeholder="M Lafran Pane"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 <View className="w-full md:w-1/2 px-2 mb-3">
-                  <Text className="text-slate-400 text-[11px] mb-1">Catatan Tambahan (Opsional)</Text>
+                  <Text className="text-[#70787C] text-[11px] mb-1">Catatan Tambahan (Opsional)</Text>
                   <TextInput
                     value={notes}
                     onChangeText={setNotes}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
                     placeholder="Catatan transfer, termin, dsb."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
               </View>
@@ -859,19 +859,19 @@ export function InvoiceFormModal({
           </ScrollView>
 
           {/* Footer Modal Action Buttons */}
-          <View className="flex-row items-center justify-end px-5 py-3.5 border-t border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-end px-5 py-3 border-t border-[#E3DDCF] bg-white">
             <Pressable
               onPress={onClose}
               disabled={saving}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 mr-2.5"
+              className="px-4 py-2 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] mr-2 hover:bg-[#F2ECE1]"
             >
-              <Text className="text-slate-300 font-semibold text-xs">Batal</Text>
+              <Text className="text-[#70787C] font-semibold text-xs">Batal</Text>
             </Pressable>
 
             <Pressable
               onPress={handleSave}
               disabled={saving}
-              className="flex-row items-center px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-600"
+              className="flex-row items-center px-4 py-2 rounded-[3px] bg-[#1B2225] hover:bg-[#2C3539] active:bg-[#2C3539]"
             >
               {saving ? (
                 <>
@@ -891,28 +891,31 @@ export function InvoiceFormModal({
       {/* Sub-Modal: Picker Import dari Surat Penawaran */}
       {showQuotationPicker && (
         <Modal transparent animationType="fade" visible={showQuotationPicker} onRequestClose={() => setShowQuotationPicker(false)}>
-          <View className="flex-1 bg-black/80 justify-center items-center p-4">
-            <View className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl">
-              <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <View className="flex-1 bg-black/60 justify-center items-center p-4">
+            <View className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-lg rounded-[4px] p-4 shadow-2xl">
+              <View className="flex-row items-center justify-between mb-3 pb-2.5 border-b border-[#E3DDCF]">
                 <View>
-                  <Text className="text-white font-bold text-sm">Pilih Surat Penawaran</Text>
-                  <Text className="text-slate-400 text-xs mt-0.5">
+                  <Text className="text-[#1B2225] font-bold text-sm">Pilih Surat Penawaran</Text>
+                  <Text className="text-[#70787C] text-xs mt-0.5">
                     Data penawaran akan disalin otomatis ke invoice ini
                   </Text>
                 </View>
-                <Pressable onPress={() => setShowQuotationPicker(false)}>
-                  <X size={16} color="#94A3B8" />
+                <Pressable
+                  onPress={() => setShowQuotationPicker(false)}
+                  className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1]"
+                >
+                  <X size={14} color="#70787C" />
                 </Pressable>
               </View>
 
               {isLoadingQuotations ? (
                 <View className="py-8 items-center justify-center">
-                  <ActivityIndicator size="large" color="#38BDF8" />
-                  <Text className="text-slate-400 text-xs mt-2">Memuat daftar penawaran...</Text>
+                  <ActivityIndicator size="large" color="#968363" />
+                  <Text className="text-[#70787C] text-xs mt-2">Memuat daftar penawaran...</Text>
                 </View>
               ) : availableQuotations.length === 0 ? (
                 <View className="py-8 items-center justify-center">
-                  <Text className="text-slate-400 text-xs">Belum ada surat penawaran tersimpan.</Text>
+                  <Text className="text-[#70787C] text-xs">Belum ada surat penawaran tersimpan.</Text>
                 </View>
               ) : (
                 <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
@@ -920,18 +923,18 @@ export function InvoiceFormModal({
                     <Pressable
                       key={q.id}
                       onPress={() => handleSelectQuotationToImport(q)}
-                      className="p-3 mb-2 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-sky-500/50 active:bg-slate-800"
+                      className="p-3 mb-2 rounded-[3px] bg-white border border-[#DDD6C8] hover:border-[#968363] active:bg-[#FAF8F5]"
                     >
                       <View className="flex-row justify-between items-center mb-1">
-                        <Text className="text-sky-400 font-bold text-xs font-mono">
+                        <Text className="text-[#1B2225] font-bold text-xs font-mono">
                           {q.quotation_no}
                         </Text>
-                        <Text className="text-emerald-400 font-bold text-xs">
+                        <Text className="text-emerald-700 font-mono font-bold text-xs">
                           {formatRupiah(q.total_amount)}
                         </Text>
                       </View>
-                      <Text className="text-white text-xs font-semibold">{q.client_name}</Text>
-                      <Text className="text-slate-400 text-[11px] mt-0.5">{q.project_title}</Text>
+                      <Text className="text-[#1B2225] text-xs font-semibold">{q.client_name}</Text>
+                      <Text className="text-[#70787C] text-[11px] mt-0.5">{q.project_title}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
