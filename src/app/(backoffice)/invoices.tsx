@@ -1,11 +1,17 @@
 import { Pagination } from '@/components/ui/Pagination';
 import { confirmDialog } from '@/lib/confirm';
+import { useNetworkStatus } from '@/lib/network';
+import { invoiceCacheService } from '@/services/invoiceCacheService';
 import { Invoice, PaymentReceipt, SaveInvoicePayload } from '@/services/invoiceService';
+import { offlineQueueService } from '@/services/offlineQueueService';
+import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   createInvoice,
   deleteInvoice,
   fetchInvoices,
+  optimisticDeleteInvoice,
+  setInvoicesFromCache,
   updateInvoice,
 } from '@/store/slices/invoiceSlice';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
@@ -74,6 +80,15 @@ type StatusFilter = 'all' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
 export default function InvoicesScreen() {
   const dispatch = useAppDispatch();
   const { invoices, isLoading } = useAppSelector((state) => state.invoice);
+  const { isOnline } = useNetworkStatus();
+
+  // Status Antrean Mutasi Offline
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  const refreshPendingCount = async () => {
+    const count = await offlineQueueService.getCount();
+    setPendingSyncCount(count);
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
@@ -99,17 +114,51 @@ export default function InvoicesScreen() {
   const [previewReceipt, setPreviewReceipt] = useState<PaymentReceipt | null>(null);
   const [previewReceiptInvoice, setPreviewReceiptInvoice] = useState<Invoice | null>(null);
 
-  // Load invoices on mount
+  // Load invoices on mount & Instant Offline Cache First (0ms render)
   useEffect(() => {
+    let isMounted = true;
+    invoiceCacheService.getInvoicesCache().then((cached) => {
+      if (isMounted && cached && cached.length > 0) {
+        dispatch(setInvoicesFromCache(cached));
+      }
+    });
+
+    refreshPendingCount();
     dispatch(fetchInvoices());
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
+
+  // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload / refresh halaman)
+  useEffect(() => {
+    if (isOnline) {
+      syncService
+        .processQueue((remaining) => {
+          setPendingSyncCount(remaining);
+        })
+        .then(() => {
+          refreshPendingCount();
+          if (invoices.length > 0) {
+            invoiceCacheService.saveInvoicesCache(invoices);
+          }
+        });
+    } else {
+      refreshPendingCount();
+    }
+  }, [isOnline, invoices]);
 
   // Otomatis reset ke halaman 1 jika filter atau kata kunci pencarian berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, activeFilter]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
+    if (isOnline) {
+      await syncService.processQueue((remaining) => setPendingSyncCount(remaining));
+      await refreshPendingCount();
+    }
     dispatch(fetchInvoices());
   };
 
@@ -209,12 +258,15 @@ export default function InvoicesScreen() {
 
   // Handler Simpan Invoice (Create / Update)
   const handleSaveInvoice = async (payload: SaveInvoicePayload) => {
-    if (selectedInvoice) {
-      await dispatch(updateInvoice({ id: selectedInvoice.id, payload })).unwrap();
-    } else {
-      await dispatch(createInvoice(payload)).unwrap();
+    try {
+      if (selectedInvoice) {
+        await dispatch(updateInvoice({ id: selectedInvoice.id, payload })).unwrap();
+      } else {
+        await dispatch(createInvoice(payload)).unwrap();
+      }
+    } finally {
+      refreshPendingCount();
     }
-    dispatch(fetchInvoices());
   };
 
   // Handler Hapus Invoice
@@ -228,10 +280,14 @@ export default function InvoicesScreen() {
     });
 
     if (confirmed) {
+      // Optimistic delete instan di UI lokal (0ms)
+      dispatch(optimisticDeleteInvoice(inv.id));
       try {
         await dispatch(deleteInvoice(inv.id)).unwrap();
       } catch (err: any) {
-        Alert.alert('Gagal', err || 'Gagal menghapus invoice.');
+        console.warn('[invoices] Delete error:', err);
+      } finally {
+        refreshPendingCount();
       }
     }
   };
@@ -281,6 +337,43 @@ export default function InvoicesScreen() {
 
   return (
     <View className="flex-1 bg-slate-900">
+      {/* 1. Offline & Sync Status Banner */}
+      {!isOnline && (
+        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
+            <Text className="text-amber-200 text-xs font-semibold">
+              Mode Offline Aktif
+            </Text>
+            <Text className="text-amber-400/80 text-xs ml-2">
+              • {pendingSyncCount > 0
+                ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
+                : 'Menampilkan data tersimpan di perangkat lokal'}
+            </Text>
+          </View>
+          <Text className="text-amber-300 text-[11px] font-medium">
+            {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
+          </Text>
+        </View>
+      )}
+
+      {isOnline && pendingSyncCount > 0 && (
+        <View className="flex-row items-center justify-between bg-blue-950/80 border-b border-blue-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <ActivityIndicator size="small" color="#38BDF8" className="mr-2.5" />
+            <Text className="text-blue-200 text-xs font-semibold">
+              Menyinkronkan Perubahan ke Cloud
+            </Text>
+            <Text className="text-blue-400/80 text-xs ml-2">
+              • {pendingSyncCount} perubahan sedang disinkronkan...
+            </Text>
+          </View>
+          <Text className="text-sky-300 text-[11px] font-medium">
+            Sinkronisasi
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         className="flex-1 px-4 py-6 md:px-8"
         refreshControl={

@@ -8,7 +8,13 @@ export type MutationType =
   | 'UPDATE_QUOTATION_STATUS'
   | 'DELETE_QUOTATION'
   | 'CREATE_QUOTATION'
-  | 'UPDATE_QUOTATION';
+  | 'UPDATE_QUOTATION'
+  | 'CREATE_INVOICE'
+  | 'UPDATE_INVOICE'
+  | 'UPDATE_INVOICE_STATUS'
+  | 'DELETE_INVOICE'
+  | 'RECORD_PAYMENT'
+  | 'DELETE_PAYMENT';
 
 export interface OfflineMutation {
   id: string;

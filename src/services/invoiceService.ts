@@ -1,5 +1,8 @@
 import { Platform } from 'react-native';
+import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
+import { invoiceCacheService } from '@/services/invoiceCacheService';
+import { offlineQueueService } from '@/services/offlineQueueService';
 import { terbilang } from '@/utils/terbilang';
 import { Quotation } from './quotationService';
 
@@ -134,79 +137,113 @@ export const invoiceService = {
   },
 
   /**
-   * Mengambil semua daftar invoice beserta item dan riwayat pembayarannya
+   * Mengambil semua daftar invoice beserta item dan riwayat pembayarannya (Offline-First Resilient)
    */
   async getInvoices(): Promise<Invoice[]> {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select(`
-        *,
-        invoice_items (*),
-        payments (*)
-      `)
-      .order('created_at', { ascending: false });
+    const isOnline = await checkIsOnline();
 
-    if (error) throw error;
+    // 1. Jika terdeteksi offline, langsung kembalikan cache lokal tanpa menunggu timeout
+    if (!isOnline) {
+      console.log('[invoiceService] Offline mode: memuat invoices dari local cache');
+      const cached = await invoiceCacheService.getInvoicesCache();
+      if (cached) return cached;
+    }
 
-    return (data || []).map((inv: any) => ({
-      ...inv,
-      subtotal: Number(inv.subtotal || 0),
-      total: Number(inv.total || 0),
-      paid_amount: Number(inv.paid_amount || 0),
-      balance_due: Number(inv.balance_due || 0),
-      invoice_items: (inv.invoice_items || []).sort(
-        (a: any, b: any) => (a.item_no || 0) - (b.item_no || 0)
-      ),
-      payments: (inv.payments || []).sort(
-        (a: any, b: any) =>
-          new Date(b.created_at || b.payment_date).getTime() -
-          new Date(a.created_at || a.payment_date).getTime()
-      ),
-    }));
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          invoice_items (*),
+          payments (*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formatted = (data || []).map((inv: any) => ({
+        ...inv,
+        subtotal: Number(inv.subtotal || 0),
+        total: Number(inv.total || 0),
+        paid_amount: Number(inv.paid_amount || 0),
+        balance_due: Number(inv.balance_due || 0),
+        invoice_items: (inv.invoice_items || []).sort(
+          (a: any, b: any) => (a.item_no || 0) - (b.item_no || 0)
+        ),
+        payments: (inv.payments || []).sort(
+          (a: any, b: any) =>
+            new Date(b.created_at || b.payment_date).getTime() -
+            new Date(a.created_at || a.payment_date).getTime()
+        ),
+      }));
+
+      // 2. Simpan snapshot data terbaru ke local cache
+      await invoiceCacheService.saveInvoicesCache(formatted);
+
+      return formatted;
+    } catch (err) {
+      console.warn('[invoiceService] Gagal fetch invoices online, fallback ke local cache:', err);
+      const cached = await invoiceCacheService.getInvoicesCache();
+      if (cached) return cached;
+      throw err;
+    }
   },
 
   /**
    * Mengambil 1 invoice berdasarkan ID lengkap dengan rincian
    */
   async getInvoiceById(id: string): Promise<Invoice | null> {
-    const { data, error } = await supabase
-      .from('invoices')
-      .select(`
-        *,
-        invoice_items (*),
-        payments (*)
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
+    const isOnline = await checkIsOnline();
+    if (!isOnline) {
+      const cachedList = await invoiceCacheService.getInvoicesCache();
+      const found = cachedList?.find((inv) => inv.id === id);
+      if (found) return found;
     }
 
-    if (!data) return null;
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          invoice_items (*),
+          payments (*)
+        `)
+        .eq('id', id)
+        .single();
 
-    return {
-      ...data,
-      subtotal: Number(data.subtotal || 0),
-      total: Number(data.total || 0),
-      paid_amount: Number(data.paid_amount || 0),
-      balance_due: Number(data.balance_due || 0),
-      invoice_items: (data.invoice_items || []).sort(
-        (a: any, b: any) => (a.item_no || 0) - (b.item_no || 0)
-      ),
-      payments: (data.payments || []).sort(
-        (a: any, b: any) =>
-          new Date(b.created_at || b.payment_date).getTime() -
-          new Date(a.created_at || a.payment_date).getTime()
-      ),
-    };
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+      }
+
+      if (!data) return null;
+
+      return {
+        ...data,
+        subtotal: Number(data.subtotal || 0),
+        total: Number(data.total || 0),
+        paid_amount: Number(data.paid_amount || 0),
+        balance_due: Number(data.balance_due || 0),
+        invoice_items: (data.invoice_items || []).sort(
+          (a: any, b: any) => (a.item_no || 0) - (b.item_no || 0)
+        ),
+        payments: (data.payments || []).sort(
+          (a: any, b: any) =>
+            new Date(b.created_at || b.payment_date).getTime() -
+            new Date(a.created_at || a.payment_date).getTime()
+        ),
+      };
+    } catch (err) {
+      const cachedList = await invoiceCacheService.getInvoicesCache();
+      return cachedList?.find((inv) => inv.id === id) || null;
+    }
   },
 
   /**
-   * Membuat invoice baru beserta rincian itemnya
+   * Membuat invoice baru beserta rincian itemnya (Offline-First Resilient)
    */
   async createInvoice(payload: SaveInvoicePayload): Promise<Invoice> {
+    const isOnline = await checkIsOnline();
     const subtotal = payload.items.reduce(
       (sum, it) => sum + Number(it.amount || 0),
       0
@@ -215,60 +252,117 @@ export const invoiceService = {
     const paidAmount = 0;
     const balanceDue = total;
 
-    const { data: invoiceData, error: invoiceError } = await supabase
-      .from('invoices')
-      .insert({
-        quotation_id: payload.quotation_id || null,
-        card_id: payload.card_id || null,
-        invoice_no: payload.invoice_no,
-        client_name: payload.client_name,
-        client_phone: payload.client_phone || null,
-        client_address: payload.client_address || null,
-        issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
-        due_date: payload.due_date || null,
-        subtotal,
-        total,
-        paid_amount: paidAmount,
-        balance_due: balanceDue,
-        status: 'unpaid',
-        bank_name: payload.bank_name || 'Bank Mandiri',
-        bank_account_no: payload.bank_account_no || '1370026994893',
-        bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
-        authorized_by: payload.authorized_by || 'M Lafran Pane',
-        signature_url: payload.signature_url || null,
-        notes: payload.notes || null,
-        terms: payload.terms || DEFAULT_INVOICE_TERMS,
-      })
-      .select()
-      .single();
-
-    if (invoiceError) throw invoiceError;
-
-    if (payload.items.length > 0) {
-      const itemsToInsert = payload.items.map((it, idx) => ({
-        invoice_id: invoiceData.id,
+    const tempId = `temp_inv_${Date.now()}`;
+    const tempInvoice: Invoice = {
+      id: tempId,
+      quotation_id: payload.quotation_id || null,
+      card_id: payload.card_id || null,
+      invoice_no: payload.invoice_no,
+      client_name: payload.client_name,
+      client_phone: payload.client_phone || null,
+      client_address: payload.client_address || null,
+      issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
+      due_date: payload.due_date || null,
+      subtotal,
+      total,
+      paid_amount: paidAmount,
+      balance_due: balanceDue,
+      status: 'unpaid',
+      bank_name: payload.bank_name || 'Bank Mandiri',
+      bank_account_no: payload.bank_account_no || '1370026994893',
+      bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
+      authorized_by: payload.authorized_by || 'M Lafran Pane',
+      signature_url: payload.signature_url || null,
+      notes: payload.notes || null,
+      terms: payload.terms || DEFAULT_INVOICE_TERMS,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      invoice_items: payload.items.map((it, idx) => ({
+        id: `temp_item_${tempId}_${idx}`,
+        invoice_id: tempId,
         item_no: idx + 1,
         description: it.description,
         quantity: Number(it.quantity || 1),
         unit: it.unit || 'SET',
         unit_price: Number(it.unit_price || 0),
         amount: Number(it.amount || 0),
-      }));
+      })),
+      payments: [],
+    };
 
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(itemsToInsert);
-
-      if (itemsError) throw itemsError;
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan CREATE_INVOICE ke antrean');
+      await offlineQueueService.enqueue('CREATE_INVOICE', { payload, tempId });
+      await invoiceCacheService.upsertInvoiceInCache(tempInvoice);
+      return tempInvoice;
     }
 
-    return (await this.getInvoiceById(invoiceData.id)) as Invoice;
+    try {
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          quotation_id: payload.quotation_id || null,
+          card_id: payload.card_id || null,
+          invoice_no: payload.invoice_no,
+          client_name: payload.client_name,
+          client_phone: payload.client_phone || null,
+          client_address: payload.client_address || null,
+          issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
+          due_date: payload.due_date || null,
+          subtotal,
+          total,
+          paid_amount: paidAmount,
+          balance_due: balanceDue,
+          status: 'unpaid',
+          bank_name: payload.bank_name || 'Bank Mandiri',
+          bank_account_no: payload.bank_account_no || '1370026994893',
+          bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
+          authorized_by: payload.authorized_by || 'M Lafran Pane',
+          signature_url: payload.signature_url || null,
+          notes: payload.notes || null,
+          terms: payload.terms || DEFAULT_INVOICE_TERMS,
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      if (payload.items.length > 0) {
+        const itemsToInsert = payload.items.map((it, idx) => ({
+          invoice_id: invoiceData.id,
+          item_no: idx + 1,
+          description: it.description,
+          quantity: Number(it.quantity || 1),
+          unit: it.unit || 'SET',
+          unit_price: Number(it.unit_price || 0),
+          amount: Number(it.amount || 0),
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
+      }
+
+      const created = (await this.getInvoiceById(invoiceData.id)) as Invoice;
+      if (created) {
+        await invoiceCacheService.upsertInvoiceInCache(created);
+      }
+      return created || tempInvoice;
+    } catch (err) {
+      console.warn('[invoiceService] Gagal create invoice online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('CREATE_INVOICE', { payload, tempId });
+      await invoiceCacheService.upsertInvoiceInCache(tempInvoice);
+      return tempInvoice;
+    }
   },
 
   /**
-   * Mengedit invoice dan memperbarui rincian itemnya
+   * Mengedit invoice dan memperbarui rincian itemnya (Offline-First Resilient)
    */
   async updateInvoice(id: string, payload: SaveInvoicePayload): Promise<Invoice> {
+    const isOnline = await checkIsOnline();
     const existing = await this.getInvoiceById(id);
     const subtotal = payload.items.reduce(
       (sum, it) => sum + Number(it.amount || 0),
@@ -284,40 +378,31 @@ export const invoiceService = {
         ? 'partial'
         : 'unpaid';
 
-    const { error: invoiceError } = await supabase
-      .from('invoices')
-      .update({
-        quotation_id: payload.quotation_id || null,
-        card_id: payload.card_id || null,
-        invoice_no: payload.invoice_no,
-        client_name: payload.client_name,
-        client_phone: payload.client_phone || null,
-        client_address: payload.client_address || null,
-        issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
-        due_date: payload.due_date || null,
-        subtotal,
-        total,
-        paid_amount: paidAmount,
-        balance_due: balanceDue,
-        status,
-        bank_name: payload.bank_name || 'Bank Mandiri',
-        bank_account_no: payload.bank_account_no || '1370026994893',
-        bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
-        authorized_by: payload.authorized_by || 'M Lafran Pane',
-        signature_url: payload.signature_url || null,
-        notes: payload.notes || null,
-        terms: payload.terms || DEFAULT_INVOICE_TERMS,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-
-    if (invoiceError) throw invoiceError;
-
-    // Hapus dan gantikan item baru
-    await supabase.from('invoice_items').delete().eq('invoice_id', id);
-
-    if (payload.items.length > 0) {
-      const itemsToInsert = payload.items.map((it, idx) => ({
+    const updatedData: Invoice = {
+      id,
+      quotation_id: payload.quotation_id || null,
+      card_id: payload.card_id || null,
+      invoice_no: payload.invoice_no,
+      client_name: payload.client_name,
+      client_phone: payload.client_phone || null,
+      client_address: payload.client_address || null,
+      issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
+      due_date: payload.due_date || null,
+      subtotal,
+      total,
+      paid_amount: paidAmount,
+      balance_due: balanceDue,
+      status,
+      bank_name: payload.bank_name || 'Bank Mandiri',
+      bank_account_no: payload.bank_account_no || '1370026994893',
+      bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
+      authorized_by: payload.authorized_by || 'M Lafran Pane',
+      signature_url: payload.signature_url || null,
+      notes: payload.notes || null,
+      terms: payload.terms || DEFAULT_INVOICE_TERMS,
+      updated_at: new Date().toISOString(),
+      invoice_items: payload.items.map((it, idx) => ({
+        id: `temp_item_${id}_${idx}`,
         invoice_id: id,
         item_no: idx + 1,
         description: it.description,
@@ -325,53 +410,143 @@ export const invoiceService = {
         unit: it.unit || 'SET',
         unit_price: Number(it.unit_price || 0),
         amount: Number(it.amount || 0),
-      }));
+      })),
+      payments: existing?.payments || [],
+    };
 
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(itemsToInsert);
-
-      if (itemsError) throw itemsError;
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan UPDATE_INVOICE ke antrean');
+      await offlineQueueService.enqueue('UPDATE_INVOICE', { id, payload });
+      await invoiceCacheService.upsertInvoiceInCache(updatedData);
+      return updatedData;
     }
 
-    return (await this.getInvoiceById(id)) as Invoice;
+    try {
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .update({
+          quotation_id: payload.quotation_id || null,
+          card_id: payload.card_id || null,
+          invoice_no: payload.invoice_no,
+          client_name: payload.client_name,
+          client_phone: payload.client_phone || null,
+          client_address: payload.client_address || null,
+          issue_date: payload.issue_date || new Date().toISOString().split('T')[0],
+          due_date: payload.due_date || null,
+          subtotal,
+          total,
+          paid_amount: paidAmount,
+          balance_due: balanceDue,
+          status,
+          bank_name: payload.bank_name || 'Bank Mandiri',
+          bank_account_no: payload.bank_account_no || '1370026994893',
+          bank_account_holder: payload.bank_account_holder || 'M.LAFRAN PANE',
+          authorized_by: payload.authorized_by || 'M Lafran Pane',
+          signature_url: payload.signature_url || null,
+          notes: payload.notes || null,
+          terms: payload.terms || DEFAULT_INVOICE_TERMS,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (invoiceError) throw invoiceError;
+
+      // Hapus dan gantikan item baru
+      await supabase.from('invoice_items').delete().eq('invoice_id', id);
+
+      if (payload.items.length > 0) {
+        const itemsToInsert = payload.items.map((it, idx) => ({
+          invoice_id: id,
+          item_no: idx + 1,
+          description: it.description,
+          quantity: Number(it.quantity || 1),
+          unit: it.unit || 'SET',
+          unit_price: Number(it.unit_price || 0),
+          amount: Number(it.amount || 0),
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
+      }
+
+      const updated = (await this.getInvoiceById(id)) as Invoice;
+      if (updated) {
+        await invoiceCacheService.upsertInvoiceInCache(updated);
+      }
+      return updated || updatedData;
+    } catch (err) {
+      console.warn('[invoiceService] Gagal update invoice online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('UPDATE_INVOICE', { id, payload });
+      await invoiceCacheService.upsertInvoiceInCache(updatedData);
+      return updatedData;
+    }
   },
 
   /**
-   * Mengubah status invoice secara langsung
+   * Mengubah status invoice secara langsung (Offline-First Resilient)
    */
   async updateStatus(id: string, status: Invoice['status']): Promise<void> {
-    const { error } = await supabase
-      .from('invoices')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id);
+    const isOnline = await checkIsOnline();
 
-    if (error) throw error;
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan UPDATE_INVOICE_STATUS ke antrean');
+      await offlineQueueService.enqueue('UPDATE_INVOICE_STATUS', { id, status });
+      await invoiceCacheService.updateInvoiceStatusInCache(id, status);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      await invoiceCacheService.updateInvoiceStatusInCache(id, status);
+    } catch (err) {
+      console.warn('[invoiceService] Gagal update invoice status online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('UPDATE_INVOICE_STATUS', { id, status });
+      await invoiceCacheService.updateInvoiceStatusInCache(id, status);
+    }
   },
 
   /**
-   * Menghapus invoice
+   * Menghapus invoice (Offline-First Resilient)
    */
   async deleteInvoice(id: string): Promise<void> {
-    const { error } = await supabase.from('invoices').delete().eq('id', id);
-    if (error) throw error;
+    const isOnline = await checkIsOnline();
+
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan DELETE_INVOICE ke antrean');
+      await offlineQueueService.enqueue('DELETE_INVOICE', { id });
+      await invoiceCacheService.removeInvoiceFromCache(id);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('invoices').delete().eq('id', id);
+      if (error) throw error;
+      await invoiceCacheService.removeInvoiceFromCache(id);
+    } catch (err) {
+      console.warn('[invoiceService] Gagal delete invoice online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('DELETE_INVOICE', { id });
+      await invoiceCacheService.removeInvoiceFromCache(id);
+    }
   },
 
   /**
-   * Mencatat mutasi pembayaran termin baru (Payment Receipt)
+   * Mencatat mutasi pembayaran termin baru (Payment Receipt) (Offline-First Resilient)
    */
   async recordPayment(payload: RecordPaymentPayload): Promise<PaymentReceipt> {
+    const isOnline = await checkIsOnline();
     const receiptNo = payload.receipt_no || this.generateReceiptNumber();
     const amountWords = payload.amount_words || terbilang(payload.amount);
 
-    console.log('[invoiceService.recordPayment] Inserting payment:', {
-      invoice_id: payload.invoice_id,
-      receipt_no: receiptNo,
-      stage_name: payload.stage_name,
-      amount: payload.amount,
-    });
-
-    const paymentData: Record<string, any> = {
+    const tempPayment: PaymentReceipt = {
+      id: `temp_pmt_${Date.now()}`,
       invoice_id: payload.invoice_id,
       receipt_no: receiptNo,
       billing_ref: payload.billing_ref,
@@ -383,56 +558,110 @@ export const invoiceService = {
       amount_words: amountWords,
       proof_url: payload.proof_url || null,
       received_by: payload.received_by || 'M Lafran Pane',
+      created_at: new Date().toISOString(),
     };
 
-    let { data, error } = await supabase
-      .from('payments')
-      .insert(paymentData)
-      .select()
-      .single();
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan RECORD_PAYMENT ke antrean');
+      await offlineQueueService.enqueue('RECORD_PAYMENT', {
+        payload: {
+          ...payload,
+          receipt_no: receiptNo,
+          amount_words: amountWords,
+        },
+      });
+      await invoiceCacheService.addPaymentToInvoiceInCache(tempPayment);
+      return tempPayment;
+    }
 
-    // Self-healing jika kolom amount_words belum ditambahkan di tabel payments Supabase
-    if (error && (error.message?.includes('amount_words') || (error as any).details?.includes('amount_words'))) {
-      console.warn('[invoiceService.recordPayment] Kolom amount_words belum ada di DB, retry insert tanpa amount_words...');
-      delete paymentData.amount_words;
-      const retryResult = await supabase
+    try {
+      const paymentData: Record<string, any> = {
+        invoice_id: payload.invoice_id,
+        receipt_no: receiptNo,
+        billing_ref: payload.billing_ref,
+        stage_name: payload.stage_name,
+        amount: Number(payload.amount || 0),
+        payment_date: payload.payment_date || new Date().toISOString().split('T')[0],
+        payment_method: payload.payment_method || 'Bank Transfer',
+        description: payload.description || null,
+        amount_words: amountWords,
+        proof_url: payload.proof_url || null,
+        received_by: payload.received_by || 'M Lafran Pane',
+      };
+
+      let { data, error } = await supabase
         .from('payments')
         .insert(paymentData)
         .select()
         .single();
-      data = retryResult.data;
-      error = retryResult.error;
+
+      // Self-healing jika kolom amount_words belum ditambahkan di tabel payments Supabase
+      if (error && (error.message?.includes('amount_words') || (error as any).details?.includes('amount_words'))) {
+        delete paymentData.amount_words;
+        const retryResult = await supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+          .single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
+
+      if (error) {
+        throw new Error(error.message || (error as any).details || 'Gagal menyimpan mutasi pembayaran');
+      }
+
+      try {
+        await this.syncInvoicePaymentState(payload.invoice_id);
+      } catch (syncErr) {
+        console.warn('[invoiceService.recordPayment] syncInvoicePaymentState warning:', syncErr);
+      }
+
+      const savedPayment = {
+        ...data,
+        amount_words: data.amount_words || amountWords,
+      } as PaymentReceipt;
+
+      await invoiceCacheService.addPaymentToInvoiceInCache(savedPayment);
+      return savedPayment;
+    } catch (err) {
+      console.warn('[invoiceService] Gagal record payment online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('RECORD_PAYMENT', {
+        payload: {
+          ...payload,
+          receipt_no: receiptNo,
+          amount_words: amountWords,
+        },
+      });
+      await invoiceCacheService.addPaymentToInvoiceInCache(tempPayment);
+      return tempPayment;
     }
-
-    if (error) {
-      console.error('[invoiceService.recordPayment] Insert error:', error);
-      throw new Error(error.message || error.details || 'Gagal menyimpan mutasi pembayaran di database');
-    }
-
-    console.log('[invoiceService.recordPayment] Payment inserted successfully:', data.id);
-
-    // Sinkronisasi manual cadangan (jika DB trigger belum aktif)
-    try {
-      await this.syncInvoicePaymentState(payload.invoice_id);
-    } catch (syncErr) {
-      console.warn('[invoiceService.recordPayment] syncInvoicePaymentState warning:', syncErr);
-    }
-
-    // Pastikan amount_words selalu tersedia di client
-    return {
-      ...data,
-      amount_words: data.amount_words || amountWords,
-    } as PaymentReceipt;
   },
 
   /**
-   * Menghapus catatan mutasi pembayaran
+   * Menghapus catatan mutasi pembayaran (Offline-First Resilient)
    */
   async deletePayment(paymentId: string, invoiceId: string): Promise<void> {
-    const { error } = await supabase.from('payments').delete().eq('id', paymentId);
-    if (error) throw error;
+    const isOnline = await checkIsOnline();
 
-    await this.syncInvoicePaymentState(invoiceId);
+    if (!isOnline) {
+      console.log('[invoiceService] Offline: Menyimpan DELETE_PAYMENT ke antrean');
+      await offlineQueueService.enqueue('DELETE_PAYMENT', { paymentId, invoiceId });
+      await invoiceCacheService.removePaymentFromInvoiceInCache(paymentId, invoiceId);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('payments').delete().eq('id', paymentId);
+      if (error) throw error;
+
+      await this.syncInvoicePaymentState(invoiceId);
+      await invoiceCacheService.removePaymentFromInvoiceInCache(paymentId, invoiceId);
+    } catch (err) {
+      console.warn('[invoiceService] Gagal delete payment online, fallback ke antrean offline:', err);
+      await offlineQueueService.enqueue('DELETE_PAYMENT', { paymentId, invoiceId });
+      await invoiceCacheService.removePaymentFromInvoiceInCache(paymentId, invoiceId);
+    }
   },
 
   /**

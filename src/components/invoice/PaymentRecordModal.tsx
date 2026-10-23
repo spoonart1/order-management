@@ -1,4 +1,5 @@
 import { DatePickerField } from '@/components/ui';
+import { checkIsOnline } from '@/lib/network';
 import { Invoice, invoiceService } from '@/services/invoiceService';
 import { useAppDispatch } from '@/store/hooks';
 import { recordPayment } from '@/store/slices/invoiceSlice';
@@ -167,12 +168,23 @@ export function PaymentRecordModal({
       // Upload bukti transfer jika ada foto yang dipilih
       if (selectedAsset) {
         console.log('[PaymentRecordModal] Uploading payment proof...');
-        proofUrl = await invoiceService.uploadPaymentProof(invoice.id, {
-          uri: selectedAsset.uri,
-          mimeType: selectedAsset.mimeType || 'image/jpeg',
-          fileName: selectedAsset.fileName || `proof_${Date.now()}.jpg`,
-        });
-        console.log('[PaymentRecordModal] Proof uploaded, url:', proofUrl);
+        const isOnline = await checkIsOnline();
+        if (isOnline) {
+          try {
+            proofUrl = await invoiceService.uploadPaymentProof(invoice.id, {
+              uri: selectedAsset.uri,
+              mimeType: selectedAsset.mimeType || 'image/jpeg',
+              fileName: selectedAsset.fileName || `proof_${Date.now()}.jpg`,
+            });
+            console.log('[PaymentRecordModal] Proof uploaded, url:', proofUrl);
+          } catch (uploadErr) {
+            console.warn('[PaymentRecordModal] Upload proof gagal, fallback ke local uri:', uploadErr);
+            proofUrl = selectedAsset.uri;
+          }
+        } else {
+          // Saat offline, gunakan URI lokal agar kwitansi tetap dapat menampilkan foto bukti
+          proofUrl = selectedAsset.uri;
+        }
       }
 
       console.log('[PaymentRecordModal] Dispatching recordPayment...');

@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { invoiceCacheService } from '@/services/invoiceCacheService';
 import {
   Invoice,
   PaymentReceipt,
@@ -28,13 +29,21 @@ const initialState: InvoiceState = {
   searchQuery: '',
 };
 
-// Async Thunks
+// Async Thunks (Stale-While-Revalidate: Offline Cache First)
 export const fetchInvoices = createAsyncThunk<Invoice[], void, { rejectValue: string }>(
   'invoice/fetchInvoices',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
+    // 1. Muat data offline terlebih dahulu secara instan jika ada di cache lokal (0ms render)
+    const cached = await invoiceCacheService.getInvoicesCache();
+    if (cached && cached.length > 0) {
+      dispatch(invoiceSlice.actions.setInvoicesFromCache(cached));
+    }
+
+    // 2. Ambil data terbaru dari network di background
     try {
       return await invoiceService.getInvoices();
     } catch (err: any) {
+      if (cached && cached.length > 0) return cached;
       return rejectWithValue(err.message || 'Gagal memuat daftar invoice');
     }
   }
@@ -164,11 +173,78 @@ const invoiceSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setInvoicesFromCache: (state, action: PayloadAction<Invoice[]>) => {
+      if (state.invoices.length === 0) {
+        state.invoices = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      }
+    },
+    optimisticUpdateInvoiceStatus: (
+      state,
+      action: PayloadAction<{ id: string; status: Invoice['status'] }>
+    ) => {
+      const inv = state.invoices.find((i) => i.id === action.payload.id);
+      if (inv) inv.status = action.payload.status;
+      if (state.currentInvoice?.id === action.payload.id) {
+        state.currentInvoice.status = action.payload.status;
+      }
+    },
+    optimisticDeleteInvoice: (state, action: PayloadAction<string>) => {
+      state.invoices = state.invoices.filter((inv) => inv.id !== action.payload);
+      if (state.currentInvoice?.id === action.payload) {
+        state.currentInvoice = null;
+      }
+    },
+    optimisticRecordPayment: (
+      state,
+      action: PayloadAction<{ invoiceId: string; payment: PaymentReceipt }>
+    ) => {
+      const inv = state.invoices.find((i) => i.id === action.payload.invoiceId);
+      if (inv) {
+        if (!inv.payments) inv.payments = [];
+        inv.payments.unshift(action.payload.payment);
+        const totalPaid = inv.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        inv.paid_amount = totalPaid;
+        inv.balance_due = Math.max(0, Number(inv.total || 0) - totalPaid);
+        inv.status = totalPaid >= inv.total && inv.total > 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid';
+      }
+      if (state.currentInvoice?.id === action.payload.invoiceId) {
+        if (!state.currentInvoice.payments) state.currentInvoice.payments = [];
+        state.currentInvoice.payments.unshift(action.payload.payment);
+        const totalPaid = state.currentInvoice.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        state.currentInvoice.paid_amount = totalPaid;
+        state.currentInvoice.balance_due = Math.max(0, Number(state.currentInvoice.total || 0) - totalPaid);
+        state.currentInvoice.status = totalPaid >= state.currentInvoice.total && state.currentInvoice.total > 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid';
+      }
+    },
+    optimisticDeletePayment: (
+      state,
+      action: PayloadAction<{ invoiceId: string; paymentId: string }>
+    ) => {
+      const inv = state.invoices.find((i) => i.id === action.payload.invoiceId);
+      if (inv && inv.payments) {
+        inv.payments = inv.payments.filter((p) => p.id !== action.payload.paymentId);
+        const totalPaid = inv.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        inv.paid_amount = totalPaid;
+        inv.balance_due = Math.max(0, Number(inv.total || 0) - totalPaid);
+        inv.status = totalPaid >= inv.total && inv.total > 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid';
+      }
+      if (state.currentInvoice?.id === action.payload.invoiceId && state.currentInvoice.payments) {
+        state.currentInvoice.payments = state.currentInvoice.payments.filter((p) => p.id !== action.payload.paymentId);
+        const totalPaid = state.currentInvoice.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        state.currentInvoice.paid_amount = totalPaid;
+        state.currentInvoice.balance_due = Math.max(0, Number(state.currentInvoice.total || 0) - totalPaid);
+        state.currentInvoice.status = totalPaid >= state.currentInvoice.total && state.currentInvoice.total > 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid';
+      }
+    },
   },
   extraReducers: (builder) => {
-    // fetchInvoices
+    // fetchInvoices (Resilient Background Revalidation)
     builder.addCase(fetchInvoices.pending, (state) => {
-      state.isLoading = true;
+      if (state.invoices.length === 0) {
+        state.isLoading = true;
+      }
       state.error = null;
     });
     builder.addCase(fetchInvoices.fulfilled, (state, action) => {
@@ -294,7 +370,16 @@ const invoiceSlice = createSlice({
   },
 });
 
-export const { setFilterStatus, setSearchQuery, setCurrentInvoice, clearError } =
-  invoiceSlice.actions;
+export const {
+  setFilterStatus,
+  setSearchQuery,
+  setCurrentInvoice,
+  clearError,
+  setInvoicesFromCache,
+  optimisticUpdateInvoiceStatus,
+  optimisticDeleteInvoice,
+  optimisticRecordPayment,
+  optimisticDeletePayment,
+} = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

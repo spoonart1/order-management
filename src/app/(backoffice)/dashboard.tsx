@@ -1,10 +1,16 @@
 import { confirmDialog } from '@/lib/confirm';
+import { useNetworkStatus } from '@/lib/network';
+import { boardCacheService } from '@/services/boardCacheService';
+import { invoiceCacheService } from '@/services/invoiceCacheService';
 import { Invoice, PaymentReceipt } from '@/services/invoiceService';
+import { offlineQueueService } from '@/services/offlineQueueService';
+import { quotationCacheService } from '@/services/quotationCacheService';
+import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { signOut } from '@/store/slices/authSlice';
-import { fetchBoardByType } from '@/store/slices/boardSlice';
-import { fetchInvoices } from '@/store/slices/invoiceSlice';
-import { fetchQuotations } from '@/store/slices/quotationSlice';
+import { fetchBoardByType, setBoardFromCache } from '@/store/slices/boardSlice';
+import { fetchInvoices, setInvoicesFromCache } from '@/store/slices/invoiceSlice';
+import { fetchQuotations, setQuotationsFromCache } from '@/store/slices/quotationSlice';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
 import { useRouter } from 'expo-router';
 import {
@@ -45,11 +51,62 @@ export default function DashboardScreen() {
   const { currentBoard, isLoading: boardLoading } = useAppSelector((state) => state.board);
 
   const [refreshing, setRefreshing] = useState(false);
+  const { isOnline } = useNetworkStatus();
 
-  // Inisialisasi pengambilan data ringkasan seluruh modul saat mount
+  // Status Antrean Mutasi Offline
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  const refreshPendingCount = async () => {
+    const count = await offlineQueueService.getCount();
+    setPendingSyncCount(count);
+  };
+
+  // Inisialisasi pengambilan data ringkasan seluruh modul saat mount (Instant Cache First)
   useEffect(() => {
+    let isMounted = true;
+    refreshPendingCount();
+
+    // 1. Muat seluruh cache offline secara instan (0ms render)
+    Promise.all([
+      invoiceCacheService.getInvoicesCache(),
+      quotationCacheService.getQuotationsCache(),
+      boardCacheService.getBoardCache('marketing'),
+    ]).then(([cachedInvoices, cachedQuotations, cachedBoard]) => {
+      if (isMounted) {
+        if (cachedInvoices && cachedInvoices.length > 0) {
+          dispatch(setInvoicesFromCache(cachedInvoices));
+        }
+        if (cachedQuotations && cachedQuotations.length > 0) {
+          dispatch(setQuotationsFromCache(cachedQuotations));
+        }
+        if (cachedBoard) {
+          dispatch(setBoardFromCache(cachedBoard));
+        }
+      }
+    });
+
+    // 2. Ambil data terbaru dari server di latar belakang
     loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
+
+  // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload / refresh halaman)
+  useEffect(() => {
+    if (isOnline) {
+      syncService
+        .processQueue((remaining) => {
+          setPendingSyncCount(remaining);
+        })
+        .then(() => {
+          refreshPendingCount();
+        });
+    } else {
+      refreshPendingCount();
+    }
+  }, [isOnline]);
 
   const loadDashboardData = async () => {
     try {
@@ -66,6 +123,10 @@ export default function DashboardScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    if (isOnline) {
+      await syncService.processQueue((remaining) => setPendingSyncCount(remaining));
+      await refreshPendingCount();
+    }
     await loadDashboardData();
     setRefreshing(false);
   };
@@ -190,18 +251,56 @@ export default function DashboardScreen() {
   const isGlobalLoading = (invoiceLoading || quotationLoading || boardLoading) && invoices.length === 0;
 
   return (
-    <ScrollView
-      className="flex-1 bg-slate-900"
-      contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor="#38BDF8"
-          colors={['#38BDF8']}
-        />
-      }
-    >
+    <View className="flex-1 bg-slate-900">
+      {/* 1. Offline & Sync Status Banner */}
+      {!isOnline && (
+        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
+            <Text className="text-amber-200 text-xs font-semibold">
+              Mode Offline Aktif
+            </Text>
+            <Text className="text-amber-400/80 text-xs ml-2">
+              • {pendingSyncCount > 0
+                ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
+                : 'Menampilkan data tersimpan di perangkat lokal'}
+            </Text>
+          </View>
+          <Text className="text-amber-300 text-[11px] font-medium">
+            {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
+          </Text>
+        </View>
+      )}
+
+      {isOnline && pendingSyncCount > 0 && (
+        <View className="flex-row items-center justify-between bg-blue-950/80 border-b border-blue-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <ActivityIndicator size="small" color="#38BDF8" className="mr-2.5" />
+            <Text className="text-blue-200 text-xs font-semibold">
+              Menyinkronkan Perubahan ke Cloud
+            </Text>
+            <Text className="text-blue-400/80 text-xs ml-2">
+              • {pendingSyncCount} perubahan sedang disinkronkan...
+            </Text>
+          </View>
+          <Text className="text-sky-300 text-[11px] font-medium">
+            Sinkronisasi
+          </Text>
+        </View>
+      )}
+
+      <ScrollView
+        className="flex-1 bg-slate-900"
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#38BDF8"
+            colors={['#38BDF8']}
+          />
+        }
+      >
       {/* 1. HEADER SECTION (GREETING & REFRESH) */}
       <View className="flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
         <View>
@@ -651,5 +750,6 @@ export default function DashboardScreen() {
         </>
       )}
     </ScrollView>
+    </View>
   );
 }

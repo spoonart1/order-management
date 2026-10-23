@@ -1,5 +1,6 @@
 import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
+import { invoiceService } from '@/services/invoiceService';
 import { offlineQueueService } from '@/services/offlineQueueService';
 import { quotationService } from '@/services/quotationService';
 
@@ -135,6 +136,52 @@ export const syncService = {
 
       case 'UPDATE_QUOTATION': {
         await quotationService.updateQuotation(payload.id, payload.payload);
+        break;
+      }
+
+      case 'CREATE_INVOICE': {
+        await invoiceService.createInvoice(payload.payload);
+        break;
+      }
+
+      case 'UPDATE_INVOICE': {
+        await invoiceService.updateInvoice(payload.id, payload.payload);
+        break;
+      }
+
+      case 'UPDATE_INVOICE_STATUS': {
+        await invoiceService.updateStatus(payload.id, payload.status);
+        break;
+      }
+
+      case 'DELETE_INVOICE': {
+        await invoiceService.deleteInvoice(payload.id);
+        break;
+      }
+
+      case 'RECORD_PAYMENT': {
+        const paymentPayload = { ...payload.payload };
+        if (
+          paymentPayload.proof_url &&
+          (paymentPayload.proof_url.startsWith('file:') ||
+            paymentPayload.proof_url.startsWith('blob:') ||
+            paymentPayload.proof_url.startsWith('data:'))
+        ) {
+          try {
+            paymentPayload.proof_url = await invoiceService.uploadPaymentProof(
+              paymentPayload.invoice_id,
+              { uri: paymentPayload.proof_url }
+            );
+          } catch (uploadErr) {
+            console.warn('[syncService] Gagal upload proof saat background sync:', uploadErr);
+          }
+        }
+        await invoiceService.recordPayment(paymentPayload);
+        break;
+      }
+
+      case 'DELETE_PAYMENT': {
+        await invoiceService.deletePayment(payload.paymentId, payload.invoiceId);
         break;
       }
 
