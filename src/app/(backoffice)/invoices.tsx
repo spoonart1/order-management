@@ -1,48 +1,39 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { InvoiceFormModal } from '@/components/invoice/InvoiceFormModal';
+import { confirmDialog } from '@/lib/confirm';
+import { Invoice, SaveInvoicePayload } from '@/services/invoiceService';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+  createInvoice,
+  deleteInvoice,
+  fetchInvoices,
+  updateInvoice
+} from '@/store/slices/invoiceSlice';
+import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
 import {
   AlertCircle,
   Calendar,
   CheckCircle2,
   Clock,
-  DollarSign,
-  Eye,
-  FileSpreadsheet,
   FileText,
-  Filter,
+  HandCoins,
   Pencil,
   Plus,
   RefreshCw,
   Search,
   Trash2,
-  TrendingUp,
   User,
-  Wallet,
+  Wallet
 } from 'lucide-react-native';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  createInvoice,
-  createInvoiceFromQuotation,
-  deleteInvoice,
-  fetchInvoices,
-  updateInvoice,
-  updateInvoiceStatus,
-} from '@/store/slices/invoiceSlice';
-import { Invoice, SaveInvoicePayload } from '@/services/invoiceService';
-import { Quotation, quotationService } from '@/services/quotationService';
-import { InvoiceFormModal } from '@/components/invoice/InvoiceFormModal';
-import { confirmDialog } from '@/lib/confirm';
-import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 
 type StatusFilter = 'all' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
 
@@ -300,7 +291,7 @@ export default function InvoicesScreen() {
                 </Text>
               </View>
               <View className="w-10 h-10 rounded-xl bg-rose-500/10 items-center justify-center border border-rose-500/20">
-                <DollarSign size={20} color="#FB7185" />
+                <HandCoins size={20} color="#FB7185" />
               </View>
             </View>
           </View>
@@ -329,14 +320,12 @@ export default function InvoicesScreen() {
           <View className="flex-row items-center bg-slate-950 border border-slate-800 p-1 rounded-xl overflow-x-auto">
             <Pressable
               onPress={() => setActiveFilter('all')}
-              className={`px-3 py-1.5 rounded-lg ${
-                activeFilter === 'all' ? 'bg-sky-500' : 'bg-transparent'
-              }`}
+              className={`px-3 py-1.5 rounded-lg ${activeFilter === 'all' ? 'bg-sky-500' : 'bg-transparent'
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  activeFilter === 'all' ? 'text-white' : 'text-slate-400'
-                }`}
+                className={`text-xs font-bold ${activeFilter === 'all' ? 'text-white' : 'text-slate-400'
+                  }`}
               >
                 Semua ({invoices.length})
               </Text>
@@ -344,14 +333,12 @@ export default function InvoicesScreen() {
 
             <Pressable
               onPress={() => setActiveFilter('unpaid')}
-              className={`px-3 py-1.5 rounded-lg ml-1 ${
-                activeFilter === 'unpaid' ? 'bg-rose-500' : 'bg-transparent'
-              }`}
+              className={`px-3 py-1.5 rounded-lg ml-1 ${activeFilter === 'unpaid' ? 'bg-rose-500' : 'bg-transparent'
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  activeFilter === 'unpaid' ? 'text-white' : 'text-slate-400'
-                }`}
+                className={`text-xs font-bold ${activeFilter === 'unpaid' ? 'text-white' : 'text-slate-400'
+                  }`}
               >
                 Unpaid ({stats.unpaidCount})
               </Text>
@@ -359,14 +346,12 @@ export default function InvoicesScreen() {
 
             <Pressable
               onPress={() => setActiveFilter('partial')}
-              className={`px-3 py-1.5 rounded-lg ml-1 ${
-                activeFilter === 'partial' ? 'bg-sky-500' : 'bg-transparent'
-              }`}
+              className={`px-3 py-1.5 rounded-lg ml-1 ${activeFilter === 'partial' ? 'bg-sky-500' : 'bg-transparent'
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  activeFilter === 'partial' ? 'text-white' : 'text-slate-400'
-                }`}
+                className={`text-xs font-bold ${activeFilter === 'partial' ? 'text-white' : 'text-slate-400'
+                  }`}
               >
                 Partial ({stats.partialCount})
               </Text>
@@ -374,14 +359,12 @@ export default function InvoicesScreen() {
 
             <Pressable
               onPress={() => setActiveFilter('paid')}
-              className={`px-3 py-1.5 rounded-lg ml-1 ${
-                activeFilter === 'paid' ? 'bg-emerald-600' : 'bg-transparent'
-              }`}
+              className={`px-3 py-1.5 rounded-lg ml-1 ${activeFilter === 'paid' ? 'bg-emerald-600' : 'bg-transparent'
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  activeFilter === 'paid' ? 'text-white' : 'text-slate-400'
-                }`}
+                className={`text-xs font-bold ${activeFilter === 'paid' ? 'text-white' : 'text-slate-400'
+                  }`}
               >
                 Paid ({stats.paidCount})
               </Text>
@@ -513,13 +496,12 @@ export default function InvoicesScreen() {
                         {/* Progress Bar */}
                         <View className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-1">
                           <View
-                            className={`h-full ${
-                              paidPct >= 100
-                                ? 'bg-emerald-500'
-                                : paidPct > 0
+                            className={`h-full ${paidPct >= 100
+                              ? 'bg-emerald-500'
+                              : paidPct > 0
                                 ? 'bg-sky-500'
                                 : 'bg-slate-700'
-                            }`}
+                              }`}
                             style={{ width: `${paidPct}%` }}
                           />
                         </View>
