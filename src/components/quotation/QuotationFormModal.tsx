@@ -260,6 +260,7 @@ export function QuotationFormModal({
   const [isSearchingClient, setIsSearchingClient] = useState(false);
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const isSelectingRef = useRef(false);
+  const isUserTypingClientRef = useRef(false);
   const wasVisibleRef = useRef(false);
   const currentQuotationIdRef = useRef<string | null | undefined>(undefined);
 
@@ -382,6 +383,7 @@ export function QuotationFormModal({
         });
       }
 
+      isUserTypingClientRef.current = false;
       setClientSuggestions([]);
       setShowClientDropdown(false);
       setErrorMessage(null);
@@ -393,6 +395,11 @@ export function QuotationFormModal({
     if (!visible) return;
     if (isSelectingRef.current) {
       isSelectingRef.current = false;
+      return;
+    }
+
+    // Hanya lakukan pencarian jika pengguna aktif mengetik (bukan saat initial load / klik edit)
+    if (!isUserTypingClientRef.current) {
       return;
     }
 
@@ -436,6 +443,7 @@ export function QuotationFormModal({
   // Handler saat item klien dipilih dari dropdown
   const handleSelectClient = (item: ClientSuggestion) => {
     isSelectingRef.current = true;
+    isUserTypingClientRef.current = false;
     setClientName(item.client_name);
 
     if (item.client_phone) {
@@ -713,6 +721,7 @@ export function QuotationFormModal({
                     <TextInput
                       value={clientName}
                       onChangeText={(t) => {
+                        isUserTypingClientRef.current = true;
                         setClientName(t);
                         if (errorMessage) setErrorMessage(null);
                       }}
@@ -728,6 +737,7 @@ export function QuotationFormModal({
                     {clientName.trim().length > 0 && (
                       <Pressable
                         onPress={() => {
+                          isUserTypingClientRef.current = false;
                           setClientName('');
                           setClientSuggestions([]);
                           setShowClientDropdown(false);
@@ -979,7 +989,7 @@ export function QuotationFormModal({
                     className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3 py-1.5 rounded-xl mr-2"
                   >
                     <Plus size={13} color="#38BDF8" />
-                    <Text className="text-sky-300 text-xs font-semibold ml-1">+ Kitchen Set</Text>
+                    <Text className="text-sky-300 text-xs font-semibold ml-1">Kitchen Set</Text>
                   </Pressable>
 
                   <Pressable
@@ -987,7 +997,7 @@ export function QuotationFormModal({
                     className="flex-row items-center bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl"
                   >
                     <Plus size={13} color="#CBD5E1" />
-                    <Text className="text-slate-300 text-xs font-semibold ml-1">+ Lainnya</Text>
+                    <Text className="text-slate-300 text-xs font-semibold ml-1">Lainnya</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1191,6 +1201,25 @@ export function QuotationFormModal({
                   </View>
                 </View>
               ))}
+
+              {/* Tombol Tambah Item di Akhir Daftar (End of Items) */}
+              <View className="flex-row items-center justify-start mt-1 mb-2">
+                <Pressable
+                  onPress={() => handleAddItem('kitchen_set')}
+                  className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3.5 py-2 rounded-xl mr-2.5 shadow-sm"
+                >
+                  <Plus size={14} color="#38BDF8" />
+                  <Text className="text-sky-300 text-xs font-semibold ml-1.5">Kitchen Set</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleAddItem('other')}
+                  className="flex-row items-center bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl shadow-sm"
+                >
+                  <Plus size={14} color="#CBD5E1" />
+                  <Text className="text-slate-300 text-xs font-semibold ml-1.5">Lainnya</Text>
+                </Pressable>
+              </View>
 
               {/* Total & Terbilang Ringkasan Box */}
               <View className="mt-4 p-4 rounded-xl bg-slate-900 border border-emerald-900/60 shadow-lg">
