@@ -1,6 +1,6 @@
 import { Quotation } from '@/services/quotationService';
 import { pdfGenerator } from '@/utils/pdfGenerator';
-import { generateQuotationHtml } from '@/utils/quotationPdfTemplate';
+import { generateQuotationHtml, getQuotationPdfFilename } from '@/utils/quotationPdfTemplate';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
 import { Printer, Share2, X } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -31,11 +31,12 @@ export function QuotationPreviewModal({
   if (!quotation) return null;
 
   const htmlContent = generateQuotationHtml(quotation);
+  const pdfFilename = getQuotationPdfFilename(quotation);
 
   const handlePrint = async () => {
     try {
       setLoading(true);
-      await pdfGenerator.print(htmlContent);
+      await pdfGenerator.print(htmlContent, pdfFilename);
     } catch (err: any) {
       Alert.alert('Gagal Mencetak', err.message || 'Terjadi kesalahan saat mencetak.');
     } finally {
@@ -46,8 +47,7 @@ export function QuotationPreviewModal({
   const handleShare = async () => {
     try {
       setLoading(true);
-      const safeNo = quotation.quotation_no.replace(/[/\\?%*:|"<>]/g, '_');
-      await pdfGenerator.exportAndShare(htmlContent, `Surat_Penawaran_${safeNo}.pdf`);
+      await pdfGenerator.exportAndShare(htmlContent, `${pdfFilename}.pdf`);
     } catch (err: any) {
       Alert.alert('Gagal Membagikan', err.message || 'Terjadi kesalahan saat membagikan PDF.');
     } finally {

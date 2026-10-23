@@ -2,6 +2,36 @@ import { Quotation } from '../services/quotationService';
 import { formatIndonesianDate, formatRupiah } from './terbilang';
 
 /**
+ * Menghasilkan nama file PDF standar untuk Surat Penawaran:
+ * Format: "Surat Penawaran {client_name}_{project_name}_{tanggal}"
+ */
+export function getQuotationPdfFilename(q: Quotation): string {
+  const sanitize = (str?: string | null) =>
+    (str || '')
+      .replace(/[/\\?%*:|"<>]/g, '')
+      .trim();
+
+  const client = sanitize(q.client_name) || 'Klien';
+  const project = sanitize(q.project_title) || 'Proyek';
+
+  // Format tanggal: DD-MM-YYYY
+  let dateStr = '';
+  if (q.issued_date) {
+    const parts = q.issued_date.split('-');
+    if (parts.length === 3) {
+      dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    } else {
+      dateStr = q.issued_date;
+    }
+  } else {
+    const now = new Date();
+    dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+  }
+
+  return `Surat Penawaran ${client}_${project}_${dateStr}`;
+}
+
+/**
  * Menghasilkan markup HTML untuk rendering dan ekspor PDF Surat Penawaran Resmi Alora Studio
  * Mengadopsi format presisi 100% dari dokumen acuan (No. 053b/SP/APK/10/26)
  */
@@ -14,6 +44,7 @@ export function generateQuotationHtml(q: Quotation): string {
 
   const items = q.quotation_items || [];
   const issuedDateFormatted = formatIndonesianDate(q.issued_date);
+  const pdfTitle = getQuotationPdfFilename(q);
 
   const itemsHtml = items.map((item, index) => {
     const specs = [
@@ -43,7 +74,7 @@ export function generateQuotationHtml(q: Quotation): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Surat Penawaran - ${q.quotation_no}</title>
+  <title>${pdfTitle}</title>
   <style>
     @page {
       size: A4;
