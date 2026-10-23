@@ -1,6 +1,6 @@
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { CardItem } from '@/store/slices/boardSlice';
-import { Trash2 } from 'lucide-react-native';
+import { FileText, Trash2 } from 'lucide-react-native';
 import { useRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 
@@ -54,6 +54,11 @@ export function KanbanCard({
           disabled={isDeleting}
           buttonClassName="w-7 h-7 rounded-lg items-center justify-center bg-slate-900"
           items={[
+            {
+              label: 'Detail & Surat Penawaran',
+              icon: <FileText size={13} color="#38BDF8" />,
+              onPress: onPress,
+            },
             {
               label: 'Hapus Kartu',
               icon: <Trash2 size={13} color="#F87171" />,

@@ -42,6 +42,14 @@ export default function BackofficeLayout() {
                     title: "ALORA STUDIO - Order Boards",
                 }}
             />
+
+            <Drawer.Screen
+                name="quotations"
+                options={{
+                    drawerLabel: "Surat Penawaran",
+                    title: "ALORA STUDIO - Surat Penawaran",
+                }}
+            />
         </Drawer>
     );
 }

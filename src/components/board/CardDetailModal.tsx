@@ -1,6 +1,10 @@
 import { Chip } from "@/components/ui/Chip";
 import { cardAttachmentService } from "@/services/cardAttachmentService";
+import { Quotation, SaveQuotationPayload, quotationService } from "@/services/quotationService";
+import { QuotationFormModal } from "@/components/quotation/QuotationFormModal";
+import { QuotationPreviewModal } from "@/components/quotation/QuotationPreviewModal";
 import { AttachmentItem, CardItem, ColumnItem, Profile } from "@/store/slices/boardSlice";
+import { formatRupiah } from "@/utils/terbilang";
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
 import {
@@ -63,6 +67,11 @@ export function CardDetailModal({
     const [uploading, setUploading] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
+    // State Surat Penawaran
+    const [linkedQuotation, setLinkedQuotation] = useState<Quotation | null>(null);
+    const [quotationFormVisible, setQuotationFormVisible] = useState(false);
+    const [quotationPreviewVisible, setQuotationPreviewVisible] = useState(false);
+
     useEffect(() => {
         if (!visible) return;
         setErrorMessage(null);
@@ -75,6 +84,11 @@ export function CardDetailModal({
             setAssignedTo(card.assigned_to || null);
             setNotes(card.notes || '');
             setAttachments(card.card_attachments || []);
+
+            // Ambil data penawaran yang terhubung
+            quotationService.getQuotationByCardId(card.id)
+                .then((q) => setLinkedQuotation(q))
+                .catch(() => setLinkedQuotation(null));
         } else {
             // Mode create: reset form
             setTitle('');
@@ -85,8 +99,20 @@ export function CardDetailModal({
             setAssignedTo(null);
             setNotes('');
             setAttachments([]);
+            setLinkedQuotation(null);
         }
     }, [card, visible, defaultColumnId]);
+
+    const handleSaveQuotationFromCard = async (payload: SaveQuotationPayload) => {
+        let saved: Quotation;
+        if (linkedQuotation) {
+            saved = await quotationService.updateQuotation(linkedQuotation.id, payload);
+        } else {
+            saved = await quotationService.createQuotation(payload);
+        }
+        setLinkedQuotation(saved);
+        setValue(String(saved.total_amount));
+    };
 
     // Cek apakah sedang di tahap Offering (Penawaran) atau DP (Deal Payment)
     const selectedColumn = columns.find((c) => c.id === columnId);
@@ -417,6 +443,64 @@ export function CardDetailModal({
                             </View>
                         )}
 
+                        {/* Surat Penawaran Resmi */}
+                        {!isCreateMode && card && (
+                            <View className="mb-4 bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
+                                <View className="flex-row items-center justify-between mb-2">
+                                    <Text className="text-slate-300 text-xs font-semibold">
+                                        Surat Penawaran Resmi
+                                    </Text>
+                                    {linkedQuotation && (
+                                        <View className="bg-sky-950/80 border border-sky-800 px-2 py-0.5 rounded-md">
+                                            <Text className="text-sky-400 text-[10px] font-bold">
+                                                {linkedQuotation.quotation_no}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                {linkedQuotation ? (
+                                    <View>
+                                        <Text className="text-emerald-400 font-bold text-sm mb-1">
+                                            {formatRupiah(linkedQuotation.total_amount)}
+                                        </Text>
+                                        <Text className="text-slate-400 text-[11px] mb-3">
+                                            Status: {linkedQuotation.status.toUpperCase()} • {linkedQuotation.quotation_items?.length || 0} Item Spesifikasi
+                                        </Text>
+                                        <View className="flex-row space-x-2">
+                                            <Pressable
+                                                onPress={() => setQuotationPreviewVisible(true)}
+                                                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                className="flex-1 bg-slate-800 py-2 rounded-lg items-center mr-2 border border-slate-700"
+                                            >
+                                                <Text className="text-sky-300 text-xs font-semibold">👁️ Preview PDF</Text>
+                                            </Pressable>
+                                            <Pressable
+                                                onPress={() => setQuotationFormVisible(true)}
+                                                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                className="flex-1 bg-blue-600/20 py-2 rounded-lg items-center border border-blue-500/40"
+                                            >
+                                                <Text className="text-blue-300 text-xs font-semibold">✏️ Edit Penawaran</Text>
+                                            </Pressable>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View className="items-center py-2">
+                                        <Text className="text-slate-500 text-xs mb-2 text-center">
+                                            Belum ada Surat Penawaran resmi untuk proyek ini.
+                                        </Text>
+                                        <Pressable
+                                            onPress={() => setQuotationFormVisible(true)}
+                                            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                            className="bg-blue-600/20 border border-blue-500/40 px-3.5 py-2 rounded-xl flex-row items-center"
+                                        >
+                                            <Text className="text-sky-300 text-xs font-bold">📄 + Buat Surat Penawaran</Text>
+                                        </Pressable>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+
                         {/* Catatan Proyek */}
                         <View className="mb-4">
                             <Text className="text-slate-300 text-xs font-semibold mb-1">
@@ -464,6 +548,29 @@ export function CardDetailModal({
                     </View>
                 </View>
             </View>
+
+            {/* Modal Form Surat Penawaran */}
+            {card && (
+                <QuotationFormModal
+                    visible={quotationFormVisible}
+                    quotation={linkedQuotation}
+                    cardId={card.id}
+                    defaultClientName={clientName || card.client_name || ''}
+                    defaultClientPhone={clientPhone || card.client_phone || ''}
+                    defaultProjectTitle={title || card.title || ''}
+                    onClose={() => setQuotationFormVisible(false)}
+                    onSave={handleSaveQuotationFromCard}
+                />
+            )}
+
+            {/* Modal Preview Surat Penawaran */}
+            {linkedQuotation && (
+                <QuotationPreviewModal
+                    visible={quotationPreviewVisible}
+                    quotation={linkedQuotation}
+                    onClose={() => setQuotationPreviewVisible(false)}
+                />
+            )}
         </Modal>
     );
 }
