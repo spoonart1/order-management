@@ -250,166 +250,170 @@ export default function QuotationsScreen() {
     switch (status) {
       case 'approved':
         return {
-          bg: 'bg-emerald-950/80 border-emerald-700/60',
-          text: 'text-emerald-400',
+          bg: 'bg-emerald-50 border-emerald-200',
+          text: 'text-emerald-700',
           label: 'Disetujui',
         };
       case 'sent':
         return {
-          bg: 'bg-sky-950/80 border-sky-700/60',
-          text: 'text-sky-300',
+          bg: 'bg-sky-50 border-sky-200',
+          text: 'text-sky-700',
           label: 'Terkirim',
         };
       case 'rejected':
         return {
-          bg: 'bg-rose-950/80 border-rose-700/60',
-          text: 'text-rose-400',
+          bg: 'bg-rose-50 border-rose-200',
+          text: 'text-rose-700',
           label: 'Ditolak',
         };
       case 'draft':
       default:
         return {
-          bg: 'bg-slate-800 border-slate-700',
-          text: 'text-slate-300',
+          bg: 'bg-[#FAF8F5] border-[#DDD6C8]',
+          text: 'text-[#70787C]',
           label: 'Draft',
         };
     }
   };
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-[#F8F6F1]">
       {/* 1. Offline & Sync Status Banner */}
       {!isOnline && (
-        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+        <View className="flex-row items-center justify-between bg-[#2B2317] border-b border-[#52442F] px-4 md:px-5 py-2">
           <View className="flex-row items-center">
-            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
-            <Text className="text-amber-200 text-xs font-semibold">
+            <View className="w-2 h-2 rounded-full bg-[#E5B650] mr-2" />
+            <Text className="text-[#F6E3B8] text-xs font-semibold">
               Mode Offline Aktif
             </Text>
-            <Text className="text-amber-400/80 text-xs ml-2">
+            <Text className="text-[#D8BE8A] text-xs ml-2">
               • {pendingSyncCount > 0
                 ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
                 : 'Menampilkan data tersimpan di perangkat lokal'}
             </Text>
           </View>
-          <Text className="text-amber-300 text-[11px] font-medium">
+          <Text className="text-[#E5B650] text-[11px] font-medium font-mono">
             {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
           </Text>
         </View>
       )}
 
       {isOnline && pendingSyncCount > 0 && (
-        <View className="flex-row items-center justify-between bg-blue-950/80 border-b border-blue-800/80 px-5 py-2">
+        <View className="flex-row items-center justify-between bg-[#1B2225] border-b border-[#2C3539] px-4 md:px-5 py-2">
           <View className="flex-row items-center">
-            <ActivityIndicator size="small" color="#38BDF8" className="mr-2.5" />
-            <Text className="text-blue-200 text-xs font-semibold">
+            <ActivityIndicator size="small" color="#C8B89A" className="mr-2.5" />
+            <Text className="text-[#F4F1EA] text-xs font-semibold">
               Menyinkronkan Perubahan ke Cloud
             </Text>
-            <Text className="text-blue-400/80 text-xs ml-2">
+            <Text className="text-[#A8B2B7] text-xs ml-2">
               • {pendingSyncCount} perubahan sedang disinkronkan...
             </Text>
           </View>
-          <Text className="text-sky-300 text-[11px] font-medium">
+          <Text className="text-[#C8B89A] text-[11px] font-medium font-mono">
             Sinkronisasi
           </Text>
         </View>
       )}
 
       <ScrollView
-        className="flex-1 p-4 md:p-6"
+        className="flex-1 p-3.5 md:p-5"
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor="#38BDF8" />
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor="#968363" />
         }
       >
         {/* HEADER HALAMAN */}
-        <View className="flex-row flex-wrap items-center justify-between pb-5 border-b border-slate-800 gap-4">
+        <View className="flex-row flex-wrap items-center justify-between pb-4 border-b border-[#E3DDCF] gap-3">
           <View>
             <View className="flex-row items-center">
-              <FileText size={22} color="#38BDF8" />
-              <Text className="text-white text-xl md:text-2xl font-black ml-2.5">
+              <FileText size={20} color="#968363" />
+              <Text className="text-[#1B2225] text-lg md:text-xl font-bold font-mono ml-2">
                 Surat Penawaran
               </Text>
             </View>
-            <Text className="text-slate-400 text-xs md:text-sm mt-1">
-              Kelola surat penawaran resmi, spesifikasi interior, dan cetak dokumen PDF standar Alora Studio
+            <Text className="text-[#70787C] text-xs mt-0.5">
+              Kelola penawaran harga resmi, item spesifikasi interior & cetak PDF standar Alora Studio
             </Text>
           </View>
 
           <Pressable
             onPress={handleOpenCreate}
             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-            className="flex-row items-center bg-blue-600 px-4 py-2.5 rounded-xl shadow-lg"
+            className="flex-row items-center bg-[#1B2225] hover:bg-[#2C373C] px-3.5 py-2 rounded-[3px] shadow-xs"
           >
-            <Plus size={16} color="#FFFFFF" />
-            <Text className="text-white text-xs md:text-sm font-bold ml-1.5">
+            <Plus size={14} color="#FFFFFF" />
+            <Text className="text-white text-xs font-semibold ml-1.5">
               + Buat Surat Penawaran
             </Text>
           </Pressable>
         </View>
 
         {/* STATISTIK RINGKAS CARDS */}
-        <View className="flex-row flex-wrap -mx-2 my-5">
-          <View className="w-1/2 md:w-1/4 px-2 mb-3">
-            <View className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-slate-400 text-xs">Total Penawaran</Text>
-                <FileCheck size={16} color="#94A3B8" />
-              </View>
-              <Text className="text-white text-xl font-bold mt-1.5">{stats.total}</Text>
-            </View>
-          </View>
-
-          <View className="w-1/2 md:w-1/4 px-2 mb-3">
-            <View className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-slate-400 text-xs">Disetujui Klien</Text>
-                <CheckCircle2 size={16} color="#34D399" />
-              </View>
-              <Text className="text-emerald-400 text-xl font-bold mt-1.5">{stats.approved}</Text>
-            </View>
-          </View>
-
-          <View className="w-1/2 md:w-1/4 px-2 mb-3">
-            <View className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-slate-400 text-xs">Menunggu Respon</Text>
-                <Clock size={16} color="#38BDF8" />
-              </View>
-              <Text className="text-sky-300 text-xl font-bold mt-1.5">
-                {stats.sent + stats.draft}
+        <View className="grid grid-cols-2 md:grid-cols-4 gap-3 my-3">
+          <View className="bg-white border border-[#E3DDCF] p-3 rounded-[3px] shadow-xs justify-between">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[#70787C] text-[11px] font-semibold uppercase tracking-wider">
+                Total Penawaran
               </Text>
+              <FileCheck size={14} color="#968363" />
             </View>
+            <Text className="text-[#1B2225] text-lg md:text-xl font-bold font-mono mt-1">
+              {stats.total}
+            </Text>
           </View>
 
-          <View className="w-1/2 md:w-1/4 px-2 mb-3">
-            <View className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-slate-400 text-xs">Potensi Nilai Penawaran</Text>
-                <Text className="text-amber-400 text-xs font-bold">Rp</Text>
-              </View>
-              <Text className="text-amber-400 text-base md:text-lg font-bold mt-1.5" numberOfLines={1}>
-                {formatRupiah(stats.totalValue)}
+          <View className="bg-white border border-[#E3DDCF] p-3 rounded-[3px] shadow-xs justify-between">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[#70787C] text-[11px] font-semibold uppercase tracking-wider">
+                Disetujui Klien
               </Text>
+              <CheckCircle2 size={14} color="#059669" />
             </View>
+            <Text className="text-emerald-800 text-lg md:text-xl font-bold font-mono mt-1">
+              {stats.approved}
+            </Text>
+          </View>
+
+          <View className="bg-white border border-[#E3DDCF] p-3 rounded-[3px] shadow-xs justify-between">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[#70787C] text-[11px] font-semibold uppercase tracking-wider">
+                Menunggu Respon
+              </Text>
+              <Clock size={14} color="#B45309" />
+            </View>
+            <Text className="text-[#968363] text-lg md:text-xl font-bold font-mono mt-1">
+              {stats.sent + stats.draft}
+            </Text>
+          </View>
+
+          <View className="bg-white border border-[#E3DDCF] p-3 rounded-[3px] shadow-xs justify-between">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[#70787C] text-[11px] font-semibold uppercase tracking-wider">
+                Potensi Nilai
+              </Text>
+              <Text className="text-[#968363] text-[10px] font-bold font-mono">RAB</Text>
+            </View>
+            <Text className="text-[#1B2225] text-base md:text-lg font-bold font-mono mt-1" numberOfLines={1}>
+              {formatRupiah(stats.totalValue)}
+            </Text>
           </View>
         </View>
 
         {/* SEARCH & FILTER TABS */}
-        <View className="flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+        <View className="flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3">
           {/* Search Bar */}
-          <View className="flex-1 flex-row items-center bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
-            <Search size={16} color="#64748B" />
+          <View className="flex-1 flex-row items-center bg-white border border-[#DDD6C8] rounded-[3px] px-3 py-1.5">
+            <Search size={14} color="#8A9296" />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              className="flex-1 text-white text-xs md:text-sm ml-2.5 p-0"
+              className="flex-1 text-[#1B2225] text-xs ml-2 p-0"
               placeholder="Cari nomor surat, nama klien, atau judul proyek..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#8A9296"
             />
             {searchQuery ? (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Text className="text-slate-500 text-xs">✕</Text>
+                <Text className="text-[#8A9296] text-xs">✕</Text>
               </Pressable>
             ) : null}
           </View>
@@ -430,15 +434,15 @@ export default function QuotationsScreen() {
                 <Pressable
                   key={tab.id}
                   onPress={() => setActiveFilter(tab.id)}
-                  className={`px-3 py-2 rounded-xl border ${
+                  className={`px-3 py-1.5 rounded-[3px] border ${
                     active
-                      ? 'bg-blue-600/30 border-blue-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
+                      ? 'bg-[#1B2225] border-[#1B2225]'
+                      : 'bg-white border-[#DDD6C8] hover:bg-[#FAF8F5]'
                   }`}
                 >
                   <Text
                     className={`text-xs ${
-                      active ? 'text-blue-300 font-bold' : 'text-slate-400'
+                      active ? 'text-white font-bold' : 'text-[#4D555A] font-medium'
                     }`}
                   >
                     {tab.label}
@@ -451,9 +455,9 @@ export default function QuotationsScreen() {
 
         {/* LOADING INDICATOR SAAT REFRESH / DATA FETCH */}
         {isLoading && quotations.length > 0 && (
-          <View className="flex-row items-center justify-center py-2.5 px-4 bg-sky-950/40 border border-sky-800/40 rounded-xl mb-4">
-            <ActivityIndicator size="small" color="#38BDF8" />
-            <Text className="text-sky-300 text-xs ml-2 font-medium">
+          <View className="flex-row items-center justify-center py-2 px-3 bg-white border border-[#E3DDCF] rounded-[3px] mb-3">
+            <ActivityIndicator size="small" color="#968363" />
+            <Text className="text-[#70787C] text-xs ml-2 font-medium">
               Memperbarui data surat penawaran...
             </Text>
           </View>
@@ -461,17 +465,17 @@ export default function QuotationsScreen() {
 
         {/* LIST PENAWARAN */}
         {isLoading && quotations.length === 0 ? (
-          <View className="py-20 items-center justify-center">
-            <ActivityIndicator size="large" color="#38BDF8" />
-            <Text className="text-slate-400 text-xs mt-3">Memuat surat penawaran...</Text>
+          <View className="py-16 items-center justify-center bg-white border border-[#E3DDCF] rounded-[4px]">
+            <ActivityIndicator size="large" color="#968363" />
+            <Text className="text-[#70787C] text-xs mt-3">Memuat surat penawaran...</Text>
           </View>
         ) : filteredQuotations.length === 0 ? (
-          <View className="py-20 items-center justify-center bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-6 text-center">
-            <FileText size={42} color="#475569" />
-            <Text className="text-white font-bold text-sm mt-3">
+          <View className="py-16 items-center justify-center bg-white border border-dashed border-[#DDD6C8] rounded-[4px] p-6 text-center">
+            <FileText size={36} color="#8A9296" />
+            <Text className="text-[#1B2225] font-bold text-sm mt-2.5">
               Belum Ada Surat Penawaran
             </Text>
-            <Text className="text-slate-400 text-xs mt-1 max-w-sm text-center">
+            <Text className="text-[#70787C] text-xs mt-1 max-w-sm text-center">
               {searchQuery || activeFilter !== 'all'
                 ? 'Tidak ditemukan surat penawaran dengan kriteria pencarian tersebut.'
                 : 'Buat surat penawaran resmi baru untuk klien Anda dengan format standar Alora Studio.'}
@@ -479,32 +483,32 @@ export default function QuotationsScreen() {
             {!(searchQuery || activeFilter !== 'all') && (
               <Pressable
                 onPress={handleOpenCreate}
-                className="mt-4 px-4 py-2 bg-blue-600 rounded-xl"
+                className="mt-3.5 px-4 py-2 bg-[#1B2225] rounded-[3px]"
               >
                 <Text className="text-white text-xs font-bold">+ Buat Sekarang</Text>
               </Pressable>
             )}
           </View>
         ) : (
-          <View className="flex-col space-y-3">
+          <View className="flex-col space-y-2.5">
             {paginatedQuotations.map((item) => {
               const badge = getStatusBadge(item.status);
               return (
                 <View
                   key={item.id}
-                  className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-5 hover:border-slate-700 transition"
+                  className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 shadow-xs hover:border-[#968363] transition"
                 >
                   {/* Row 1: Nomor Surat & Status Badge & Actions */}
                   <View className="flex-row items-center justify-between mb-2">
                     <View className="flex-row items-center flex-wrap gap-2">
-                      <View className="bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                        <Text className="text-sky-400 font-mono font-bold text-xs">
+                      <View className="bg-[#FAF8F5] px-2 py-0.5 rounded-[2px] border border-[#DDD6C8]">
+                        <Text className="text-[#968363] font-mono font-bold text-xs">
                           {item.quotation_no}
                         </Text>
                       </View>
 
                       <View
-                        className={`px-2.5 py-0.5 rounded-full border ${badge.bg}`}
+                        className={`px-2 py-0.5 rounded-[2px] border ${badge.bg}`}
                       >
                         <Text className={`text-[10px] font-bold ${badge.text}`}>
                           ● {badge.label}
@@ -514,36 +518,36 @@ export default function QuotationsScreen() {
 
                     {/* Menu Aksi Dropdown */}
                     <DropdownMenu
-                      buttonClassName="w-8 h-8 rounded-lg items-center justify-center bg-slate-950 border border-slate-800"
+                      buttonClassName="w-6 h-6 rounded-[2px] items-center justify-center bg-[#FAF8F5] border border-[#DDD6C8]"
                       items={[
                         {
                           label: 'Lihat Preview & PDF',
-                          icon: <Eye size={13} color="#38BDF8" />,
+                          icon: <Eye size={12} color="#968363" />,
                           onPress: () => handleOpenPreview(item),
                         },
                         {
                           label: 'Edit Surat Penawaran',
-                          icon: <Pencil size={13} color="#FBBF24" />,
+                          icon: <Pencil size={12} color="#B45309" />,
                           onPress: () => handleOpenEdit(item),
                         },
                         {
                           label: 'Ubah ke: Disetujui',
-                          icon: <CheckCircle2 size={13} color="#34D399" />,
+                          icon: <CheckCircle2 size={12} color="#059669" />,
                           onPress: () => handleUpdateStatus(item.id, 'approved'),
                         },
                         {
                           label: 'Ubah ke: Terkirim',
-                          icon: <Clock size={13} color="#38BDF8" />,
+                          icon: <Clock size={12} color="#0284C7" />,
                           onPress: () => handleUpdateStatus(item.id, 'sent'),
                         },
                         {
                           label: 'Ubah ke: Ditolak',
-                          icon: <XCircle size={13} color="#F87171" />,
+                          icon: <XCircle size={12} color="#9E2A2B" />,
                           onPress: () => handleUpdateStatus(item.id, 'rejected'),
                         },
                         {
                           label: 'Hapus Surat Penawaran',
-                          icon: <Trash2 size={13} color="#F87171" />,
+                          icon: <Trash2 size={12} color="#9E2A2B" />,
                           destructive: true,
                           onPress: () => handleDelete(item.id, item.quotation_no),
                         },
@@ -552,41 +556,41 @@ export default function QuotationsScreen() {
                   </View>
 
                   {/* Row 2: Judul Proyek & Klien */}
-                  <View className="mb-3">
-                    <Text className="text-white font-bold text-base md:text-lg mb-1">
+                  <View className="mb-2.5">
+                    <Text className="text-[#1B2225] font-bold text-sm md:text-base mb-0.5">
                       {item.project_title}
                     </Text>
-                    <Text className="text-slate-400 text-xs">
-                      👤 Kepada Yth: <Text className="text-slate-200 font-medium">{item.client_name}</Text>
+                    <Text className="text-[#70787C] text-xs">
+                      👤 Kepada Yth: <Text className="text-[#1B2225] font-semibold">{item.client_name}</Text>
                       {item.client_city ? ` (${item.client_city})` : ''}
                       {item.client_phone ? ` • 📞 ${item.client_phone}` : ''}
                     </Text>
                   </View>
 
                   {/* Row 3: Nilai Penawaran & Spesifikasi Items Count */}
-                  <View className="bg-slate-950/80 border border-slate-800/80 p-3 rounded-xl flex-row items-center justify-between mb-3">
+                  <View className="bg-[#FAF8F5] border border-[#EDE7DC] p-2.5 rounded-[3px] flex-row items-center justify-between mb-2.5">
                     <View>
-                      <Text className="text-slate-400 text-[11px]">Nilai Total Penawaran:</Text>
-                      <Text className="text-emerald-400 font-black text-base md:text-lg">
+                      <Text className="text-[#70787C] text-[10px]">Nilai Total Penawaran:</Text>
+                      <Text className="text-emerald-800 font-bold text-base md:text-lg font-mono">
                         {formatRupiah(item.total_amount)}
                       </Text>
                     </View>
 
-                    <View className="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                      <Text className="text-slate-300 text-xs font-semibold">
+                    <View className="bg-white px-2 py-1 rounded-[2px] border border-[#DDD6C8]">
+                      <Text className="text-[#70787C] text-xs font-semibold font-mono">
                         {item.quotation_items?.length || 0} Item Spesifikasi
                       </Text>
                     </View>
                   </View>
 
                   {/* Row 4: Footer Info (Tanggal, Marketing & Quick Preview Button) */}
-                  <View className="flex-row items-center justify-between pt-2 border-t border-slate-800/80">
+                  <View className="flex-row items-center justify-between pt-2 border-t border-[#F2EDE4]">
                     <View className="flex-row items-center flex-wrap gap-2">
-                      <Text className="text-slate-500 text-[11px]">
+                      <Text className="text-[#70787C] text-[11px]">
                         📅 {formatIndonesianDate(item.issued_date)}
                       </Text>
-                      <Text className="text-slate-500 text-[11px]">•</Text>
-                      <Text className="text-sky-400 text-[11px]">
+                      <Text className="text-[#DDD6C8] text-[11px]">•</Text>
+                      <Text className="text-[#968363] text-[11px] font-semibold">
                         ✍️ {item.marketing_name || 'Marketing Alora'}
                       </Text>
                     </View>
@@ -595,10 +599,10 @@ export default function QuotationsScreen() {
                       <Pressable
                         onPress={() => handleOpenPreview(item)}
                         style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                        className="flex-row items-center bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 rounded-xl mr-2"
+                        className="flex-row items-center bg-[#FAF8F5] hover:bg-[#F2EDE4] border border-[#DDD6C8] px-2.5 py-1 rounded-[3px] mr-2"
                       >
-                        <Eye size={13} color="#38BDF8" />
-                        <Text className="text-sky-300 text-xs font-semibold ml-1">
+                        <Eye size={12} color="#968363" />
+                        <Text className="text-[#1B2225] text-xs font-semibold ml-1">
                           Preview & Cetak PDF
                         </Text>
                       </Pressable>
@@ -606,10 +610,10 @@ export default function QuotationsScreen() {
                       <Pressable
                         onPress={() => handleOpenEdit(item)}
                         style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                        className="flex-row items-center bg-slate-800 px-3 py-1.5 rounded-xl"
+                        className="flex-row items-center bg-[#1B2225] hover:bg-[#2C373C] px-2.5 py-1 rounded-[3px]"
                       >
-                        <Pencil size={12} color="#94A3B8" />
-                        <Text className="text-slate-300 text-xs font-semibold ml-1">Edit</Text>
+                        <Pencil size={11} color="#FFFFFF" />
+                        <Text className="text-white text-xs font-semibold ml-1">Edit</Text>
                       </Pressable>
                     </View>
                   </View>

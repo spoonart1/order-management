@@ -97,21 +97,15 @@ function SpecFieldWithDropdown({
   return (
     <View className="w-full md:w-1/4 px-1.5 mb-2.5">
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-slate-400 text-[11px] font-medium">{label}</Text>
-        {/* <Pressable
-          onPress={() => setDropdownOpen(true)}
-          className="flex-row items-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700"
-        >
-          <Text className="text-sky-400 text-[9px] font-semibold mr-0.5">▾ Dropdown</Text>
-        </Pressable> */}
+        <Text className="text-[#70787C] text-[11px] font-medium">{label}</Text>
       </View>
 
       <TextInput
         value={value}
         onChangeText={onChange}
-        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
+        className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-medium"
         placeholder={placeholder}
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#8A9296"
       />
 
       {/* Suggestion Chips */}
@@ -124,14 +118,16 @@ function SpecFieldWithDropdown({
             <Pressable
               key={opt}
               onPress={() => handleSelectOption(opt)}
-              className={`px-1.5 py-0.5 rounded border ${isSelected
-                ? 'bg-blue-600/30 border-blue-500'
-                : 'bg-slate-950/80 border-slate-800'
-                }`}
+              className={`px-1.5 py-0.5 rounded-[2px] border ${
+                isSelected
+                  ? 'bg-[#1B2225] border-[#1B2225]'
+                  : 'bg-white border-[#DDD6C8]'
+              }`}
             >
               <Text
-                className={`text-[10px] ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
-                  }`}
+                className={`text-[10px] ${
+                  isSelected ? 'text-white font-bold' : 'text-[#70787C]'
+                }`}
               >
                 {isSelected ? '✓ ' : '+ '}{opt}
               </Text>
@@ -154,14 +150,14 @@ function SpecFieldWithDropdown({
           >
             <Pressable
               onPress={(e) => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-4 shadow-2xl"
+              className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-sm rounded-[4px] p-4 shadow-2xl"
             >
-              <View className="flex-row items-center justify-between pb-2 mb-3 border-b border-slate-800">
-                <Text className="text-white font-bold text-sm">
+              <View className="flex-row items-center justify-between pb-2 mb-3 border-b border-[#E3DDCF]">
+                <Text className="text-[#1B2225] font-bold text-sm font-mono">
                   Pilih {label}
                 </Text>
                 <Pressable onPress={() => setDropdownOpen(false)}>
-                  <Text className="text-slate-400 text-xs">✕ Tutup</Text>
+                  <Text className="text-[#70787C] text-xs">✕ Tutup</Text>
                 </Pressable>
               </View>
 
@@ -174,21 +170,23 @@ function SpecFieldWithDropdown({
                     <Pressable
                       key={opt}
                       onPress={() => handleSelectOption(opt)}
-                      className={`p-3 rounded-xl border flex-row items-center justify-between mb-2 ${isSelected
-                        ? 'bg-blue-600/25 border-blue-500'
-                        : 'bg-slate-950 border-slate-800'
-                        }`}
+                      className={`p-2.5 rounded-[3px] border flex-row items-center justify-between mb-2 ${
+                        isSelected
+                          ? 'bg-[#1B2225] border-[#1B2225]'
+                          : 'bg-white border-[#DDD6C8]'
+                      }`}
                     >
                       <Text
-                        className={`text-xs ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-200'
-                          }`}
+                        className={`text-xs ${
+                          isSelected ? 'text-white font-bold' : 'text-[#1B2225]'
+                        }`}
                       >
                         {opt}
                       </Text>
                       {isSelected ? (
-                        <Text className="text-emerald-400 font-bold text-xs">✓ Dipilih</Text>
+                        <Text className="text-emerald-700 font-bold text-xs">✓ Dipilih</Text>
                       ) : (
-                        <Text className="text-slate-500 text-xs">+ Pilih</Text>
+                        <Text className="text-[#8A9296] text-xs">+ Pilih</Text>
                       )}
                     </Pressable>
                   );
@@ -197,7 +195,7 @@ function SpecFieldWithDropdown({
 
               <Pressable
                 onPress={() => setDropdownOpen(false)}
-                className="py-2.5 bg-blue-600 rounded-xl items-center shadow"
+                className="py-2 bg-[#1B2225] rounded-[3px] items-center shadow-xs"
               >
                 <Text className="text-white text-xs font-bold">Simpan / Selesai</Text>
               </Pressable>
@@ -653,71 +651,71 @@ export function QuotationFormModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/80 items-center justify-center p-2 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl h-[94%] flex-col overflow-hidden shadow-2xl">
+      <View className="flex-1 bg-black/60 items-center justify-center p-2 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] rounded-[4px] w-full max-w-5xl h-[94%] flex-col overflow-hidden shadow-2xl">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
             <View>
-              <Text className="text-white font-bold text-base md:text-lg">
+              <Text className="text-[#1B2225] font-bold font-mono text-base md:text-lg">
                 {quotation ? 'Edit Surat Penawaran' : 'Buat Surat Penawaran Baru'}
               </Text>
-              <Text className="text-slate-400 text-xs mt-0.5">
+              <Text className="text-[#70787C] text-xs mt-0.5">
                 Format standar resmi Alora Studio • Terhubung ke RAB & Spesifikasi
               </Text>
             </View>
 
             <Pressable
               onPress={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+              className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center"
             >
-              <X size={18} color="#94A3B8" />
+              <X size={15} color="#1B2225" />
             </Pressable>
           </View>
 
           {/* Form Content */}
           <ScrollView
-            className="flex-1 p-5 md:p-6"
+            className="flex-1 p-4 md:p-5"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
             {/* Error Message Box */}
             {errorMessage ? (
-              <View className="mb-5 p-3.5 bg-rose-950/80 border border-rose-500 rounded-xl">
-                <Text className="text-rose-200 text-xs font-semibold">⚠️ {errorMessage}</Text>
+              <View className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-[3px]">
+                <Text className="text-rose-700 text-xs font-semibold">⚠️ {errorMessage}</Text>
               </View>
             ) : null}
 
             {/* SEKSI 1: INFORMASI UMUM & SURAT */}
-            <View className="mb-6 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-4 rounded-[4px] shadow-xs">
+              <Text className="text-[#968363] font-bold text-xs uppercase font-mono tracking-wider mb-2.5">
                 1. INFORMASI SURAT & KLIEN
               </Text>
 
               <View className="flex-row flex-wrap -mx-2">
                 {/* No Surat */}
-                <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    No. Surat Penawaran <Text className="text-rose-400">*</Text>
+                <View className="w-full md:w-1/3 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                    No. Surat Penawaran <Text className="text-rose-600">*</Text>
                   </Text>
                   <TextInput
                     value={quotationNo}
                     onChangeText={setQuotationNo}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono"
                     placeholder="054/SP/APK/10/26"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Nama Klien dengan Auto-Search & Dropdown Board Cards */}
-                <View className="w-full md:w-1/3 px-2 mb-3 relative z-30">
+                <View className="w-full md:w-1/3 px-2 mb-2.5 relative z-30">
                   <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-slate-300 text-xs font-semibold">
-                      Nama Klien (Kepada Yth) <Text className="text-rose-400">*</Text>
+                    <Text className="text-[#1B2225] text-xs font-semibold">
+                      Nama Klien (Kepada Yth) <Text className="text-rose-600">*</Text>
                     </Text>
                     {isSearchingClient && (
                       <View className="flex-row items-center">
-                        <ActivityIndicator size="small" color="#38BDF8" style={{ transform: [{ scale: 0.7 }] }} />
-                        <Text className="text-sky-400 text-[10px] ml-1">Mencari...</Text>
+                        <ActivityIndicator size="small" color="#968363" style={{ transform: [{ scale: 0.7 }] }} />
+                        <Text className="text-[#968363] text-[10px] ml-1">Mencari...</Text>
                       </View>
                     )}
                   </View>
@@ -735,9 +733,9 @@ export function QuotationFormModal({
                           setShowClientDropdown(true);
                         }
                       }}
-                      className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs pr-8"
+                      className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs pr-8 font-medium"
                       placeholder="Ketik nama klien (auto search)..."
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor="#8A9296"
                     />
                     {clientName.trim().length > 0 && (
                       <Pressable
@@ -749,7 +747,7 @@ export function QuotationFormModal({
                         }}
                         className="absolute right-2.5 top-2.5"
                       >
-                        <X size={14} color="#94A3B8" />
+                        <X size={14} color="#8A9296" />
                       </Pressable>
                     )}
                   </View>
@@ -759,25 +757,25 @@ export function QuotationFormModal({
                     <View
                       style={{
                         position: 'absolute',
-                        top: 58,
+                        top: 54,
                         left: 8,
                         right: 8,
                         zIndex: 9999,
                         elevation: 10,
                       }}
-                      className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl"
+                      className="bg-white border border-[#DDD6C8] rounded-[4px] overflow-hidden shadow-xl"
                     >
-                      <View className="px-3 py-1.5 bg-slate-950 border-b border-slate-800 flex-row justify-between items-center">
-                        <Text className="text-[10px] text-sky-400 font-bold uppercase tracking-wider">
+                      <View className="px-3 py-1.5 bg-[#FAF8F5] border-b border-[#E3DDCF] flex-row justify-between items-center">
+                        <Text className="text-[10px] text-[#968363] font-bold font-mono uppercase tracking-wider">
                           Ditemukan di Order Boards
                         </Text>
                         <Pressable onPress={() => setShowClientDropdown(false)}>
-                          <Text className="text-slate-400 text-[10px]">Tutup ✕</Text>
+                          <Text className="text-[#70787C] text-[10px]">Tutup ✕</Text>
                         </Pressable>
                       </View>
 
                       <ScrollView
-                        style={{ maxHeight: 210 }}
+                        style={{ maxHeight: 200 }}
                         keyboardShouldPersistTaps="handled"
                         nestedScrollEnabled
                       >
@@ -785,28 +783,28 @@ export function QuotationFormModal({
                           <Pressable
                             key={item.id}
                             onPress={() => handleSelectClient(item)}
-                            style={({ pressed }) => [{ backgroundColor: pressed ? '#1E293B' : 'transparent' }]}
-                            className="p-2.5 border-b border-slate-800/80 active:bg-slate-800"
+                            style={({ pressed }) => [{ backgroundColor: pressed ? '#FAF8F5' : 'transparent' }]}
+                            className="p-2 border-b border-[#F2EDE4] hover:bg-[#FAF8F5]"
                           >
                             <View className="flex-row items-center justify-between">
                               <View className="flex-row items-center flex-1 mr-2">
-                                <View className="w-6 h-6 rounded-full bg-sky-950 items-center justify-center mr-2 border border-sky-800">
-                                  <User size={12} color="#38BDF8" />
+                                <View className="w-5 h-5 rounded-[2px] bg-[#FAF8F5] items-center justify-center mr-2 border border-[#DDD6C8]">
+                                  <User size={11} color="#1B2225" />
                                 </View>
                                 <View className="flex-1">
-                                  <Text className="text-white text-xs font-bold" numberOfLines={1}>
+                                  <Text className="text-[#1B2225] text-xs font-bold" numberOfLines={1}>
                                     {item.client_name}
                                   </Text>
-                                  <Text className="text-slate-400 text-[10px]" numberOfLines={1}>
+                                  <Text className="text-[#70787C] text-[10px]" numberOfLines={1}>
                                     Proyek: {item.title}
                                   </Text>
                                 </View>
                               </View>
 
                               {item.client_phone ? (
-                                <View className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 flex-row items-center">
-                                  <Phone size={9} color="#34D399" />
-                                  <Text className="text-emerald-400 text-[10px] font-medium ml-1">
+                                <View className="bg-[#FAF8F5] px-1.5 py-0.5 rounded-[2px] border border-[#DDD6C8] flex-row items-center">
+                                  <Phone size={8} color="#059669" />
+                                  <Text className="text-emerald-800 text-[9px] font-mono ml-1">
                                     {item.client_phone}
                                   </Text>
                                 </View>
@@ -816,8 +814,8 @@ export function QuotationFormModal({
                         ))}
                       </ScrollView>
 
-                      <View className="px-3 py-1 bg-slate-950/90">
-                        <Text className="text-slate-500 text-[9px] text-center">
+                      <View className="px-3 py-1 bg-[#FAF8F5]">
+                        <Text className="text-[#8A9296] text-[9px] text-center">
                           💡 Klik nama klien untuk auto-fill No. HP & Proyek
                         </Text>
                       </View>
@@ -826,9 +824,9 @@ export function QuotationFormModal({
 
                   {/* Badge Jika Terhubung ke Kartu Board */}
                   {selectedCardId && (
-                    <View className="flex-row items-center mt-1.5 bg-sky-950/60 border border-sky-800/80 px-2 py-1 rounded-lg">
-                      <Link size={11} color="#38BDF8" />
-                      <Text className="text-sky-300 text-[10px] ml-1 flex-1 font-medium" numberOfLines={1}>
+                    <View className="flex-row items-center mt-1 bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-1 rounded-[2px]">
+                      <Link size={10} color="#968363" />
+                      <Text className="text-[#1B2225] text-[10px] ml-1 flex-1 font-medium" numberOfLines={1}>
                         Terhubung: {selectedCardTitle || 'Order Board Card'}
                       </Text>
                       <Pressable
@@ -838,41 +836,41 @@ export function QuotationFormModal({
                         }}
                         className="ml-1 px-1"
                       >
-                        <Text className="text-slate-400 text-[10px]">✕</Text>
+                        <Text className="text-[#8A9296] text-[10px]">✕</Text>
                       </Pressable>
                     </View>
                   )}
                 </View>
 
                 {/* No HP Klien */}
-                <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                <View className="w-full md:w-1/3 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                     No. HP / WA Klien
                   </Text>
                   <TextInput
                     value={clientPhone}
                     onChangeText={(t) => setClientPhone(t.replace(/[^0-9]/g, ''))}
                     keyboardType="phone-pad"
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono"
                     placeholder="Contoh: 081234567890"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Kota Klien */}
-                <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">Kota Klien</Text>
+                <View className="w-full md:w-1/3 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">Kota Klien</Text>
                   <TextInput
                     value={clientCity}
                     onChangeText={setClientCity}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs"
                     placeholder="Yogyakarta"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Tanggal Terbit Surat Penawaran */}
-                <View className="w-full md:w-1/3 px-2 mb-3">
+                <View className="w-full md:w-1/3 px-2 mb-2.5">
                   <DatePickerField
                     label="Tanggal Surat"
                     required
@@ -883,80 +881,80 @@ export function QuotationFormModal({
                 </View>
 
                 {/* Judul Proyek */}
-                <View className="w-full md:w-2/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    Judul Pekerjaan / Proyek <Text className="text-rose-400">*</Text>
+                <View className="w-full md:w-2/3 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                    Judul Pekerjaan / Proyek <Text className="text-rose-600">*</Text>
                   </Text>
                   <TextInput
                     value={projectTitle}
                     onChangeText={setProjectTitle}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-medium"
                     placeholder="Contoh: Interior Kamar Utama & Kitchen Set"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
               </View>
             </View>
 
             {/* SEKSI 2: KETENTUAN, DURASI & MARKETING SIGNATURE */}
-            <View className="mb-6 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-4 rounded-[4px] shadow-xs">
+              <Text className="text-[#968363] font-bold text-xs uppercase font-mono tracking-wider mb-2.5">
                 2. SYARAT, DURASI & PENANDATANGAN
               </Text>
 
               <View className="flex-row flex-wrap -mx-2">
                 {/* Waktu Pengerjaan */}
-                <View className="w-1/2 md:w-1/4 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                <View className="w-1/2 md:w-1/4 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                     Durasi Pengerjaan (Hari Kerja)
                   </Text>
                   <TextInput
                     value={workDuration}
                     onChangeText={(t) => setWorkDuration(t.replace(/[^0-9]/g, ''))}
                     keyboardType="numeric"
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono"
                     placeholder="20"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Masa Berlaku */}
-                <View className="w-1/2 md:w-1/4 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                <View className="w-1/2 md:w-1/4 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                     Masa Berlaku (Hari Kalender)
                   </Text>
                   <TextInput
                     value={validityDays}
                     onChangeText={(t) => setValidityDays(t.replace(/[^0-9]/g, ''))}
                     keyboardType="numeric"
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono"
                     placeholder="20"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
                 </View>
 
                 {/* Signature Marketing */}
-                <View className="w-full md:w-2/4 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
+                <View className="w-full md:w-2/4 px-2 mb-2.5">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                     Nama Marketing (Penanda Tangan Surat)
                   </Text>
                   <TextInput
                     value={marketingName}
                     onChangeText={setMarketingName}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                    className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs"
                     placeholder="Marketing Alora"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#8A9296"
                   />
-                  <Text className="text-slate-500 text-[10px] mt-1">
+                  <Text className="text-[#8A9296] text-[10px] mt-0.5">
                     Jabatan resmi otomatis tercetak sebagai: Marketing Alora
                   </Text>
                 </View>
               </View>
 
               {/* Status Surat */}
-              <View className="mt-2">
-                <Text className="text-slate-300 text-xs font-semibold mb-2">Status Dokumen:</Text>
-                <View className="flex-row flex-wrap gap-2">
+              <View className="mt-1">
+                <Text className="text-[#1B2225] text-xs font-semibold mb-1.5">Status Dokumen:</Text>
+                <View className="flex-row flex-wrap gap-1.5">
                   {(['draft', 'sent', 'approved', 'rejected'] as const).map((st) => {
                     const isSelected = status === st;
                     const labels: Record<string, string> = {
@@ -969,14 +967,16 @@ export function QuotationFormModal({
                       <Pressable
                         key={st}
                         onPress={() => setStatus(st)}
-                        className={`px-3 py-1.5 rounded-lg border ${isSelected
-                          ? 'bg-blue-600/30 border-blue-500'
-                          : 'bg-slate-900 border-slate-700'
-                          }`}
+                        className={`px-3 py-1 rounded-[3px] border ${
+                          isSelected
+                            ? 'bg-[#1B2225] border-[#1B2225]'
+                            : 'bg-white border-[#DDD6C8]'
+                        }`}
                       >
                         <Text
-                          className={`text-xs ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
-                            }`}
+                          className={`text-xs ${
+                            isSelected ? 'text-white font-bold' : 'text-[#4D555A]'
+                          }`}
                         >
                           {labels[st]}
                         </Text>
@@ -988,13 +988,13 @@ export function QuotationFormModal({
             </View>
 
             {/* SEKSI 3: RINCIAN PENAWARAN & SPESIFIKASI */}
-            <View className="mb-6 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <View className="flex-row items-center justify-between mb-4">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-4 rounded-[4px] shadow-xs">
+              <View className="flex-row items-center justify-between mb-3">
                 <View>
-                  <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+                  <Text className="text-[#968363] font-bold text-xs uppercase font-mono tracking-wider">
                     3. RINCIAN PENAWARAN & SPESIFIKASI
                   </Text>
-                  <Text className="text-slate-400 text-[11px] mt-0.5">
+                  <Text className="text-[#70787C] text-[11px] mt-0.5">
                     Pilih jenis item (Kitchen Set / Lainnya) dan tentukan spesifikasi teknis
                   </Text>
                 </View>
@@ -1002,18 +1002,18 @@ export function QuotationFormModal({
                 <View className="flex-row items-center">
                   <Pressable
                     onPress={() => handleAddItem('kitchen_set')}
-                    className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3 py-1.5 rounded-xl mr-2"
+                    className="flex-row items-center bg-[#1B2225] px-2.5 py-1.5 rounded-[3px] mr-2 shadow-xs"
                   >
-                    <Plus size={13} color="#38BDF8" />
-                    <Text className="text-sky-300 text-xs font-semibold ml-1">Kitchen Set</Text>
+                    <Plus size={12} color="#FFFFFF" />
+                    <Text className="text-white text-xs font-semibold ml-1">Kitchen Set</Text>
                   </Pressable>
 
                   <Pressable
                     onPress={() => handleAddItem('other')}
-                    className="flex-row items-center bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl"
+                    className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2.5 py-1.5 rounded-[3px]"
                   >
-                    <Plus size={13} color="#CBD5E1" />
-                    <Text className="text-slate-300 text-xs font-semibold ml-1">Lainnya</Text>
+                    <Plus size={12} color="#1B2225" />
+                    <Text className="text-[#1B2225] text-xs font-semibold ml-1">Lainnya</Text>
                   </Pressable>
                 </View>
               </View>
@@ -1022,27 +1022,29 @@ export function QuotationFormModal({
               {items.map((item, index) => (
                 <View
                   key={index}
-                  className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl mb-3.5 relative"
+                  className="bg-[#FAF8F5] border border-[#DDD6C8] p-3 rounded-[3px] mb-3 relative"
                 >
                   {/* Item Header, Jenis Item Selector & Delete */}
-                  <View className="flex-row flex-wrap items-center justify-between mb-3 pb-2.5 border-b border-slate-800 gap-2">
+                  <View className="flex-row flex-wrap items-center justify-between mb-2.5 pb-2 border-b border-[#E3DDCF] gap-2">
                     <View className="flex-row items-center flex-wrap gap-2">
-                      <Text className="text-amber-400 font-bold text-xs">
+                      <Text className="text-[#968363] font-bold text-xs font-mono">
                         Item #{item.item_no}
                       </Text>
 
                       {/* Selector Jenis Item: Kitchen Set vs Lainnya */}
-                      <View className="flex-row bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                      <View className="flex-row bg-white p-0.5 rounded-[2px] border border-[#DDD6C8]">
                         <Pressable
                           onPress={() => handleToggleItemType(index, 'kitchen_set')}
-                          className={`px-2.5 py-1 rounded-md flex-row items-center ${item.item_type === 'kitchen_set'
-                            ? 'bg-blue-600 shadow'
-                            : 'bg-transparent'
-                            }`}
+                          className={`px-2 py-0.5 rounded-[2px] flex-row items-center ${
+                            item.item_type === 'kitchen_set'
+                              ? 'bg-[#1B2225]'
+                              : 'bg-transparent'
+                          }`}
                         >
                           <Text
-                            className={`text-[10px] font-bold ${item.item_type === 'kitchen_set' ? 'text-white' : 'text-slate-400'
-                              }`}
+                            className={`text-[10px] font-bold ${
+                              item.item_type === 'kitchen_set' ? 'text-white' : 'text-[#70787C]'
+                            }`}
                           >
                             🍳 Kitchen Set
                           </Text>
@@ -1050,14 +1052,16 @@ export function QuotationFormModal({
 
                         <Pressable
                           onPress={() => handleToggleItemType(index, 'other')}
-                          className={`px-2.5 py-1 rounded-md flex-row items-center ${item.item_type === 'other'
-                            ? 'bg-blue-600 shadow'
-                            : 'bg-transparent'
-                            }`}
+                          className={`px-2 py-0.5 rounded-[2px] flex-row items-center ${
+                            item.item_type === 'other'
+                              ? 'bg-[#1B2225]'
+                              : 'bg-transparent'
+                          }`}
                         >
                           <Text
-                            className={`text-[10px] font-bold ${item.item_type === 'other' ? 'text-white' : 'text-slate-400'
-                              }`}
+                            className={`text-[10px] font-bold ${
+                              item.item_type === 'other' ? 'text-white' : 'text-[#70787C]'
+                            }`}
                           >
                             📦 Lainnya
                           </Text>
@@ -1068,41 +1072,41 @@ export function QuotationFormModal({
                     {items.length > 1 && (
                       <Pressable
                         onPress={() => handleRemoveItem(index)}
-                        className="flex-row items-center bg-rose-950/60 border border-rose-800/60 px-2.5 py-1 rounded-lg"
+                        className="flex-row items-center bg-[#FFF1F2] border border-[#FECDD3] px-2 py-0.5 rounded-[2px]"
                       >
-                        <Trash2 size={12} color="#F87171" />
-                        <Text className="text-rose-400 text-[11px] font-medium ml-1">Hapus</Text>
+                        <Trash2 size={11} color="#9E2A2B" />
+                        <Text className="text-[#9E2A2B] text-[11px] font-medium ml-1">Hapus</Text>
                       </Pressable>
                     )}
                   </View>
 
                   {/* Deskripsi Pekerjaan */}
-                  <View className="mb-3">
-                    <Text className="text-slate-300 text-xs font-semibold mb-1">
-                      Deskripsi Pekerjaan <Text className="text-rose-400">*</Text>
+                  <View className="mb-2.5">
+                    <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                      Deskripsi Pekerjaan <Text className="text-rose-600">*</Text>
                     </Text>
                     <TextInput
                       value={item.description}
                       onChangeText={(t) => handleUpdateItem(index, 'description', t)}
-                      className="bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                      className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs"
                       placeholder={
                         item.item_type === 'kitchen_set'
                           ? 'Contoh: KABINET ATAS & PINTU FRAME / KABINET BAWAH'
                           : 'Contoh: Downlight, LED Strip, Rak Piring, Rak Bumbu'
                       }
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor="#8A9296"
                     />
                   </View>
 
                   {/* Spesifikasi Teknis: Hanya muncul jika item_type === 'kitchen_set' */}
                   {item.item_type === 'kitchen_set' ? (
-                    <View className="mb-3 bg-slate-950/80 border border-slate-800/80 p-3 rounded-xl">
-                      <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-sky-400 text-[10px] font-bold uppercase tracking-wider">
+                    <View className="mb-2.5 bg-white border border-[#E3DDCF] p-2.5 rounded-[3px]">
+                      <View className="flex-row items-center justify-between mb-1.5">
+                        <Text className="text-[#968363] text-[10px] font-bold uppercase font-mono tracking-wider">
                           Spesifikasi Teknis Kitchen Set
                         </Text>
-                        <Text className="text-slate-500 text-[9px]">
-                          Pilih chip atau tombol dropdown untuk mengisi opsi
+                        <Text className="text-[#8A9296] text-[9px]">
+                          Pilih chip opsi untuk mengisi data
                         </Text>
                       </View>
 
@@ -1137,80 +1141,81 @@ export function QuotationFormModal({
 
                         {/* Dimensi */}
                         <View className="w-full md:w-1/4 px-1.5 mb-2.5">
-                          <Text className="text-slate-400 text-[11px] font-medium mb-1">Dimensi</Text>
+                          <Text className="text-[#70787C] text-[11px] font-medium mb-1">Dimensi</Text>
                           <TextInput
                             value={item.dimensions || ''}
                             onChangeText={(t) => handleUpdateItem(index, 'dimensions', t)}
-                            className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs"
+                            className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs font-mono"
                             placeholder="1,44 m / P 240 x L 60 x T 220 cm"
-                            placeholderTextColor="#64748B"
+                            placeholderTextColor="#8A9296"
                           />
                         </View>
                       </View>
                     </View>
                   ) : (
-                    <View className="mb-3 px-3 py-2 bg-slate-950/50 border border-dashed border-slate-800 rounded-xl">
-                      <Text className="text-slate-500 text-[10px]">
-                        ℹ️ Item Lainnya: Kolom spesifikasi (Bahan, Finishing, Aksesoris, Dimensi) disembunyikan.
+                    <View className="mb-2.5 px-2.5 py-1.5 bg-white border border-dashed border-[#DDD6C8] rounded-[3px]">
+                      <Text className="text-[#8A9296] text-[10px]">
+                        ℹ️ Item Lainnya: Kolom spesifikasi teknis disembunyikan.
                       </Text>
                     </View>
                   )}
 
                   {/* Volume, Satuan, Harga Satuan & Subtotal Item */}
-                  <View className="flex-row flex-wrap items-center -mx-1.5 pt-2 border-t border-slate-800/80">
+                  <View className="flex-row flex-wrap items-center -mx-1.5 pt-2 border-t border-[#E3DDCF]">
                     <View className="w-1/4 px-1.5">
-                      <Text className="text-slate-400 text-[11px] mb-1">Volume</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Volume</Text>
                       <TextInput
                         value={String(item.quantity || '')}
                         onChangeText={(t) =>
                           handleUpdateItem(index, 'quantity', t.replace(/[^0-9.]/g, ''))
                         }
                         keyboardType="numeric"
-                        className="bg-slate-950 border border-slate-800 text-white p-2 rounded-xl text-xs text-center font-bold"
+                        className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs text-center font-bold font-mono"
                         placeholder="1"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     {/* Satuan: SET & locked khusus Kitchen Set */}
                     <View className="w-1/4 px-1.5">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-slate-400 text-[11px]">Satuan</Text>
+                        <Text className="text-[#70787C] text-[11px]">Satuan</Text>
                         {item.item_type === 'kitchen_set' && (
-                          <Text className="text-amber-400 text-[9px] font-bold">🔒 Terkunci</Text>
+                          <Text className="text-[#968363] text-[9px] font-bold">🔒 Kunci</Text>
                         )}
                       </View>
                       <TextInput
                         value={item.item_type === 'kitchen_set' ? 'SET' : item.unit}
                         editable={item.item_type !== 'kitchen_set'}
                         onChangeText={(t) => handleUpdateItem(index, 'unit', t)}
-                        className={`border text-xs text-center font-semibold p-2 rounded-xl ${item.item_type === 'kitchen_set'
-                          ? 'bg-slate-900 border-slate-800 text-slate-400 opacity-90'
-                          : 'bg-slate-950 border-slate-800 text-white'
-                          }`}
+                        className={`border text-xs text-center font-semibold p-2 rounded-[3px] ${
+                          item.item_type === 'kitchen_set'
+                            ? 'bg-[#FAF8F5] border-[#DDD6C8] text-[#70787C]'
+                            : 'bg-white border-[#DDD6C8] text-[#1B2225]'
+                        }`}
                         placeholder="SET / PCS / M1"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     <View className="w-2/4 px-1.5">
-                      <Text className="text-slate-400 text-[11px] mb-1">Harga Satuan (Rp)</Text>
+                      <Text className="text-[#70787C] text-[11px] mb-1">Harga Satuan (Rp)</Text>
                       <TextInput
                         value={String(item.unit_price || '')}
                         onChangeText={(t) =>
                           handleUpdateItem(index, 'unit_price', t.replace(/[^0-9]/g, ''))
                         }
                         keyboardType="numeric"
-                        className="bg-slate-950 border border-slate-800 text-emerald-400 p-2 rounded-xl text-xs font-bold"
+                        className="bg-white border border-[#DDD6C8] text-emerald-800 p-2 rounded-[3px] text-xs font-bold font-mono"
                         placeholder="0"
-                        placeholderTextColor="#64748B"
+                        placeholderTextColor="#8A9296"
                       />
                     </View>
 
                     {/* Total Harga Item */}
-                    <View className="w-full px-1.5 mt-2 flex-row justify-between items-center bg-slate-950/70 p-2 rounded-lg">
-                      <Text className="text-slate-400 text-[11px]">Jumlah Harga Item #{item.item_no}:</Text>
-                      <Text className="text-emerald-400 font-bold text-xs">
+                    <View className="w-full px-1.5 mt-2 flex-row justify-between items-center bg-white border border-[#DDD6C8] p-2 rounded-[2px]">
+                      <Text className="text-[#70787C] text-[11px]">Jumlah Harga Item #{item.item_no}:</Text>
+                      <Text className="text-emerald-800 font-bold text-xs font-mono">
                         {formatRupiah(item.amount)}
                       </Text>
                     </View>
@@ -1222,40 +1227,40 @@ export function QuotationFormModal({
               <View className="flex-row items-center justify-start mt-1 mb-2">
                 <Pressable
                   onPress={() => handleAddItem('kitchen_set')}
-                  className="flex-row items-center bg-blue-600/25 border border-blue-500/50 px-3.5 py-2 rounded-xl mr-2.5 shadow-sm"
+                  className="flex-row items-center bg-[#1B2225] px-3 py-1.5 rounded-[3px] mr-2 shadow-xs"
                 >
-                  <Plus size={14} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold ml-1.5">Kitchen Set</Text>
+                  <Plus size={12} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-semibold ml-1.5">Kitchen Set</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => handleAddItem('other')}
-                  className="flex-row items-center bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl shadow-sm"
+                  className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-3 py-1.5 rounded-[3px]"
                 >
-                  <Plus size={14} color="#CBD5E1" />
-                  <Text className="text-slate-300 text-xs font-semibold ml-1.5">Lainnya</Text>
+                  <Plus size={12} color="#1B2225" />
+                  <Text className="text-[#1B2225] text-xs font-semibold ml-1.5">Lainnya</Text>
                 </Pressable>
               </View>
 
               {/* Total & Terbilang Ringkasan Box */}
-              <View className="mt-4 p-4 rounded-xl bg-slate-900 border border-emerald-900/60 shadow-lg">
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="text-slate-300 font-bold text-xs uppercase">
+              <View className="mt-3.5 p-3.5 rounded-[3px] bg-[#1B2225] border border-[#1B2225] shadow-xs">
+                <View className="flex-row justify-between items-center mb-0.5">
+                  <Text className="text-[#DDD6C8] font-bold text-xs uppercase font-mono tracking-wider">
                     TOTAL NILAI PENAWARAN:
                   </Text>
-                  <Text className="text-emerald-400 font-black text-lg">
+                  <Text className="text-emerald-400 font-black text-lg font-mono">
                     {formatRupiah(subtotal)}
                   </Text>
                 </View>
-                <Text className="text-slate-400 text-xs italic">
+                <Text className="text-[#A0A7AB] text-[11px] italic">
                   "{terbilangText}"
                 </Text>
               </View>
             </View>
 
             {/* SEKSI 4: CATATAN TAMBAHAN */}
-            <View className="mb-6 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-4 rounded-[4px] shadow-xs">
+              <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                 Catatan Internal / Keterangan Khusus (Opsional)
               </Text>
               <TextInput
@@ -1263,22 +1268,22 @@ export function QuotationFormModal({
                 onChangeText={setNotes}
                 multiline
                 numberOfLines={2}
-                className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
+                className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2 rounded-[3px] text-xs"
                 placeholder="Catatan tambahan untuk tim Alora Studio..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#8A9296"
               />
             </View>
           </ScrollView>
 
           {/* Footer Actions */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-between px-5 py-3 border-t border-[#E3DDCF] bg-white">
             {onPreview ? (
               <Pressable
                 onPress={handleOpenPreview}
                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700"
+                className="px-3.5 py-1.5 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8]"
               >
-                <Text className="text-sky-300 font-semibold text-xs">👁️ Preview PDF</Text>
+                <Text className="text-[#1B2225] font-semibold text-xs">👁️ Preview PDF</Text>
               </Pressable>
             ) : (
               <View />
@@ -1288,16 +1293,16 @@ export function QuotationFormModal({
               <Pressable
                 onPress={onClose}
                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 mr-2"
+                className="px-3.5 py-1.5 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] mr-2"
               >
-                <Text className="text-slate-300 font-semibold text-xs">Batal</Text>
+                <Text className="text-[#1B2225] font-semibold text-xs">Batal</Text>
               </Pressable>
 
               <Pressable
                 onPress={handleSubmit}
                 disabled={saving}
                 style={({ pressed }) => [{ opacity: pressed || saving ? 0.8 : 1 }]}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 items-center justify-center shadow-lg"
+                className="px-4 py-1.5 rounded-[3px] bg-[#1B2225] hover:bg-[#2C373C] items-center justify-center shadow-xs"
               >
                 {saving ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />

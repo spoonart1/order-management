@@ -71,15 +71,15 @@ export function QuotationPreviewModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/80 items-center justify-center p-3 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl h-[90%] flex-col overflow-hidden shadow-2xl">
+      <View className="flex-1 bg-black/60 items-center justify-center p-3 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] rounded-[4px] w-full max-w-4xl h-[90%] flex-col overflow-hidden shadow-2xl">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
             <View>
-              <Text className="text-white font-bold text-base">
+              <Text className="text-[#1B2225] font-bold font-mono text-base">
                 Preview Surat Penawaran
               </Text>
-              <Text className="text-slate-400 text-xs">
+              <Text className="text-[#70787C] text-xs">
                 No: {quotation.quotation_no} • {quotation.project_title}
               </Text>
             </View>
@@ -90,10 +90,10 @@ export function QuotationPreviewModal({
                 onPress={handlePrint}
                 disabled={loading}
                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                className="flex-row items-center bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 mr-2"
+                className="flex-row items-center bg-[#FAF8F5] px-3 py-1.5 rounded-[3px] border border-[#DDD6C8] mr-2"
               >
-                <Printer size={15} color="#38BDF8" />
-                <Text className="text-sky-300 text-xs font-semibold ml-1.5">
+                <Printer size={13} color="#968363" />
+                <Text className="text-[#1B2225] text-xs font-semibold ml-1.5">
                   Cetak / Print
                 </Text>
               </Pressable>
@@ -103,13 +103,13 @@ export function QuotationPreviewModal({
                 onPress={handleShare}
                 disabled={loading}
                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                className="flex-row items-center bg-blue-600 px-3.5 py-2 rounded-xl shadow-md mr-2"
+                className="flex-row items-center bg-[#1B2225] hover:bg-[#2C373C] px-3.5 py-1.5 rounded-[3px] shadow-xs mr-2"
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <Share2 size={15} color="#FFFFFF" />
+                    <Share2 size={13} color="#FFFFFF" />
                     <Text className="text-white text-xs font-semibold ml-1.5">
                       {Platform.OS === 'web' ? 'Simpan PDF' : 'Bagikan PDF'}
                     </Text>
@@ -120,18 +120,18 @@ export function QuotationPreviewModal({
               {/* Tombol Tutup */}
               <Pressable
                 onPress={onClose}
-                className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+                className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center"
               >
-                <X size={18} color="#94A3B8" />
+                <X size={15} color="#1B2225" />
               </Pressable>
             </View>
           </View>
 
           {/* Body Konten */}
-          <View className="flex-1 bg-slate-950/60 p-4">
+          <View className="flex-1 bg-[#F8F6F1] p-3 md:p-4">
             {Platform.OS === 'web' ? (
               // Di Web: render iframe interaktif dengan A4 styling
-              <View className="w-full h-full bg-white rounded-xl overflow-hidden shadow-inner">
+              <View className="w-full h-full bg-white rounded-[3px] overflow-hidden border border-[#DDD6C8] shadow-sm">
                 {React.createElement('iframe', {
                   ref: iframeRef,
                   id: 'quotation-preview-iframe',
@@ -147,66 +147,66 @@ export function QuotationPreviewModal({
             ) : (
               // Di Native (Mobile): ringkasan dokumen informatif & tombol aksi cepat
               <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                <View className="bg-slate-900 border border-slate-800 p-5 rounded-xl mb-4">
-                  <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-800">
-                    <Text className="text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <View className="bg-white border border-[#E3DDCF] p-4 rounded-[4px] mb-3 shadow-xs">
+                  <View className="flex-row justify-between items-center mb-2.5 pb-2 border-b border-[#F0EBE1]">
+                    <Text className="text-[#968363] font-bold text-xs uppercase font-mono tracking-wider">
                       ALORA STUDIO INDONESIA
                     </Text>
-                    <Text className="text-slate-400 text-xs">
+                    <Text className="text-[#70787C] text-xs">
                       {formatIndonesianDate(quotation.issued_date)}
                     </Text>
                   </View>
 
-                  <Text className="text-white font-bold text-lg mb-1">
+                  <Text className="text-[#1B2225] font-bold text-base mb-0.5">
                     {quotation.project_title}
                   </Text>
-                  <Text className="text-slate-300 text-xs mb-3">
+                  <Text className="text-[#70787C] text-xs mb-3">
                     Klien: {quotation.client_name} ({quotation.client_city})
                   </Text>
 
-                  <View className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 mb-4">
-                    <Text className="text-slate-400 text-xs">Total Penawaran:</Text>
-                    <Text className="text-emerald-400 font-black text-xl mt-0.5">
+                  <View className="bg-[#FAF8F5] p-3 rounded-[3px] border border-[#EDE7DC] mb-3">
+                    <Text className="text-[#70787C] text-[10px]">Total Penawaran:</Text>
+                    <Text className="text-emerald-800 font-bold text-lg font-mono mt-0.5">
                       {formatRupiah(quotation.total_amount)}
                     </Text>
-                    <Text className="text-slate-400 text-[11px] italic mt-1">
+                    <Text className="text-[#8A9296] text-[11px] italic mt-0.5">
                       "{quotation.terbilang}"
                     </Text>
                   </View>
 
-                  <Text className="text-slate-400 text-xs font-semibold mb-2">
+                  <Text className="text-[#1B2225] text-xs font-semibold mb-2">
                     Rincian Item ({quotation.quotation_items?.length || 0} item):
                   </Text>
                   {quotation.quotation_items?.map((it, idx) => (
                     <View
                       key={it.id || idx}
-                      className="py-2.5 border-b border-slate-800/80 flex-row justify-between items-center"
+                      className="py-2 border-b border-[#F2EDE4] flex-row justify-between items-center"
                     >
                       <View className="flex-1 mr-3">
-                        <Text className="text-white text-xs font-medium">
+                        <Text className="text-[#1B2225] text-xs font-medium">
                           {idx + 1}. {it.description}
                         </Text>
-                        <Text className="text-slate-400 text-[10px]">
+                        <Text className="text-[#70787C] text-[10px]">
                           {it.quantity} {it.unit} @ {formatRupiah(it.unit_price)}
                         </Text>
                       </View>
-                      <Text className="text-slate-200 font-semibold text-xs">
+                      <Text className="text-[#1B2225] font-semibold text-xs font-mono">
                         {formatRupiah(it.amount)}
                       </Text>
                     </View>
                   ))}
 
-                  <View className="mt-4 pt-3 border-t border-slate-800 flex-row justify-between items-center">
-                    <Text className="text-slate-400 text-xs">Marketing PIC:</Text>
-                    <Text className="text-sky-400 font-semibold text-xs">
+                  <View className="mt-3 pt-2.5 border-t border-[#F0EBE1] flex-row justify-between items-center">
+                    <Text className="text-[#70787C] text-xs">Marketing PIC:</Text>
+                    <Text className="text-[#968363] font-semibold text-xs">
                       {quotation.marketing_name || 'Marketing Alora'}
                     </Text>
                   </View>
                 </View>
 
-                <View className="bg-blue-950/40 border border-blue-900/60 p-4 rounded-xl flex-row items-center mb-6">
-                  <Text className="text-blue-300 text-xs flex-1">
-                    💡 Dokumen siap dicetak dalam format resmi 2 Halaman A4 standar Alora Studio. Gunakan tombol Cetak atau Bagikan di atas.
+                <View className="bg-white border border-[#DDD6C8] p-3 rounded-[3px] flex-row items-center mb-4">
+                  <Text className="text-[#70787C] text-xs flex-1">
+                    💡 Dokumen siap dicetak dalam format resmi 2 Halaman A4 standar Alora Studio. Gunakan tombol Cetak atau Simpan PDF di atas.
                   </Text>
                 </View>
               </ScrollView>
