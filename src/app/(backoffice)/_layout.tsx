@@ -50,6 +50,14 @@ export default function BackofficeLayout() {
                     title: "ALORA STUDIO - Surat Penawaran",
                 }}
             />
+
+            <Drawer.Screen
+                name="invoices"
+                options={{
+                    drawerLabel: "Invoice & Tagihan",
+                    title: "ALORA STUDIO - Invoice & Tagihan",
+                }}
+            />
         </Drawer>
     );
 }
