@@ -1,4 +1,5 @@
 import { Drawer } from 'expo-router/drawer';
+import { Image, View } from 'react-native';
 import { useAppSelector } from '../../store/hooks';
 
 export default function BackofficeLayout() {
@@ -24,6 +25,28 @@ export default function BackofficeLayout() {
                     backgroundColor: '#0F172A',
                 },
                 headerTintColor: '#F8FAFC',
+                headerRight: () => (
+                    <View style={{ marginRight: 16 }}>
+                        <View
+                            style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 8,
+                                backgroundColor: '#FFFFFF',
+                                padding: 2,
+                                overflow: 'hidden',
+                                borderWidth: 1,
+                                borderColor: '#334155',
+                            }}
+                        >
+                            <Image
+                                source={require('../../../assets/images/logo.png')}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode="contain"
+                            />
+                        </View>
+                    </View>
+                ),
             }}
         >
             {/* Rute ke dashboard.tsx */}

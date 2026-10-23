@@ -34,6 +34,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -301,35 +302,47 @@ export default function DashboardScreen() {
           />
         }
       >
-      {/* 1. HEADER SECTION (GREETING & REFRESH) */}
-      <View className="flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
-        <View>
-          <Text className="text-white font-extrabold text-xl md:text-2xl">
-            Selamat Datang, {profile?.full_name || 'Staff Alora'} 👋
-          </Text>
-          <Text className="text-slate-400 text-xs md:text-sm mt-1">
-            Ringkasan Eksekutif Operasional, Finansial & Proyek Alora Studio
-          </Text>
-        </View>
-
-        <View className="flex-row items-center space-x-2">
-          {/* Badge Tanggal Hari Ini */}
-          <View className="flex-row items-center bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl mr-2">
-            <Calendar size={14} color="#38BDF8" />
-            <Text className="text-slate-300 text-xs font-semibold ml-2">
-              {formatIndonesianDate(new Date().toISOString().split('T')[0])}
-            </Text>
+      {/* 1. BRANDED HEADER HERO */}
+      <View className="bg-slate-950/80 border border-slate-800/80 p-4 md:p-5 rounded-2xl mb-6 shadow-sm">
+        <View className="flex-col md:flex-row md:items-center justify-between gap-4">
+          <View className="flex-row items-center">
+            {/* Logo Alora Studio Badge */}
+            <View className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white p-1 border border-slate-700/60 shadow-md items-center justify-center mr-3.5 overflow-hidden">
+              <Image
+                source={require('../../../assets/images/logo.png')}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="contain"
+              />
+            </View>
+            <View>
+              <Text className="text-white font-extrabold text-xl md:text-2xl">
+                Selamat Datang, {profile?.full_name || 'Staff Alora'} 👋
+              </Text>
+              <Text className="text-slate-400 text-xs md:text-sm mt-0.5">
+                Alora Studio • Interior Design & Custom Furniture
+              </Text>
+            </View>
           </View>
 
-          {/* Tombol Refresh */}
-          <Pressable
-            onPress={handleRefresh}
-            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-            className="flex-row items-center bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl border border-slate-700"
-          >
-            <RefreshCw size={14} color="#CBD5E1" />
-            <Text className="text-slate-200 text-xs font-semibold ml-1.5">Refresh</Text>
-          </Pressable>
+          <View className="flex-row items-center space-x-2">
+            {/* Badge Tanggal Hari Ini */}
+            <View className="flex-row items-center bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl mr-2">
+              <Calendar size={14} color="#38BDF8" />
+              <Text className="text-slate-300 text-xs font-semibold ml-2">
+                {formatIndonesianDate(new Date().toISOString().split('T')[0])}
+              </Text>
+            </View>
+
+            {/* Tombol Refresh */}
+            <Pressable
+              onPress={handleRefresh}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              className="flex-row items-center bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl border border-slate-700"
+            >
+              <RefreshCw size={14} color="#CBD5E1" />
+              <Text className="text-slate-200 text-xs font-semibold ml-1.5">Refresh</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
