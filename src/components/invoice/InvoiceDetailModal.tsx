@@ -1,13 +1,17 @@
+import React, { useState } from 'react';
 import { confirmDialog } from '@/lib/confirm';
 import { Invoice, PaymentReceipt } from '@/services/invoiceService';
 import { useAppDispatch } from '@/store/hooks';
 import { deletePayment } from '@/store/slices/invoiceSlice';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
+import * as Clipboard from 'expo-clipboard';
 import {
   AlertCircle,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   CreditCard,
   ExternalLink,
   Plus,
@@ -45,8 +49,22 @@ export function InvoiceDetailModal({
   onOpenReceiptPdf,
 }: InvoiceDetailModalProps) {
   const dispatch = useAppDispatch();
+  const [copiedBank, setCopiedBank] = useState(false);
 
   if (!invoice) return null;
+
+  const handleCopyBank = async () => {
+    const textToCopy = `${invoice.bank_name || 'Bank Mandiri'}\n${invoice.bank_account_no || '1370026994893'}\n${invoice.bank_account_holder || 'M.LAFRAN PANE'}`;
+    try {
+      await Clipboard.setStringAsync(textToCopy);
+    } catch {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(textToCopy);
+      }
+    }
+    setCopiedBank(true);
+    setTimeout(() => setCopiedBank(false), 2000);
+  };
 
   const paidPct =
     invoice.total > 0
@@ -247,9 +265,37 @@ export function InvoiceDetailModal({
               {/* Kolom Kanan: Rekening Pembayaran */}
               <View className="w-full md:w-1/2 px-2">
                 <View className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl h-full">
-                  <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-2.5">
-                    Rekening Pembayaran Resmi
-                  </Text>
+                  <View className="flex-row items-center justify-between mb-2.5">
+                    <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+                      Rekening Pembayaran Resmi
+                    </Text>
+
+                    <Pressable
+                      onPress={handleCopyBank}
+                      className={`flex-row items-center px-2.5 py-1 rounded-lg border ${
+                        copiedBank
+                          ? 'bg-emerald-600/30 border-emerald-500'
+                          : 'bg-slate-900 border-slate-700 hover:border-sky-500/50'
+                      }`}
+                    >
+                      {copiedBank ? (
+                        <>
+                          <Check size={11} color="#34D399" />
+                          <Text className="text-emerald-300 text-[10px] font-semibold ml-1">
+                            Tersalin
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={11} color="#38BDF8" />
+                          <Text className="text-sky-300 text-[10px] font-semibold ml-1">
+                            Salin
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                  </View>
+
                   <View className="space-y-1">
                     <Text className="text-white text-xs font-bold">
                       {invoice.bank_name || 'Bank Mandiri'}

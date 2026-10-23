@@ -109,7 +109,13 @@ export const recordPayment = createAsyncThunk<
     const invoice = (await invoiceService.getInvoiceById(payload.invoice_id)) as Invoice;
     return { invoice, payment };
   } catch (err: any) {
-    return rejectWithValue(err.message || 'Gagal mencatat pembayaran');
+    console.error('[invoiceSlice.recordPayment] Error:', err);
+    const message =
+      err?.message ||
+      err?.error_description ||
+      (typeof err === 'string' ? err : null) ||
+      'Gagal mencatat pembayaran';
+    return rejectWithValue(message);
   }
 });
 

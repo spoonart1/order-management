@@ -1,4 +1,27 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { DatePickerField } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
+import {
+  DEFAULT_INVOICE_TERMS,
+  Invoice,
+  InvoiceItem,
+  SaveInvoicePayload,
+  invoiceService
+} from '@/services/invoiceService';
+import { Quotation, quotationService } from '@/services/quotationService';
+import { useAppSelector } from '@/store/hooks';
+import { formatRupiah, terbilang } from '@/utils/terbilang';
+import * as Clipboard from 'expo-clipboard';
+import {
+  Check,
+  Copy,
+  FileSpreadsheet,
+  FileText,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X
+} from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,29 +32,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {
-  Calendar,
-  CreditCard,
-  FileSpreadsheet,
-  FileText,
-  Plus,
-  RefreshCw,
-  Trash2,
-  User,
-  X,
-} from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
-import {
-  DEFAULT_INVOICE_TERMS,
-  Invoice,
-  InvoiceItem,
-  InvoiceTerm,
-  SaveInvoicePayload,
-  invoiceService,
-} from '@/services/invoiceService';
-import { Quotation, quotationService } from '@/services/quotationService';
-import { formatIndonesianDate, formatRupiah, terbilang } from '@/utils/terbilang';
-import { useAppSelector } from '@/store/hooks';
 
 interface ClientSuggestion {
   id: string;
@@ -96,6 +96,20 @@ export function InvoiceFormModal({
   const [showQuotationPicker, setShowQuotationPicker] = useState(false);
   const [availableQuotations, setAvailableQuotations] = useState<Quotation[]>([]);
   const [isLoadingQuotations, setIsLoadingQuotations] = useState(false);
+  const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+
+  const handleCopyBankInfo = async () => {
+    const textToCopy = `${bankName}\n${bankAccountNo}\n${bankAccountHolder}`;
+    try {
+      await Clipboard.setStringAsync(textToCopy);
+    } catch {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(textToCopy);
+      }
+    }
+    setCopiedBankInfo(true);
+    setTimeout(() => setCopiedBankInfo(false), 2000);
+  };
 
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -374,6 +388,14 @@ export function InvoiceFormModal({
       return;
     }
 
+    // Validasi Tanggal Terbit <= Jatuh Tempo
+    if (dueDate.trim() && issueDate > dueDate.trim()) {
+      setErrorMessage(
+        'Tanggal Terbit tidak boleh melewati Tanggal Jatuh Tempo (Tanggal Terbit ≤ Jatuh Tempo).'
+      );
+      return;
+    }
+
     setSaving(true);
     setErrorMessage(null);
 
@@ -494,28 +516,32 @@ export function InvoiceFormModal({
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    Tanggal Terbit <Text className="text-rose-400">*</Text>
-                  </Text>
-                  <TextInput
+                  <DatePickerField
+                    label="Tanggal Terbit"
+                    required
                     value={issueDate}
-                    onChangeText={setIssueDate}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#64748B"
+                    onChange={(newDate) => {
+                      setIssueDate(newDate);
+                      if (dueDate && dueDate < newDate) {
+                        setDueDate(newDate);
+                      }
+                      if (errorMessage) setErrorMessage(null);
+                    }}
+                    placeholder="Pilih tanggal terbit..."
                   />
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    Jatuh Tempo (Due Date)
-                  </Text>
-                  <TextInput
+                  <DatePickerField
+                    label="Jatuh Tempo (Due Date)"
                     value={dueDate}
-                    onChangeText={setDueDate}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
-                    placeholder="YYYY-MM-DD (Opsional)"
-                    placeholderTextColor="#64748B"
+                    minDate={issueDate}
+                    onChange={(newDate) => {
+                      setDueDate(newDate);
+                      if (errorMessage) setErrorMessage(null);
+                    }}
+                    placeholder="Pilih tanggal jatuh tempo..."
+                    allowClear
                   />
                 </View>
               </View>
@@ -750,42 +776,61 @@ export function InvoiceFormModal({
 
             {/* SEKSI 4: REKENING & PENGESAHAN */}
             <View className="mb-5 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
-                4. Instruksi Pembayaran Bank & Pengesahan
-              </Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+                  4. Instruksi Pembayaran Bank & Pengesahan
+                </Text>
+
+                <Pressable
+                  onPress={handleCopyBankInfo}
+                  className={`flex-row items-center px-3 py-1.5 rounded-xl border ${
+                    copiedBankInfo
+                      ? 'bg-emerald-600/30 border-emerald-500'
+                      : 'bg-slate-900 border-slate-700 hover:border-sky-500/50'
+                  }`}
+                >
+                  {copiedBankInfo ? (
+                    <>
+                      <Check size={13} color="#34D399" />
+                      <Text className="text-emerald-300 text-xs font-semibold ml-1.5">
+                        Tersalin!
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} color="#38BDF8" />
+                      <Text className="text-sky-300 text-xs font-semibold ml-1.5">
+                        Salin Rekening
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
 
               <View className="flex-row flex-wrap -mx-2">
                 <View className="w-full md:w-1/3 px-2 mb-3">
                   <Text className="text-slate-400 text-[11px] mb-1">Nama Bank</Text>
-                  <TextInput
-                    value={bankName}
-                    onChangeText={setBankName}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
-                    placeholder="Bank Mandiri"
-                    placeholderTextColor="#64748B"
-                  />
+                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
+                    <Text className="text-white text-xs font-bold">{bankName}</Text>
+                  </View>
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
                   <Text className="text-slate-400 text-[11px] mb-1">Nomor Rekening</Text>
-                  <TextInput
-                    value={bankAccountNo}
-                    onChangeText={setBankAccountNo}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs font-mono"
-                    placeholder="1370026994893"
-                    placeholderTextColor="#64748B"
-                  />
+                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
+                    <Text className="text-emerald-400 font-mono text-xs font-bold tracking-wider">
+                      {bankAccountNo}
+                    </Text>
+                  </View>
                 </View>
 
                 <View className="w-full md:w-1/3 px-2 mb-3">
                   <Text className="text-slate-400 text-[11px] mb-1">Atas Nama Rekening</Text>
-                  <TextInput
-                    value={bankAccountHolder}
-                    onChangeText={setBankAccountHolder}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
-                    placeholder="M.LAFRAN PANE"
-                    placeholderTextColor="#64748B"
-                  />
+                  <View className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl justify-center">
+                    <Text className="text-slate-200 text-xs font-semibold">
+                      {bankAccountHolder}
+                    </Text>
+                  </View>
                 </View>
 
                 <View className="w-full md:w-1/2 px-2 mb-3">

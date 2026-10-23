@@ -64,6 +64,9 @@ CREATE TABLE IF NOT EXISTS public.payments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Pastikan kolom amount_words ada jika tabel sudah dibuat sebelumnya
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS amount_words TEXT;
+
 -- 4. Indeks untuk Query Cepat
 CREATE INDEX IF NOT EXISTS idx_invoices_quotation_id ON public.invoices(quotation_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_card_id ON public.invoices(card_id);

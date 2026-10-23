@@ -8,6 +8,7 @@ import {
 } from '@/services/quotationService';
 import { useAppSelector } from '@/store/hooks';
 import { formatRupiah, terbilang } from '@/utils/terbilang';
+import { DatePickerField } from '@/components/ui';
 import {
   Link,
   Phone,
@@ -246,6 +247,7 @@ export function QuotationFormModal({
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientCity, setClientCity] = useState('Yogyakarta');
+  const [issuedDate, setIssuedDate] = useState(new Date().toISOString().split('T')[0]);
   const [projectTitle, setProjectTitle] = useState('');
   const [workDuration, setWorkDuration] = useState('20');
   const [validityDays, setValidityDays] = useState('20');
@@ -312,6 +314,7 @@ export function QuotationFormModal({
         setClientName(quotation.client_name);
         setClientPhone(quotation.client_phone || '');
         setClientCity(quotation.client_city || 'Yogyakarta');
+        setIssuedDate(quotation.issued_date || new Date().toISOString().split('T')[0]);
         setProjectTitle(quotation.project_title);
         setWorkDuration(String(quotation.work_duration_days || 20));
         setValidityDays(String(quotation.validity_days || 20));
@@ -349,6 +352,7 @@ export function QuotationFormModal({
         setClientPhone(defaultClientPhone);
         setProjectTitle(defaultProjectTitle);
         setClientCity('Yogyakarta');
+        setIssuedDate(new Date().toISOString().split('T')[0]);
         setWorkDuration('20');
         setValidityDays('20');
         setMarketingName(profile?.full_name || 'Marketing Alora');
@@ -598,6 +602,7 @@ export function QuotationFormModal({
         marketing_name: marketingName.trim() || 'Marketing Alora',
         status,
         terms,
+        issued_date: issuedDate,
         items: itemsToSave,
         notes: notes.trim() || null,
       };
@@ -628,7 +633,7 @@ export function QuotationFormModal({
       marketing_name: marketingName || 'Marketing Alora',
       status,
       terms,
-      issued_date: quotation?.issued_date || new Date().toISOString().split('T')[0],
+      issued_date: issuedDate,
       notes,
       quotation_items: items.map((it, idx) => ({
         item_no: idx + 1,
@@ -863,6 +868,17 @@ export function QuotationFormModal({
                     className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
                     placeholder="Yogyakarta"
                     placeholderTextColor="#64748B"
+                  />
+                </View>
+
+                {/* Tanggal Terbit Surat Penawaran */}
+                <View className="w-full md:w-1/3 px-2 mb-3">
+                  <DatePickerField
+                    label="Tanggal Surat"
+                    required
+                    value={issuedDate}
+                    onChange={setIssuedDate}
+                    placeholder="Pilih tanggal surat..."
                   />
                 </View>
 

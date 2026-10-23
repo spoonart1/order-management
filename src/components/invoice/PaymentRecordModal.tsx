@@ -1,3 +1,4 @@
+import { DatePickerField } from '@/components/ui';
 import { Invoice, invoiceService } from '@/services/invoiceService';
 import { useAppDispatch } from '@/store/hooks';
 import { recordPayment } from '@/store/slices/invoiceSlice';
@@ -165,13 +166,16 @@ export function PaymentRecordModal({
 
       // Upload bukti transfer jika ada foto yang dipilih
       if (selectedAsset) {
+        console.log('[PaymentRecordModal] Uploading payment proof...');
         proofUrl = await invoiceService.uploadPaymentProof(invoice.id, {
           uri: selectedAsset.uri,
           mimeType: selectedAsset.mimeType || 'image/jpeg',
           fileName: selectedAsset.fileName || `proof_${Date.now()}.jpg`,
         });
+        console.log('[PaymentRecordModal] Proof uploaded, url:', proofUrl);
       }
 
+      console.log('[PaymentRecordModal] Dispatching recordPayment...');
       await dispatch(
         recordPayment({
           invoice_id: invoice.id,
@@ -191,7 +195,14 @@ export function PaymentRecordModal({
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Gagal menyimpan catatan pembayaran.');
+      console.error('[PaymentRecordModal] handleSubmit error:', err);
+      const msg =
+        typeof err === 'string'
+          ? err
+          : err?.message ||
+            (err?.toString && err.toString() !== '[object Object]' ? err.toString() : null) ||
+            (typeof err === 'object' ? JSON.stringify(err) : 'Gagal menyimpan catatan pembayaran.');
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -357,15 +368,12 @@ export function PaymentRecordModal({
             {/* TANGGAL & METODE */}
             <View className="flex-row flex-wrap -mx-1.5 mb-4">
               <View className="w-full md:w-1/2 px-1.5 mb-3">
-                <Text className="text-slate-300 text-xs font-semibold mb-1">
-                  Tanggal Pembayaran <Text className="text-rose-400">*</Text>
-                </Text>
-                <TextInput
+                <DatePickerField
+                  label="Tanggal Pembayaran"
+                  required
                   value={paymentDate}
-                  onChangeText={setPaymentDate}
-                  className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#64748B"
+                  onChange={setPaymentDate}
+                  placeholder="Pilih tanggal pembayaran..."
                 />
               </View>
 
@@ -373,13 +381,11 @@ export function PaymentRecordModal({
                 <Text className="text-slate-300 text-xs font-semibold mb-1">
                   Metode Pembayaran
                 </Text>
-                <TextInput
-                  value={paymentMethod}
-                  onChangeText={setPaymentMethod}
+                <Text
                   className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                  placeholder="Bank Transfer Mandiri"
-                  placeholderTextColor="#64748B"
-                />
+                >
+                  {paymentMethod}
+                </Text>
               </View>
             </View>
 
@@ -446,13 +452,11 @@ export function PaymentRecordModal({
               <Text className="text-slate-300 text-xs font-semibold mb-1">
                 Diterima / Disahkan Oleh
               </Text>
-              <TextInput
-                value={receivedBy}
-                onChangeText={setReceivedBy}
+              <Text
                 className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                placeholder="M Lafran Pane"
-                placeholderTextColor="#64748B"
-              />
+              >
+                {receivedBy}
+              </Text>
             </View>
           </ScrollView>
 

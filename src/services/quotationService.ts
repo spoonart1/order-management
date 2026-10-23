@@ -339,6 +339,24 @@ export const quotationService = {
    * Menghapus surat penawaran
    */
   async deleteQuotation(id: string): Promise<void> {
+    // 1. Unlink relasi invoice jika pernah di-generate dari penawaran ini
+    try {
+      await supabase.from('invoices').update({ quotation_id: null }).eq('quotation_id', id);
+    } catch (e) {
+      console.warn('Unlinking invoice from quotation error (ignored):', e);
+    }
+
+    // 2. Hapus item rincian penawaran
+    const { error: itemsError } = await supabase
+      .from('quotation_items')
+      .delete()
+      .eq('quotation_id', id);
+
+    if (itemsError) {
+      console.error('Error deleting quotation items:', itemsError);
+    }
+
+    // 3. Hapus penawaran utama
     const { error } = await supabase.from('quotations').delete().eq('id', id);
     if (error) {
       console.error('Error deleting quotation:', error);

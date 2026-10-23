@@ -1,6 +1,7 @@
 import { QuotationFormModal } from '@/components/quotation/QuotationFormModal';
 import { QuotationPreviewModal } from '@/components/quotation/QuotationPreviewModal';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { confirmDialog } from '@/lib/confirm';
 import {
   Quotation,
   SaveQuotationPayload,
@@ -136,25 +137,23 @@ export default function QuotationsScreen() {
     }
   };
 
-  const handleDelete = (id: string, no: string) => {
-    Alert.alert(
-      'Hapus Surat Penawaran',
-      `Apakah Anda yakin ingin menghapus surat penawaran ${no}?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await dispatch(deleteQuotation(id)).unwrap();
-            } catch (err: any) {
-              Alert.alert('Gagal Menghapus', err);
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (id: string, no: string) => {
+    const confirmed = await confirmDialog({
+      title: 'Hapus Surat Penawaran',
+      message: `Apakah Anda yakin ingin menghapus surat penawaran ${no}? Rincian item penawaran ini juga akan dihapus.`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      destructive: true,
+    });
+
+    if (confirmed) {
+      try {
+        await dispatch(deleteQuotation(id)).unwrap();
+      } catch (err: any) {
+        const msg = typeof err === 'string' ? err : err?.message || 'Gagal menghapus surat penawaran.';
+        Alert.alert('Gagal Menghapus', msg);
+      }
+    }
   };
 
   const getStatusBadge = (status: Quotation['status']) => {

@@ -1,12 +1,16 @@
+import { InvoiceDetailModal } from '@/components/invoice/InvoiceDetailModal';
 import { InvoiceFormModal } from '@/components/invoice/InvoiceFormModal';
+import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
+import { PaymentRecordModal } from '@/components/invoice/PaymentRecordModal';
+import { ReceiptPreviewModal } from '@/components/invoice/ReceiptPreviewModal';
 import { confirmDialog } from '@/lib/confirm';
-import { Invoice, SaveInvoicePayload } from '@/services/invoiceService';
+import { Invoice, PaymentReceipt, SaveInvoicePayload } from '@/services/invoiceService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   createInvoice,
   deleteInvoice,
   fetchInvoices,
-  updateInvoice
+  updateInvoice,
 } from '@/store/slices/invoiceSlice';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
 import {
@@ -14,15 +18,17 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Eye,
   FileText,
   HandCoins,
   Pencil,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Trash2,
   User,
-  Wallet
+  Wallet,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -32,7 +38,7 @@ import {
   ScrollView,
   Text,
   TextInput,
-  View
+  View,
 } from 'react-native';
 
 type StatusFilter = 'all' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
@@ -47,6 +53,19 @@ export default function InvoicesScreen() {
   // Modal States
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [detailInvoice, setDetailInvoice] = useState<Invoice | null>(null);
+
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
+
+  const [invoicePreviewVisible, setInvoicePreviewVisible] = useState(false);
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+
+  const [receiptPreviewVisible, setReceiptPreviewVisible] = useState(false);
+  const [previewReceipt, setPreviewReceipt] = useState<PaymentReceipt | null>(null);
+  const [previewReceiptInvoice, setPreviewReceiptInvoice] = useState<Invoice | null>(null);
 
   // Load invoices on mount
   useEffect(() => {
@@ -107,6 +126,31 @@ export default function InvoicesScreen() {
       totalBalanceDue,
     };
   }, [invoices]);
+
+  // Handler Buka Detail Invoice
+  const handleOpenDetailModal = (inv: Invoice) => {
+    setDetailInvoice(inv);
+    setDetailModalVisible(true);
+  };
+
+  // Handler Buka Catat Pembayaran
+  const handleOpenPaymentModal = (inv: Invoice) => {
+    setPaymentInvoice(inv);
+    setPaymentModalVisible(true);
+  };
+
+  // Handler Buka Preview / Cetak Invoice PDF
+  const handleOpenInvoicePreview = (inv: Invoice) => {
+    setPreviewInvoice(inv);
+    setInvoicePreviewVisible(true);
+  };
+
+  // Handler Buka Preview / Cetak Kwitansi PDF
+  const handleOpenReceiptPreview = (receipt: PaymentReceipt, inv: Invoice) => {
+    setPreviewReceipt(receipt);
+    setPreviewReceiptInvoice(inv);
+    setReceiptPreviewVisible(true);
+  };
 
   // Handler Buat Invoice Baru
   const handleOpenCreateModal = () => {
@@ -524,6 +568,35 @@ export default function InvoicesScreen() {
                     </View>
 
                     <View className="flex-row items-center space-x-2">
+                      {/* Tombol Detail & Termin */}
+                      <Pressable
+                        onPress={() => handleOpenDetailModal(inv)}
+                        className="flex-row items-center bg-blue-600/20 hover:bg-blue-600/30 px-3 py-1.5 rounded-xl border border-blue-500/40"
+                      >
+                        <Eye size={13} color="#38BDF8" />
+                        <Text className="text-sky-300 text-xs font-semibold ml-1">Detail</Text>
+                      </Pressable>
+
+                      {/* Tombol Cetak / PDF Invoice */}
+                      <Pressable
+                        onPress={() => handleOpenInvoicePreview(inv)}
+                        className="flex-row items-center bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700"
+                      >
+                        <Printer size={13} color="#38BDF8" />
+                        <Text className="text-sky-300 text-xs font-semibold ml-1">Cetak</Text>
+                      </Pressable>
+
+                      {/* Tombol Catat Bayar */}
+                      {inv.balance_due > 0 && (
+                        <Pressable
+                          onPress={() => handleOpenPaymentModal(inv)}
+                          className="flex-row items-center bg-emerald-600/25 hover:bg-emerald-600/35 px-3 py-1.5 rounded-xl border border-emerald-500/40"
+                        >
+                          <Plus size={13} color="#34D399" />
+                          <Text className="text-emerald-300 text-xs font-semibold ml-1">Bayar</Text>
+                        </Pressable>
+                      )}
+
                       {/* Tombol Edit */}
                       <Pressable
                         onPress={() => handleOpenEditModal(inv)}
@@ -556,6 +629,64 @@ export default function InvoicesScreen() {
         onClose={() => setFormModalVisible(false)}
         onSave={handleSaveInvoice}
         invoice={selectedInvoice}
+      />
+
+      {/* DETAIL INVOICE & TRACKING TERMIN MODAL */}
+      <InvoiceDetailModal
+        visible={detailModalVisible}
+        onClose={() => setDetailModalVisible(false)}
+        invoice={
+          detailInvoice
+            ? invoices.find((i) => i.id === detailInvoice.id) || detailInvoice
+            : null
+        }
+        onOpenPaymentRecord={(inv) => {
+          setDetailModalVisible(false);
+          handleOpenPaymentModal(inv);
+        }}
+        onOpenInvoicePdf={(inv) => {
+          handleOpenInvoicePreview(inv);
+        }}
+        onOpenReceiptPdf={(receipt, inv) => {
+          handleOpenReceiptPreview(receipt, inv);
+        }}
+      />
+
+      {/* CATAT PEMBAYARAN TERMIN MODAL */}
+      <PaymentRecordModal
+        visible={paymentModalVisible}
+        onClose={() => setPaymentModalVisible(false)}
+        invoice={
+          paymentInvoice
+            ? invoices.find((i) => i.id === paymentInvoice.id) || paymentInvoice
+            : null
+        }
+        onSuccess={() => {
+          dispatch(fetchInvoices());
+        }}
+      />
+
+      {/* PREVIEW & PRINT INVOICE MODAL */}
+      <InvoicePreviewModal
+        visible={invoicePreviewVisible}
+        invoice={
+          previewInvoice
+            ? invoices.find((i) => i.id === previewInvoice.id) || previewInvoice
+            : null
+        }
+        onClose={() => setInvoicePreviewVisible(false)}
+      />
+
+      {/* PREVIEW & PRINT KWITANSI MODAL */}
+      <ReceiptPreviewModal
+        visible={receiptPreviewVisible}
+        receipt={previewReceipt}
+        invoice={
+          previewReceiptInvoice
+            ? invoices.find((i) => i.id === previewReceiptInvoice.id) || previewReceiptInvoice
+            : null
+        }
+        onClose={() => setReceiptPreviewVisible(false)}
       />
     </View>
   );

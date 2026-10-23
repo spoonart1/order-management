@@ -364,30 +364,65 @@ export const invoiceService = {
     const receiptNo = payload.receipt_no || this.generateReceiptNumber();
     const amountWords = payload.amount_words || terbilang(payload.amount);
 
-    const { data, error } = await supabase
+    console.log('[invoiceService.recordPayment] Inserting payment:', {
+      invoice_id: payload.invoice_id,
+      receipt_no: receiptNo,
+      stage_name: payload.stage_name,
+      amount: payload.amount,
+    });
+
+    const paymentData: Record<string, any> = {
+      invoice_id: payload.invoice_id,
+      receipt_no: receiptNo,
+      billing_ref: payload.billing_ref,
+      stage_name: payload.stage_name,
+      amount: Number(payload.amount || 0),
+      payment_date: payload.payment_date || new Date().toISOString().split('T')[0],
+      payment_method: payload.payment_method || 'Bank Transfer',
+      description: payload.description || null,
+      amount_words: amountWords,
+      proof_url: payload.proof_url || null,
+      received_by: payload.received_by || 'M Lafran Pane',
+    };
+
+    let { data, error } = await supabase
       .from('payments')
-      .insert({
-        invoice_id: payload.invoice_id,
-        receipt_no: receiptNo,
-        billing_ref: payload.billing_ref,
-        stage_name: payload.stage_name,
-        amount: Number(payload.amount || 0),
-        payment_date: payload.payment_date || new Date().toISOString().split('T')[0],
-        payment_method: payload.payment_method || 'Bank Transfer',
-        description: payload.description || null,
-        amount_words: amountWords,
-        proof_url: payload.proof_url || null,
-        received_by: payload.received_by || 'M Lafran Pane',
-      })
+      .insert(paymentData)
       .select()
       .single();
 
-    if (error) throw error;
+    // Self-healing jika kolom amount_words belum ditambahkan di tabel payments Supabase
+    if (error && (error.message?.includes('amount_words') || (error as any).details?.includes('amount_words'))) {
+      console.warn('[invoiceService.recordPayment] Kolom amount_words belum ada di DB, retry insert tanpa amount_words...');
+      delete paymentData.amount_words;
+      const retryResult = await supabase
+        .from('payments')
+        .insert(paymentData)
+        .select()
+        .single();
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
+    if (error) {
+      console.error('[invoiceService.recordPayment] Insert error:', error);
+      throw new Error(error.message || error.details || 'Gagal menyimpan mutasi pembayaran di database');
+    }
+
+    console.log('[invoiceService.recordPayment] Payment inserted successfully:', data.id);
 
     // Sinkronisasi manual cadangan (jika DB trigger belum aktif)
-    await this.syncInvoicePaymentState(payload.invoice_id);
+    try {
+      await this.syncInvoicePaymentState(payload.invoice_id);
+    } catch (syncErr) {
+      console.warn('[invoiceService.recordPayment] syncInvoicePaymentState warning:', syncErr);
+    }
 
-    return data as PaymentReceipt;
+    // Pastikan amount_words selalu tersedia di client
+    return {
+      ...data,
+      amount_words: data.amount_words || amountWords,
+    } as PaymentReceipt;
   },
 
   /**
@@ -485,36 +520,63 @@ export const invoiceService = {
     invoiceId: string,
     asset: { uri: string; mimeType?: string; fileName?: string }
   ): Promise<string> {
-    const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
-    const filePath = `payment_proofs/${invoiceId}_${Date.now()}.${fileExt}`;
+    try {
+      const fileExt = (
+        asset.fileName?.split('.').pop() ||
+        asset.uri.split(';')[0]?.split('/').pop() ||
+        'jpg'
+      ).toLowerCase();
+      const filePath = `payment_proofs/${invoiceId}_${Date.now()}.${fileExt}`;
 
-    let fileBody: any;
-    if (Platform.OS === 'web') {
-      const response = await fetch(asset.uri);
-      fileBody = await response.blob();
-    } else {
-      const formData = new FormData();
-      formData.append('file', {
-        uri: asset.uri,
-        name: `proof.${fileExt}`,
-        type: asset.mimeType || `image/${fileExt}`,
-      } as any);
-      fileBody = formData;
+      let fileBody: any;
+      if (Platform.OS === 'web') {
+        // Cek jika asset memiliki objek File/Blob bawaan dari input browser web
+        if ((asset as any).file && (asset as any).file instanceof Blob) {
+          fileBody = (asset as any).file;
+        } else if (asset.uri.startsWith('data:')) {
+          // Konversi base64 dataURI ke Blob tanpa fetch (mencegah "TypeError: Load failed" di Safari)
+          const byteString = atob(asset.uri.split(',')[1]);
+          const mimeString = asset.uri.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          fileBody = new Blob([ab], { type: mimeString });
+        } else {
+          const response = await fetch(asset.uri);
+          fileBody = await response.blob();
+        }
+      } else {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: asset.uri,
+          name: asset.fileName || `proof.${fileExt}`,
+          type: asset.mimeType || `image/${fileExt}`,
+        } as any);
+        fileBody = formData;
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, fileBody, {
+          contentType: asset.mimeType || `image/${fileExt}`,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('[uploadPaymentProof] Storage upload error:', uploadError);
+        throw new Error(uploadError.message || 'Gagal mengunggah bukti ke Supabase Storage');
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (err: any) {
+      console.error('[uploadPaymentProof] Error:', err);
+      throw new Error(`Upload bukti transfer gagal: ${err?.message || err}`);
     }
-
-    const { error: uploadError } = await supabase.storage
-      .from('attachments')
-      .upload(filePath, fileBody, {
-        contentType: asset.mimeType || `image/${fileExt}`,
-        upsert: true,
-      });
-
-    if (uploadError) throw uploadError;
-
-    const { data: urlData } = supabase.storage
-      .from('attachments')
-      .getPublicUrl(filePath);
-
-    return urlData.publicUrl;
   },
 };
