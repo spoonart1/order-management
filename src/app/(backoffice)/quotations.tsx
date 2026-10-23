@@ -16,6 +16,7 @@ import {
   fetchQuotations,
   optimisticDeleteQuotation,
   optimisticUpdateStatus,
+  setQuotationsFromCache,
   updateQuotation,
   updateQuotationStatus,
 } from '@/store/slices/quotationSlice';
@@ -89,10 +90,22 @@ export default function QuotationsScreen() {
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
 
-  // Load Quotations on mount & check initial queue
+  // Load Quotations on mount & check initial queue (Instant Offline Cache First)
   useEffect(() => {
+    let isMounted = true;
+    // 1. Muat data offline terlebih dahulu secara instan jika ada di cache lokal (0ms render)
+    quotationCacheService.getQuotationsCache().then((cached) => {
+      if (isMounted && cached && cached.length > 0) {
+        dispatch(setQuotationsFromCache(cached));
+      }
+    });
+
     refreshPendingCount();
     dispatch(fetchQuotations());
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
 
   // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload / refresh halaman)

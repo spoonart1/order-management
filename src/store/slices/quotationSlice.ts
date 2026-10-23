@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { quotationCacheService } from '@/services/quotationCacheService';
 import {
   Quotation,
   SaveQuotationPayload,
@@ -25,13 +26,21 @@ const initialState: QuotationState = {
   searchQuery: '',
 };
 
-// Async Thunks
+// Async Thunks (Stale-While-Revalidate: Offline Cache First)
 export const fetchQuotations = createAsyncThunk<Quotation[], void, { rejectValue: string }>(
   'quotation/fetchQuotations',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
+    // 1. Muat data offline terlebih dahulu secara instan jika ada di cache lokal (0ms render)
+    const cached = await quotationCacheService.getQuotationsCache();
+    if (cached && cached.length > 0) {
+      dispatch(quotationSlice.actions.setQuotationsFromCache(cached));
+    }
+
+    // 2. Ambil data terbaru dari network di background
     try {
       return await quotationService.getQuotations();
     } catch (err: any) {
+      if (cached && cached.length > 0) return cached;
       return rejectWithValue(err.message || 'Gagal memuat daftar surat penawaran');
     }
   }
@@ -111,6 +120,13 @@ const quotationSlice = createSlice({
     },
     clearQuotationError(state) {
       state.error = null;
+    },
+    setQuotationsFromCache(state, action: PayloadAction<Quotation[]>) {
+      if (state.quotations.length === 0) {
+        state.quotations = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      }
     },
     // Optimistic Reducers (0ms UI Response)
     optimisticUpdateStatus(
@@ -229,6 +245,7 @@ export const {
   setFilterStatus,
   setSearchQuery,
   clearQuotationError,
+  setQuotationsFromCache,
   optimisticUpdateStatus,
   optimisticDeleteQuotation,
   optimisticAddQuotation,

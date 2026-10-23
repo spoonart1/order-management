@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { boardCacheService } from "@/services/boardCacheService";
 import {
     boardService,
     CreateCardPayload,
@@ -68,13 +69,20 @@ const initialState: BoardState = {
     error: null,
 };
 
-// Async Thunk: Mengambil data board beserta kolom, kartu, dan lampiran dari Supabase via boardService
+// Async Thunk: Mengambil data board beserta kolom, kartu, dan lampiran dari Supabase via boardService (Stale-While-Revalidate)
 export const fetchBoardByType = createAsyncThunk<BoardData, string, { rejectValue: string }>(
     'board/fetchBoardByType',
-    async (boardType: string, { rejectWithValue }) => {
+    async (boardType: string, { dispatch, rejectWithValue }) => {
+        // 1. Muat data offline terlebih dahulu secara instan jika ada di cache lokal (0ms render)
+        const cached = await boardCacheService.getBoardCache(boardType);
+        if (cached) {
+            dispatch(boardSlice.actions.setBoardFromCache(cached));
+        }
+
         try {
             return await boardService.getBoardByType(boardType);
         } catch (err: unknown) {
+            if (cached) return cached;
             const msg = err instanceof Error ? err.message : 'Gagal memuat data board';
             return rejectWithValue(msg);
         }
@@ -229,6 +237,11 @@ export const boardSlice = createSlice({
             state.currentBoard = null;
             state.error = null;
         },
+        setBoardFromCache: (state, action: PayloadAction<BoardData>) => {
+            state.currentBoard = action.payload;
+            state.isLoading = false;
+            state.error = null;
+        },
         optimisticMoveCard: (state, action: PayloadAction<MoveCardPayload>) => {
             if (!state.currentBoard) return;
             const { cardId, targetColumnId, newPosition } = action.payload;
@@ -300,8 +313,9 @@ export const boardSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // fetchBoardByType: Silent background refresh jika board sudah ada agar tidak memicu flicker/reload
-            .addCase(fetchBoardByType.pending, (state) => {
-                if (!state.currentBoard) {
+            .addCase(fetchBoardByType.pending, (state, action) => {
+                const requestedType = action.meta.arg;
+                if (!state.currentBoard || state.currentBoard.type !== requestedType) {
                     state.isLoading = true;
                 }
                 state.error = null;
@@ -355,6 +369,7 @@ export const boardSlice = createSlice({
 
 export const {
     clearBoardState,
+    setBoardFromCache,
     optimisticMoveCard,
     optimisticUpdateCard,
     optimisticDeleteCard,

@@ -21,6 +21,7 @@ import {
   optimisticDeleteCard,
   optimisticMoveCard,
   optimisticUpdateCard,
+  setBoardFromCache,
   Profile,
   updateCardDetails,
   updateColumn,
@@ -85,7 +86,20 @@ export default function BoardScreen() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    // 1. Muat data offline terlebih dahulu secara instan jika ada di cache lokal (0ms render)
+    boardCacheService.getBoardCache(activeBoardType).then((cached) => {
+      if (isMounted && cached) {
+        dispatch(setBoardFromCache(cached));
+      }
+    });
+
+    // 2. Ambil data terbaru dari server di background (Stale-While-Revalidate)
     dispatch(fetchBoardByType(activeBoardType));
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch, activeBoardType]);
 
   // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload halaman)
@@ -348,7 +362,7 @@ export default function BoardScreen() {
       )}
 
       {/* 2. List Kolom Kanban */}
-      {isLoading ? (
+      {isLoading && (!currentBoard || currentBoard.type !== activeBoardType) ? (
         <View className="flex-1 justify-center items-center bg-slate-950">
           <ActivityIndicator size="large" color="#38BDF8" />
         </View>
