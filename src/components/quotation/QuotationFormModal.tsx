@@ -46,7 +46,9 @@ export const SPEC_SUGGESTIONS = {
   ],
   accessories: [
     'Engsel soft close',
-    'Rel Tandem',
+    'Engsel slowmotion',
+    'Rel Standard',
+    'Rel Tandem'
   ],
 };
 
