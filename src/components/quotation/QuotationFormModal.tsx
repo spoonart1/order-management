@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import {
   Quotation,
   QuotationItem,
@@ -7,8 +8,8 @@ import {
 } from '@/services/quotationService';
 import { useAppSelector } from '@/store/hooks';
 import { formatRupiah, terbilang } from '@/utils/terbilang';
-import { Plus, Trash2, X } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { Check, Link, Phone, Plus, Search, Trash2, User, X } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +20,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+interface ClientSuggestion {
+  id: string;
+  client_name: string;
+  client_phone: string | null;
+  title: string;
+  notes: string | null;
+}
 
 interface QuotationFormModalProps {
   visible: boolean;
@@ -56,6 +65,14 @@ export function QuotationFormModal({
   const [marketingName, setMarketingName] = useState('');
   const [status, setStatus] = useState<'draft' | 'sent' | 'approved' | 'rejected'>('draft');
   const [notes, setNotes] = useState('');
+
+  // Auto-Search & Relasi Order Board Card
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(cardId || null);
+  const [selectedCardTitle, setSelectedCardTitle] = useState<string | null>(defaultProjectTitle || null);
+  const [clientSuggestions, setClientSuggestions] = useState<ClientSuggestion[]>([]);
+  const [isSearchingClient, setIsSearchingClient] = useState(false);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const isSelectingRef = useRef(false);
 
   // Termin Pembayaran
   const [terms, setTerms] = useState<QuotationTerm[]>([
@@ -99,6 +116,8 @@ export function QuotationFormModal({
       setMarketingName(quotation.marketing_name || profile?.full_name || 'Marketing Alora');
       setStatus(quotation.status);
       setNotes(quotation.notes || '');
+      setSelectedCardId(quotation.card_id || cardId || null);
+      setSelectedCardTitle(quotation.project_title || null);
       if (quotation.terms && quotation.terms.length > 0) {
         setTerms(quotation.terms);
       }
@@ -129,6 +148,8 @@ export function QuotationFormModal({
       setMarketingName(profile?.full_name || 'Marketing Alora');
       setStatus('draft');
       setNotes('');
+      setSelectedCardId(cardId || null);
+      setSelectedCardTitle(defaultProjectTitle || null);
       setTerms([
         { title: 'Termin I', pct: 50, desc: 'DP Mulai Pekerjaan' },
         { title: 'Termin II', pct: 25, desc: 'Seting Di Lokasi' },
@@ -155,8 +176,81 @@ export function QuotationFormModal({
       });
     }
 
+    setClientSuggestions([]);
+    setShowClientDropdown(false);
     setErrorMessage(null);
-  }, [visible, quotation, defaultClientName, defaultClientPhone, defaultProjectTitle, profile]);
+  }, [visible, quotation, cardId, defaultClientName, defaultClientPhone, defaultProjectTitle, profile]);
+
+  // Efek Auto-Search Klien dari board_cards berdasarkan nama yang diketik
+  useEffect(() => {
+    if (!visible) return;
+    if (isSelectingRef.current) {
+      isSelectingRef.current = false;
+      return;
+    }
+
+    const query = clientName.trim();
+    if (query.length < 2) {
+      setClientSuggestions([]);
+      setShowClientDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearchingClient(true);
+        const { data, error } = await supabase
+          .from('board_cards')
+          .select('id, client_name, client_phone, title, notes')
+          .not('client_name', 'is', null)
+          .ilike('client_name', `%${query}%`)
+          .limit(6);
+
+        if (!error && data && data.length > 0) {
+          const valid = data.filter(
+            (c) => c.client_name && c.client_name.trim().length > 0
+          ) as ClientSuggestion[];
+          setClientSuggestions(valid);
+          setShowClientDropdown(valid.length > 0);
+        } else {
+          setClientSuggestions([]);
+          setShowClientDropdown(false);
+        }
+      } catch (err) {
+        console.error('Error auto-searching clients from board_cards:', err);
+      } finally {
+        setIsSearchingClient(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [clientName, visible]);
+
+  // Handler saat item klien dipilih dari dropdown
+  const handleSelectClient = (item: ClientSuggestion) => {
+    isSelectingRef.current = true;
+    setClientName(item.client_name);
+
+    if (item.client_phone) {
+      setClientPhone(item.client_phone);
+    }
+
+    // Auto-fill judul proyek jika kosong atau sama dengan default
+    if (!projectTitle.trim() || projectTitle === defaultProjectTitle) {
+      setProjectTitle(item.title);
+    }
+
+    // Auto-fill catatan jika kosong
+    if (!notes.trim() && item.notes) {
+      setNotes(item.notes);
+    }
+
+    setSelectedCardId(item.id);
+    setSelectedCardTitle(item.title);
+    setShowClientDropdown(false);
+    setClientSuggestions([]);
+    if (errorMessage) setErrorMessage(null);
+  };
 
   // Kalkulasi Total
   const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -236,7 +330,7 @@ export function QuotationFormModal({
       setErrorMessage(null);
 
       const payload: SaveQuotationPayload = {
-        card_id: cardId || quotation?.card_id || null,
+        card_id: selectedCardId || cardId || quotation?.card_id || null,
         quotation_no: quotationNo.trim(),
         client_name: clientName.trim(),
         client_phone: clientPhone.trim() || null,
@@ -265,7 +359,7 @@ export function QuotationFormModal({
     if (!onPreview) return;
     const mockQuotation: Quotation = {
       id: quotation?.id || 'preview-temp',
-      card_id: cardId || quotation?.card_id || null,
+      card_id: selectedCardId || cardId || quotation?.card_id || null,
       quotation_no: quotationNo || 'DRAFT/SP/APK/10/26',
       client_name: clientName || 'Nama Klien',
       client_phone: clientPhone || null,
@@ -309,7 +403,11 @@ export function QuotationFormModal({
           </View>
 
           {/* Form Content */}
-          <ScrollView className="flex-1 p-5 md:p-6" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="flex-1 p-5 md:p-6"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {/* Error Message Box */}
             {errorMessage ? (
               <View className="mb-5 p-3.5 bg-rose-950/80 border border-rose-500 rounded-xl">
@@ -338,18 +436,138 @@ export function QuotationFormModal({
                   />
                 </View>
 
-                {/* Nama Klien */}
-                <View className="w-full md:w-1/3 px-2 mb-3">
-                  <Text className="text-slate-300 text-xs font-semibold mb-1">
-                    Nama Klien (Kepada Yth) <Text className="text-rose-400">*</Text>
-                  </Text>
-                  <TextInput
-                    value={clientName}
-                    onChangeText={setClientName}
-                    className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs"
-                    placeholder="Contoh: Ibu Rina / Bpk. David"
-                    placeholderTextColor="#64748B"
-                  />
+                {/* Nama Klien dengan Auto-Search & Dropdown Board Cards */}
+                <View className="w-full md:w-1/3 px-2 mb-3 relative z-30">
+                  <View className="flex-row items-center justify-between mb-1">
+                    <Text className="text-slate-300 text-xs font-semibold">
+                      Nama Klien (Kepada Yth) <Text className="text-rose-400">*</Text>
+                    </Text>
+                    {isSearchingClient && (
+                      <View className="flex-row items-center">
+                        <ActivityIndicator size="small" color="#38BDF8" style={{ transform: [{ scale: 0.7 }] }} />
+                        <Text className="text-sky-400 text-[10px] ml-1">Mencari...</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View className="relative">
+                    <TextInput
+                      value={clientName}
+                      onChangeText={(t) => {
+                        setClientName(t);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
+                      onFocus={() => {
+                        if (clientSuggestions.length > 0) {
+                          setShowClientDropdown(true);
+                        }
+                      }}
+                      className="bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl text-xs pr-8"
+                      placeholder="Ketik nama klien (auto search)..."
+                      placeholderTextColor="#64748B"
+                    />
+                    {clientName.trim().length > 0 && (
+                      <Pressable
+                        onPress={() => {
+                          setClientName('');
+                          setClientSuggestions([]);
+                          setShowClientDropdown(false);
+                        }}
+                        className="absolute right-2.5 top-2.5"
+                      >
+                        <X size={14} color="#94A3B8" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Dropdown Hasil Pencarian dari board_cards */}
+                  {showClientDropdown && clientSuggestions.length > 0 && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 58,
+                        left: 8,
+                        right: 8,
+                        zIndex: 9999,
+                        elevation: 10,
+                      }}
+                      className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl"
+                    >
+                      <View className="px-3 py-1.5 bg-slate-950 border-b border-slate-800 flex-row justify-between items-center">
+                        <Text className="text-[10px] text-sky-400 font-bold uppercase tracking-wider">
+                          Ditemukan di Order Boards
+                        </Text>
+                        <Pressable onPress={() => setShowClientDropdown(false)}>
+                          <Text className="text-slate-400 text-[10px]">Tutup ✕</Text>
+                        </Pressable>
+                      </View>
+
+                      <ScrollView
+                        style={{ maxHeight: 210 }}
+                        keyboardShouldPersistTaps="handled"
+                        nestedScrollEnabled
+                      >
+                        {clientSuggestions.map((item) => (
+                          <Pressable
+                            key={item.id}
+                            onPress={() => handleSelectClient(item)}
+                            style={({ pressed }) => [{ backgroundColor: pressed ? '#1E293B' : 'transparent' }]}
+                            className="p-2.5 border-b border-slate-800/80 active:bg-slate-800"
+                          >
+                            <View className="flex-row items-center justify-between">
+                              <View className="flex-row items-center flex-1 mr-2">
+                                <View className="w-6 h-6 rounded-full bg-sky-950 items-center justify-center mr-2 border border-sky-800">
+                                  <User size={12} color="#38BDF8" />
+                                </View>
+                                <View className="flex-1">
+                                  <Text className="text-white text-xs font-bold" numberOfLines={1}>
+                                    {item.client_name}
+                                  </Text>
+                                  <Text className="text-slate-400 text-[10px]" numberOfLines={1}>
+                                    Proyek: {item.title}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              {item.client_phone ? (
+                                <View className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 flex-row items-center">
+                                  <Phone size={9} color="#34D399" />
+                                  <Text className="text-emerald-400 text-[10px] font-medium ml-1">
+                                    {item.client_phone}
+                                  </Text>
+                                </View>
+                              ) : null}
+                            </View>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+
+                      <View className="px-3 py-1 bg-slate-950/90">
+                        <Text className="text-slate-500 text-[9px] text-center">
+                          💡 Klik nama klien untuk auto-fill No. HP & Proyek
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Badge Jika Terhubung ke Kartu Board */}
+                  {selectedCardId && (
+                    <View className="flex-row items-center mt-1.5 bg-sky-950/60 border border-sky-800/80 px-2 py-1 rounded-lg">
+                      <Link size={11} color="#38BDF8" />
+                      <Text className="text-sky-300 text-[10px] ml-1 flex-1 font-medium" numberOfLines={1}>
+                        Terhubung: {selectedCardTitle || 'Order Board Card'}
+                      </Text>
+                      <Pressable
+                        onPress={() => {
+                          setSelectedCardId(null);
+                          setSelectedCardTitle(null);
+                        }}
+                        className="ml-1 px-1"
+                      >
+                        <Text className="text-slate-400 text-[10px]">✕</Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </View>
 
                 {/* No HP Klien */}
