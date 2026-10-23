@@ -238,7 +238,7 @@ export function generateReceiptHtml(receipt: PaymentReceipt, inv: Invoice): stri
       <div>
         <div class="receipt-title">KWITANSI PEMBAYARAN RESMI</div>
         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
-          Alora Studio SuperApp Payment Receipt
+          Alora Studio - Payment Receipt
         </div>
       </div>
       <div class="receipt-meta">
@@ -323,7 +323,7 @@ export function generateReceiptHtml(receipt: PaymentReceipt, inv: Invoice): stri
       <div class="signature-section">
         <div class="sig-date">Yogyakarta, ${dateFormatted}<br>Penerima,</div>
         <div class="sig-name">${receipt.received_by || 'M Lafran Pane'}</div>
-        <div class="sig-role">Finance &amp; Kasir Alora Studio</div>
+        <div class="sig-role">Finance Alora Studio</div>
       </div>
     </div>
   </div>

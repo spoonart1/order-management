@@ -1,8 +1,4 @@
-import { InvoiceDetailModal } from '@/components/invoice/InvoiceDetailModal';
-import { InvoiceFormModal } from '@/components/invoice/InvoiceFormModal';
-import { InvoicePreviewModal } from '@/components/invoice/InvoicePreviewModal';
-import { PaymentRecordModal } from '@/components/invoice/PaymentRecordModal';
-import { ReceiptPreviewModal } from '@/components/invoice/ReceiptPreviewModal';
+import { Pagination } from '@/components/ui/Pagination';
 import { confirmDialog } from '@/lib/confirm';
 import { Invoice, PaymentReceipt, SaveInvoicePayload } from '@/services/invoiceService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -30,8 +26,9 @@ import {
   User,
   Wallet,
 } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
@@ -41,6 +38,37 @@ import {
   View,
 } from 'react-native';
 
+// Lazy loading modal-modal berat agar startup render halaman cepat & ringan
+const InvoiceFormModal = lazy(() =>
+  import('@/components/invoice/InvoiceFormModal').then((m) => ({
+    default: m.InvoiceFormModal,
+  }))
+);
+
+const InvoiceDetailModal = lazy(() =>
+  import('@/components/invoice/InvoiceDetailModal').then((m) => ({
+    default: m.InvoiceDetailModal,
+  }))
+);
+
+const PaymentRecordModal = lazy(() =>
+  import('@/components/invoice/PaymentRecordModal').then((m) => ({
+    default: m.PaymentRecordModal,
+  }))
+);
+
+const InvoicePreviewModal = lazy(() =>
+  import('@/components/invoice/InvoicePreviewModal').then((m) => ({
+    default: m.InvoicePreviewModal,
+  }))
+);
+
+const ReceiptPreviewModal = lazy(() =>
+  import('@/components/invoice/ReceiptPreviewModal').then((m) => ({
+    default: m.ReceiptPreviewModal,
+  }))
+);
+
 type StatusFilter = 'all' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
 
 export default function InvoicesScreen() {
@@ -49,6 +77,10 @@ export default function InvoicesScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
+
+  // Pagination State (10 item per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Modal States
   const [formModalVisible, setFormModalVisible] = useState(false);
@@ -71,6 +103,11 @@ export default function InvoicesScreen() {
   useEffect(() => {
     dispatch(fetchInvoices());
   }, [dispatch]);
+
+  // Otomatis reset ke halaman 1 jika filter atau kata kunci pencarian berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilter]);
 
   const onRefresh = () => {
     dispatch(fetchInvoices());
@@ -96,6 +133,12 @@ export default function InvoicesScreen() {
       return true;
     });
   }, [invoices, activeFilter, searchQuery]);
+
+  // Data terpaginasi (hanya 10 item untuk halaman aktif)
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredInvoices.slice(startIndex, startIndex + pageSize);
+  }, [filteredInvoices, currentPage, pageSize]);
 
   // Statistik Ringkas Finansial
   const stats = useMemo(() => {
@@ -416,8 +459,23 @@ export default function InvoicesScreen() {
           </View>
         </View>
 
+        {/* LOADING INDICATOR SAAT REFRESH / DATA FETCH */}
+        {isLoading && invoices.length > 0 && (
+          <View className="flex-row items-center justify-center py-2.5 px-4 bg-sky-950/40 border border-sky-800/40 rounded-xl mb-4">
+            <ActivityIndicator size="small" color="#38BDF8" />
+            <Text className="text-sky-300 text-xs ml-2 font-medium">
+              Memperbarui data invoice...
+            </Text>
+          </View>
+        )}
+
         {/* DAFTAR KARTU INVOICE */}
-        {filteredInvoices.length === 0 ? (
+        {isLoading && invoices.length === 0 ? (
+          <View className="py-20 items-center justify-center">
+            <ActivityIndicator size="large" color="#38BDF8" />
+            <Text className="text-slate-400 text-xs mt-3">Memuat data invoice & penagihan...</Text>
+          </View>
+        ) : filteredInvoices.length === 0 ? (
           <View className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-12 items-center justify-center">
             <FileText size={48} color="#475569" />
             <Text className="text-white font-bold text-base mt-4">Tidak ada data invoice</Text>
@@ -437,7 +495,7 @@ export default function InvoicesScreen() {
           </View>
         ) : (
           <View className="flex-col space-y-4">
-            {filteredInvoices.map((inv) => {
+            {paginatedInvoices.map((inv) => {
               const paidPct =
                 inv.total > 0
                   ? Math.min(100, Math.round((inv.paid_amount / inv.total) * 100))
@@ -619,75 +677,103 @@ export default function InvoicesScreen() {
                 </View>
               );
             })}
+            {/* Pagination Controls (10 item/page) */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredInvoices.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              className="mt-2"
+            />
           </View>
         )}
       </ScrollView>
 
-      {/* FORM MODAL (CREATE / EDIT) */}
-      <InvoiceFormModal
-        visible={formModalVisible}
-        onClose={() => setFormModalVisible(false)}
-        onSave={handleSaveInvoice}
-        invoice={selectedInvoice}
-      />
+      {/* FORM MODAL (CREATE / EDIT) - Lazy load on demand */}
+      {formModalVisible && (
+        <Suspense fallback={null}>
+          <InvoiceFormModal
+            visible={formModalVisible}
+            onClose={() => setFormModalVisible(false)}
+            onSave={handleSaveInvoice}
+            invoice={selectedInvoice}
+          />
+        </Suspense>
+      )}
 
-      {/* DETAIL INVOICE & TRACKING TERMIN MODAL */}
-      <InvoiceDetailModal
-        visible={detailModalVisible}
-        onClose={() => setDetailModalVisible(false)}
-        invoice={
-          detailInvoice
-            ? invoices.find((i) => i.id === detailInvoice.id) || detailInvoice
-            : null
-        }
-        onOpenPaymentRecord={(inv) => {
-          setDetailModalVisible(false);
-          handleOpenPaymentModal(inv);
-        }}
-        onOpenInvoicePdf={(inv) => {
-          handleOpenInvoicePreview(inv);
-        }}
-        onOpenReceiptPdf={(receipt, inv) => {
-          handleOpenReceiptPreview(receipt, inv);
-        }}
-      />
+      {/* DETAIL INVOICE & TRACKING TERMIN MODAL - Lazy load on demand */}
+      {detailModalVisible && (
+        <Suspense fallback={null}>
+          <InvoiceDetailModal
+            visible={detailModalVisible}
+            onClose={() => setDetailModalVisible(false)}
+            invoice={
+              detailInvoice
+                ? invoices.find((i) => i.id === detailInvoice.id) || detailInvoice
+                : null
+            }
+            onOpenPaymentRecord={(inv) => {
+              setDetailModalVisible(false);
+              handleOpenPaymentModal(inv);
+            }}
+            onOpenInvoicePdf={(inv) => {
+              handleOpenInvoicePreview(inv);
+            }}
+            onOpenReceiptPdf={(receipt, inv) => {
+              handleOpenReceiptPreview(receipt, inv);
+            }}
+          />
+        </Suspense>
+      )}
 
-      {/* CATAT PEMBAYARAN TERMIN MODAL */}
-      <PaymentRecordModal
-        visible={paymentModalVisible}
-        onClose={() => setPaymentModalVisible(false)}
-        invoice={
-          paymentInvoice
-            ? invoices.find((i) => i.id === paymentInvoice.id) || paymentInvoice
-            : null
-        }
-        onSuccess={() => {
-          dispatch(fetchInvoices());
-        }}
-      />
+      {/* CATAT PEMBAYARAN TERMIN MODAL - Lazy load on demand */}
+      {paymentModalVisible && (
+        <Suspense fallback={null}>
+          <PaymentRecordModal
+            visible={paymentModalVisible}
+            onClose={() => setPaymentModalVisible(false)}
+            invoice={
+              paymentInvoice
+                ? invoices.find((i) => i.id === paymentInvoice.id) || paymentInvoice
+                : null
+            }
+            onSuccess={() => {
+              dispatch(fetchInvoices());
+            }}
+          />
+        </Suspense>
+      )}
 
-      {/* PREVIEW & PRINT INVOICE MODAL */}
-      <InvoicePreviewModal
-        visible={invoicePreviewVisible}
-        invoice={
-          previewInvoice
-            ? invoices.find((i) => i.id === previewInvoice.id) || previewInvoice
-            : null
-        }
-        onClose={() => setInvoicePreviewVisible(false)}
-      />
+      {/* PREVIEW & PRINT INVOICE MODAL - Lazy load on demand */}
+      {invoicePreviewVisible && (
+        <Suspense fallback={null}>
+          <InvoicePreviewModal
+            visible={invoicePreviewVisible}
+            invoice={
+              previewInvoice
+                ? invoices.find((i) => i.id === previewInvoice.id) || previewInvoice
+                : null
+            }
+            onClose={() => setInvoicePreviewVisible(false)}
+          />
+        </Suspense>
+      )}
 
-      {/* PREVIEW & PRINT KWITANSI MODAL */}
-      <ReceiptPreviewModal
-        visible={receiptPreviewVisible}
-        receipt={previewReceipt}
-        invoice={
-          previewReceiptInvoice
-            ? invoices.find((i) => i.id === previewReceiptInvoice.id) || previewReceiptInvoice
-            : null
-        }
-        onClose={() => setReceiptPreviewVisible(false)}
-      />
+      {/* PREVIEW & PRINT KWITANSI MODAL - Lazy load on demand */}
+      {receiptPreviewVisible && (
+        <Suspense fallback={null}>
+          <ReceiptPreviewModal
+            visible={receiptPreviewVisible}
+            receipt={previewReceipt}
+            invoice={
+              previewReceiptInvoice
+                ? invoices.find((i) => i.id === previewReceiptInvoice.id) || previewReceiptInvoice
+                : null
+            }
+            onClose={() => setReceiptPreviewVisible(false)}
+          />
+        </Suspense>
+      )}
     </View>
   );
 }

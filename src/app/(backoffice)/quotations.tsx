@@ -1,6 +1,5 @@
-import { QuotationFormModal } from '@/components/quotation/QuotationFormModal';
-import { QuotationPreviewModal } from '@/components/quotation/QuotationPreviewModal';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { Pagination } from '@/components/ui/Pagination';
 import { confirmDialog } from '@/lib/confirm';
 import {
   Quotation,
@@ -29,7 +28,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -42,6 +41,19 @@ import {
   View,
 } from 'react-native';
 
+// Lazy load modal berat untuk efisiensi performa startup & memori
+const QuotationFormModal = lazy(() =>
+  import('@/components/quotation/QuotationFormModal').then((m) => ({
+    default: m.QuotationFormModal,
+  }))
+);
+
+const QuotationPreviewModal = lazy(() =>
+  import('@/components/quotation/QuotationPreviewModal').then((m) => ({
+    default: m.QuotationPreviewModal,
+  }))
+);
+
 type StatusFilter = 'all' | 'draft' | 'sent' | 'approved' | 'rejected';
 
 export default function QuotationsScreen() {
@@ -50,6 +62,10 @@ export default function QuotationsScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
+
+  // Pagination State (10 item per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Modal States
   const [formModalVisible, setFormModalVisible] = useState(false);
@@ -62,6 +78,11 @@ export default function QuotationsScreen() {
   useEffect(() => {
     dispatch(fetchQuotations());
   }, [dispatch]);
+
+  // Otomatis reset ke halaman 1 jika filter atau kata kunci pencarian berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilter]);
 
   const onRefresh = () => {
     dispatch(fetchQuotations());
@@ -88,6 +109,12 @@ export default function QuotationsScreen() {
       return true;
     });
   }, [quotations, activeFilter, searchQuery]);
+
+  // Data terpaginasi (hanya 10 item untuk halaman aktif)
+  const paginatedQuotations = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredQuotations.slice(startIndex, startIndex + pageSize);
+  }, [filteredQuotations, currentPage, pageSize]);
 
   // Statistik Ringkas
   const stats = useMemo(() => {
@@ -322,6 +349,16 @@ export default function QuotationsScreen() {
           </View>
         </View>
 
+        {/* LOADING INDICATOR SAAT REFRESH / DATA FETCH */}
+        {isLoading && quotations.length > 0 && (
+          <View className="flex-row items-center justify-center py-2.5 px-4 bg-sky-950/40 border border-sky-800/40 rounded-xl mb-4">
+            <ActivityIndicator size="small" color="#38BDF8" />
+            <Text className="text-sky-300 text-xs ml-2 font-medium">
+              Memperbarui data surat penawaran...
+            </Text>
+          </View>
+        )}
+
         {/* LIST PENAWARAN */}
         {isLoading && quotations.length === 0 ? (
           <View className="py-20 items-center justify-center">
@@ -350,7 +387,7 @@ export default function QuotationsScreen() {
           </View>
         ) : (
           <View className="flex-col space-y-3">
-            {filteredQuotations.map((item) => {
+            {paginatedQuotations.map((item) => {
               const badge = getStatusBadge(item.status);
               return (
                 <View
@@ -479,34 +516,51 @@ export default function QuotationsScreen() {
                 </View>
               );
             })}
+
+            {/* Pagination Controls (10 item/page) */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredQuotations.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              className="mt-2"
+            />
           </View>
         )}
       </ScrollView>
 
-      {/* FORM MODAL (BUAT / EDIT PENAWARAN) */}
-      <QuotationFormModal
-        visible={formModalVisible}
-        quotation={selectedQuotation}
-        onClose={() => {
-          setFormModalVisible(false);
-          setSelectedQuotation(null);
-        }}
-        onSave={handleSaveQuotation}
-        onPreview={(mock) => {
-          setPreviewQuotation(mock);
-          setPreviewModalVisible(true);
-        }}
-      />
+      {/* FORM MODAL (BUAT / EDIT PENAWARAN) - Lazy Load on demand */}
+      {formModalVisible && (
+        <Suspense fallback={null}>
+          <QuotationFormModal
+            visible={formModalVisible}
+            quotation={selectedQuotation}
+            onClose={() => {
+              setFormModalVisible(false);
+              setSelectedQuotation(null);
+            }}
+            onSave={handleSaveQuotation}
+            onPreview={(mock) => {
+              setPreviewQuotation(mock);
+              setPreviewModalVisible(true);
+            }}
+          />
+        </Suspense>
+      )}
 
-      {/* PREVIEW & CETAK PDF MODAL */}
-      <QuotationPreviewModal
-        visible={previewModalVisible}
-        quotation={previewQuotation}
-        onClose={() => {
-          setPreviewModalVisible(false);
-          setPreviewQuotation(null);
-        }}
-      />
+      {/* PREVIEW & CETAK PDF MODAL - Lazy Load on demand */}
+      {previewModalVisible && (
+        <Suspense fallback={null}>
+          <QuotationPreviewModal
+            visible={previewModalVisible}
+            quotation={previewQuotation}
+            onClose={() => {
+              setPreviewModalVisible(false);
+              setPreviewQuotation(null);
+            }}
+          />
+        </Suspense>
+      )}
     </View>
   );
 }
