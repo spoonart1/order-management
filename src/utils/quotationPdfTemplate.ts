@@ -125,7 +125,10 @@ export function generateQuotationHtml(q: Quotation): string {
     }
     .signature-section {
       margin-top: 40px;
+      margin-left: auto;
+      margin-right: 0;
       width: 250px;
+      text-align: center;
     }
     .sig-date {
       margin-bottom: 60px;
@@ -188,7 +191,7 @@ export function generateQuotationHtml(q: Quotation): string {
       <div>Kepada Yth :</div>
       <div style="font-weight: bold; font-size: 13px;">${q.client_name}</div>
       ${q.client_phone ? `<div style="font-size: 11px; color: #475569;">Telp / WA: ${q.client_phone}</div>` : ''}
-      <div>Di ${q.client_city || 'Yogyakarta'}</div>
+      <div>Di ${q.client_city || 'Tempat'}</div>
     </div>
 
     <div class="content-p">
