@@ -2,6 +2,7 @@ import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
 import { boardCacheService } from '@/services/boardCacheService';
 import { offlineQueueService } from '@/services/offlineQueueService';
+import { orderWorkflowService } from '@/services/orderWorkflowService';
 import { BoardData, ColumnItem } from '@/store/slices/boardSlice';
 
 export interface UpdateCardPayload {
@@ -13,6 +14,7 @@ export interface UpdateCardPayload {
   column_id: string;
   assigned_to: string | null;
   notes: string;
+  due_date?: string | null;
 }
 
 export interface MoveCardPayload {
@@ -31,6 +33,7 @@ export interface CreateCardPayload {
   assigned_to: string | null;
   notes: string;
   position: number;
+  due_date?: string | null;
 }
 
 export interface CreateColumnPayload {
@@ -107,8 +110,13 @@ export const boardService = {
         (a, b) => a.position - b.position
       );
 
-      // Urutkan kartu di setiap kolom berdasarkan position
+      // Urutkan kartu di setiap kolom berdasarkan position & hidrasi due_date jika ada di notes
       sortedColumns.forEach((col) => {
+        col.board_cards.forEach((card) => {
+          if (!card.due_date) {
+            card.due_date = orderWorkflowService.getCardDueDate(card);
+          }
+        });
         col.board_cards.sort((a, b) => a.position - b.position);
       });
 
@@ -140,6 +148,8 @@ export const boardService = {
     if (!isOnline) {
       console.log(`[boardService] Offline: Menyimpan MOVE_CARD kartu ${payload.cardId} ke offline queue`);
       await offlineQueueService.enqueue('MOVE_CARD', payload);
+      // Evaluasi otomasi alur DP -> Order Masuk Produksi secara lokal
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.targetColumnId).catch(console.error);
       return;
     }
 
@@ -154,9 +164,13 @@ export const boardService = {
         .eq('id', payload.cardId);
 
       if (error) throw error;
+
+      // Evaluasi otomasi alur DP -> Order Masuk Produksi
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.targetColumnId).catch(console.error);
     } catch (error) {
       console.warn('[boardService] Gagal memindahkan kartu secara online, simpan ke antrean offline:', error);
       await offlineQueueService.enqueue('MOVE_CARD', payload);
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.targetColumnId).catch(console.error);
     }
   },
 
@@ -169,28 +183,51 @@ export const boardService = {
     if (!isOnline) {
       console.log(`[boardService] Offline: Menyimpan UPDATE_CARD kartu ${payload.cardId} ke offline queue`);
       await offlineQueueService.enqueue('UPDATE_CARD', payload);
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.column_id).catch(console.error);
       return;
     }
 
     try {
+      const updatePayload: Record<string, any> = {
+        title: payload.title,
+        client_name: payload.client_name,
+        client_phone: payload.client_phone,
+        estimated_value: payload.estimated_value,
+        column_id: payload.column_id,
+        assigned_to: payload.assigned_to,
+        notes: payload.notes,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (payload.due_date !== undefined) {
+        updatePayload.due_date = payload.due_date;
+      }
+
       const { error } = await supabase
         .from('board_cards')
-        .update({
-          title: payload.title,
-          client_name: payload.client_name,
-          client_phone: payload.client_phone,
-          estimated_value: payload.estimated_value,
-          column_id: payload.column_id,
-          assigned_to: payload.assigned_to,
-          notes: payload.notes,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', payload.cardId);
 
-      if (error) throw error;
+      if (error) {
+        // Jika kolom due_date belum dibuat di schema database, retry tanpa kolom due_date
+        if (error.code === '42703' && updatePayload.due_date !== undefined) {
+          delete updatePayload.due_date;
+          const { error: retryErr } = await supabase
+            .from('board_cards')
+            .update(updatePayload)
+            .eq('id', payload.cardId);
+          if (retryErr) throw retryErr;
+        } else {
+          throw error;
+        }
+      }
+
+      // Evaluasi otomasi alur DP -> Order Masuk Produksi
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.column_id).catch(console.error);
     } catch (error) {
       console.warn('[boardService] Gagal update detail kartu secara online, simpan ke antrean offline:', error);
       await offlineQueueService.enqueue('UPDATE_CARD', payload);
+      orderWorkflowService.handleMarketingDpTransition(payload.cardId, payload.column_id).catch(console.error);
     }
   },
 
@@ -198,7 +235,7 @@ export const boardService = {
    * Membuat kartu baru di kolom tertentu
    */
   async createCard(payload: CreateCardPayload): Promise<void> {
-    const { error } = await supabase.from('board_cards').insert({
+    const insertPayload: Record<string, any> = {
       board_id: payload.board_id,
       column_id: payload.column_id,
       title: payload.title,
@@ -208,11 +245,39 @@ export const boardService = {
       assigned_to: payload.assigned_to,
       notes: payload.notes || null,
       position: payload.position,
-    });
+    };
+
+    if (payload.due_date) {
+      insertPayload.due_date = payload.due_date;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from('board_cards')
+      .insert(insertPayload)
+      .select('id')
+      .single();
 
     if (error) {
-      console.error('Error creating card:', error);
-      throw error;
+      if (error.code === '42703' && insertPayload.due_date) {
+        delete insertPayload.due_date;
+        const { data: retryInserted, error: retryErr } = await supabase
+          .from('board_cards')
+          .insert(insertPayload)
+          .select('id')
+          .single();
+        if (retryErr) {
+          console.error('Error creating card on retry:', retryErr);
+          throw retryErr;
+        }
+        if (retryInserted?.id) {
+          orderWorkflowService.handleMarketingDpTransition(retryInserted.id, payload.column_id).catch(console.error);
+        }
+      } else {
+        console.error('Error creating card:', error);
+        throw error;
+      }
+    } else if (inserted?.id) {
+      orderWorkflowService.handleMarketingDpTransition(inserted.id, payload.column_id).catch(console.error);
     }
   },
 

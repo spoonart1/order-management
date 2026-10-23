@@ -1,18 +1,19 @@
 import { confirmDialog } from '@/lib/confirm';
 import { useNetworkStatus } from '@/lib/network';
 import { boardCacheService } from '@/services/boardCacheService';
+import { boardService } from '@/services/boardService';
 import { invoiceCacheService } from '@/services/invoiceCacheService';
 import { Invoice, PaymentReceipt } from '@/services/invoiceService';
 import { offlineQueueService } from '@/services/offlineQueueService';
+import { orderWorkflowService, ProductionDueStats } from '@/services/orderWorkflowService';
 import { quotationCacheService } from '@/services/quotationCacheService';
 import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { signOut } from '@/store/slices/authSlice';
-import { fetchBoardByType, setBoardFromCache } from '@/store/slices/boardSlice';
 import { fetchInvoices, setInvoicesFromCache } from '@/store/slices/invoiceSlice';
 import { fetchQuotations, setQuotationsFromCache } from '@/store/slices/quotationSlice';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   AlertTriangle,
   ArrowRight,
@@ -31,7 +32,7 @@ import {
   Wallet,
   XCircle,
 } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -49,7 +50,10 @@ export default function DashboardScreen() {
   const { user, profile, isLoading: authLoading } = useAppSelector((state) => state.auth);
   const { invoices, isLoading: invoiceLoading } = useAppSelector((state) => state.invoice);
   const { quotations, isLoading: quotationLoading } = useAppSelector((state) => state.quotation);
-  const { currentBoard, isLoading: boardLoading } = useAppSelector((state) => state.board);
+  const [marketingCardCount, setMarketingCardCount] = useState<number>(0);
+
+  // Status Deadline & Order Produksi
+  const [prodStats, setProdStats] = useState<ProductionDueStats | null>(null);
 
   const [refreshing, setRefreshing] = useState(false);
   const { isOnline } = useNetworkStatus();
@@ -72,7 +76,8 @@ export default function DashboardScreen() {
       invoiceCacheService.getInvoicesCache(),
       quotationCacheService.getQuotationsCache(),
       boardCacheService.getBoardCache('marketing'),
-    ]).then(([cachedInvoices, cachedQuotations, cachedBoard]) => {
+      orderWorkflowService.getProductionDueStatistics(10),
+    ]).then(([cachedInvoices, cachedQuotations, cachedBoard, cachedProdStats]) => {
       if (isMounted) {
         if (cachedInvoices && cachedInvoices.length > 0) {
           dispatch(setInvoicesFromCache(cachedInvoices));
@@ -81,7 +86,14 @@ export default function DashboardScreen() {
           dispatch(setQuotationsFromCache(cachedQuotations));
         }
         if (cachedBoard) {
-          dispatch(setBoardFromCache(cachedBoard));
+          let count = 0;
+          cachedBoard.board_columns.forEach((col) => {
+            count += (col.board_cards || []).length;
+          });
+          setMarketingCardCount(count);
+        }
+        if (cachedProdStats) {
+          setProdStats(cachedProdStats);
         }
       }
     });
@@ -93,6 +105,17 @@ export default function DashboardScreen() {
       isMounted = false;
     };
   }, [dispatch]);
+
+  // 2. Auto-refresh instan saat layar Dashboard kembali mendapatkan fokus (navigasi balik dari screen lain)
+  useFocusEffect(
+    useCallback(() => {
+      // Ambil snapshot statistik deadline terbaru secara instan dari cache & server
+      orderWorkflowService.getProductionDueStatistics(10).then((stats) => {
+        if (stats) setProdStats(stats);
+      });
+      loadDashboardData();
+    }, [])
+  );
 
   // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload / refresh halaman)
   useEffect(() => {
@@ -111,11 +134,22 @@ export default function DashboardScreen() {
 
   const loadDashboardData = async () => {
     try {
-      await Promise.all([
+      const [, , mBoard, pStats] = await Promise.all([
         dispatch(fetchInvoices()).unwrap(),
         dispatch(fetchQuotations()).unwrap(),
-        dispatch(fetchBoardByType('marketing')).unwrap(),
+        boardService.getBoardByType('marketing').catch(() => null),
+        orderWorkflowService.getProductionDueStatistics(10),
       ]);
+      if (mBoard) {
+        let count = 0;
+        mBoard.board_columns.forEach((col) => {
+          count += (col.board_cards || []).length;
+        });
+        setMarketingCardCount(count);
+      }
+      if (pStats) {
+        setProdStats(pStats);
+      }
     } catch (e) {
       // Abaikan jika salah satu fetch gagal agar dashboard tetap tampil
       console.warn('Dashboard fetch warning:', e);
@@ -194,23 +228,6 @@ export default function DashboardScreen() {
     return { total, draft, sent, approved, rejected, pipelineValue, approvedValue };
   }, [quotations]);
 
-  // 3. Perhitungan Statistik Kartu Pesanan / Proyek Aktif (Board)
-  const boardStats = useMemo(() => {
-    if (!currentBoard?.board_columns) return { totalCards: 0, totalEstimatedValue: 0 };
-
-    let totalCards = 0;
-    let totalEstimatedValue = 0;
-
-    currentBoard.board_columns.forEach((col) => {
-      (col.board_cards || []).forEach((card) => {
-        totalCards++;
-        totalEstimatedValue += Number(card.estimated_value || 0);
-      });
-    });
-
-    return { totalCards, totalEstimatedValue };
-  }, [currentBoard]);
-
   // 4. Deteksi Tagihan Jatuh Tempo (Overdue & Mendekati Tempo dalam 7 Hari)
   const urgentInvoices = useMemo(() => {
     const today = new Date();
@@ -249,7 +266,7 @@ export default function DashboardScreen() {
       .slice(0, 5);
   }, [invoices]);
 
-  const isGlobalLoading = (invoiceLoading || quotationLoading || boardLoading) && invoices.length === 0;
+  const isGlobalLoading = (invoiceLoading || quotationLoading) && invoices.length === 0;
 
   return (
     <View className="flex-1 bg-[#F8F6F1]">
@@ -433,25 +450,55 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              {/* Card 4: Proyek Aktif di Kanban */}
+              {/* Card 4: Proyek & Order Produksi */}
               <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 shadow-xs justify-between">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-[#70787C] text-[11px] font-semibold uppercase tracking-wider">
-                    Proyek Aktif (Kanban)
+                    Order Masuk & Produksi
                   </Text>
-                  <View className="bg-[#FAF8F5] border border-[#E2DBD0] px-1.5 py-0.5 rounded-[2px]">
-                    <Text className="text-[#1B2225] text-[10px] font-bold font-mono">ORDER</Text>
+                  <View
+                    className={`px-1.5 py-0.5 rounded-[2px] border ${
+                      (prodStats?.totalUrgentCount || 0) > 0
+                        ? 'bg-amber-50 border-amber-300'
+                        : 'bg-[#FAF8F5] border-[#E2DBD0]'
+                    }`}
+                  >
+                    <Text
+                      className={`text-[10px] font-bold font-mono ${
+                        (prodStats?.totalUrgentCount || 0) > 0 ? 'text-amber-800' : 'text-[#1B2225]'
+                      }`}
+                    >
+                      {(prodStats?.totalUrgentCount || 0) > 0 ? '⚠️ KRITIS' : 'PROD'}
+                    </Text>
                   </View>
                 </View>
                 <View className="mt-2.5">
                   <Text className="text-[#1B2225] font-bold text-lg md:text-xl font-mono">
-                    {boardStats.totalCards} Proyek
+                    {prodStats?.totalActiveCount ?? marketingCardCount} Order Aktif
                   </Text>
                   <View className="flex-row items-center justify-between border-t border-[#F2EDE4] pt-1.5 mt-1.5">
-                    <Text className="text-[#8A9296] text-[11px]" numberOfLines={1}>
-                      Est: {formatRupiah(boardStats.totalEstimatedValue)}
+                    <Text
+                      className={`text-[11px] ${
+                        (prodStats?.totalUrgentCount || 0) > 0
+                          ? 'text-amber-800 font-bold'
+                          : 'text-[#8A9296]'
+                      }`}
+                      numberOfLines={1}
+                    >
+                      {(prodStats?.totalUrgentCount || 0) > 0
+                        ? `${prodStats?.totalUrgentCount} mendekati deadline (≤10h)`
+                        : 'Jadwal deadline aman'}
                     </Text>
-                    <Text className="text-[#968363] font-semibold text-[11px]">Workshop</Text>
+                    <Pressable
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(backoffice)/boards',
+                          params: { type: 'production' },
+                        })
+                      }
+                    >
+                      <Text className="text-[#968363] font-semibold text-[11px]">Buka →</Text>
+                    </Pressable>
                   </View>
                 </View>
               </View>
@@ -698,6 +745,120 @@ export default function DashboardScreen() {
                             className="bg-[#1B2225] px-2.5 py-1 rounded-[2px]"
                           >
                             <Text className="text-white text-[11px] font-semibold">Tagih</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* 5B. MONITORING DEADLINE ORDER PRODUKSI (TENGGAT ≤ 10 HARI) */}
+            <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 mb-3 shadow-xs">
+              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5">
+                <View className="flex-row items-center">
+                  <Clock size={14} color="#968363" />
+                  <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
+                    ORDER PRODUKSI MENDEKATI DEADLINE (TENGGAT ≤ 10 HARI)
+                  </Text>
+                  {(prodStats?.totalUrgentCount || 0) > 0 && (
+                    <View className="ml-2 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-[2px]">
+                      <Text className="text-amber-900 font-mono text-[10px] font-bold">
+                        {prodStats?.totalUrgentCount} Perlu Perhatian
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(backoffice)/boards',
+                      params: { type: 'production' },
+                    })
+                  }
+                  className="flex-row items-center"
+                >
+                  <Text className="text-[#968363] text-[11px] font-semibold mr-1">Board Produksi</Text>
+                  <ArrowRight size={12} color="#968363" />
+                </Pressable>
+              </View>
+
+              {!prodStats || prodStats.urgentOrders.length === 0 ? (
+                <View className="py-4 items-center justify-center">
+                  <CheckCircle2 size={24} color="#059669" />
+                  <Text className="text-[#1B2225] font-semibold text-xs mt-1.5">
+                    Semua order produksi dalam batas tenggat aman
+                  </Text>
+                  <Text className="text-[#70787C] text-[11px] mt-0.5">
+                    Tidak ada order masuk atau pengerjaan produksi yang mendekati deadline (tenggat ≤ 10 hari).
+                  </Text>
+                </View>
+              ) : (
+                <View className="space-y-2">
+                  {prodStats.urgentOrders.map((order) => {
+                    const isOverdue = order.diff_days <= 0;
+                    return (
+                      <View
+                        key={order.id}
+                        className="bg-[#FAF8F5] border border-[#E8E2D6] p-2.5 rounded-[3px] flex-col md:flex-row md:items-center justify-between gap-2"
+                      >
+                        <View className="flex-row items-center space-x-2">
+                          <View
+                            className={`px-1.5 py-0.5 rounded-[2px] border mr-2 ${
+                              isOverdue
+                                ? 'bg-rose-50 border-rose-200'
+                                : 'bg-amber-50 border-amber-200'
+                            }`}
+                          >
+                            <Text
+                              className={`text-[9px] font-bold font-mono ${
+                                isOverdue ? 'text-rose-700' : 'text-amber-700'
+                              }`}
+                            >
+                              {isOverdue
+                                ? `LEWAT ${Math.abs(order.diff_days)} HARI`
+                                : order.diff_days === 0
+                                ? 'HARI INI'
+                                : `${order.diff_days} HARI LAGI`}
+                            </Text>
+                          </View>
+                          <View>
+                            <Text className="text-[#1B2225] font-bold text-xs">
+                              {order.title} • {order.client_name || 'Tanpa Klien'}
+                            </Text>
+                            <View className="flex-row items-center gap-1.5 mt-0.5">
+                              <View
+                                style={{ backgroundColor: order.column_color || '#968363' }}
+                                className="w-1.5 h-1.5 rounded-full"
+                              />
+                              <Text className="text-[#70787C] text-[11px]">
+                                Tahapan: {order.column_title} • Deadline:{' '}
+                                <Text className="font-mono font-semibold text-[#1B2225]">
+                                  {formatIndonesianDate(order.due_date)}
+                                </Text>
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        <View className="flex-row items-center justify-between md:justify-end gap-3">
+                          <View className="text-right">
+                            <Text className="text-[#70787C] text-[10px]">Nilai Proyek:</Text>
+                            <Text className="text-emerald-800 font-bold text-xs font-mono">
+                              {formatRupiah(order.estimated_value)}
+                            </Text>
+                          </View>
+                          <Pressable
+                            onPress={() =>
+                              router.push({
+                                pathname: '/(backoffice)/boards',
+                                params: { type: 'production' },
+                              })
+                            }
+                            className="bg-[#1B2225] hover:bg-[#2C3539] px-2.5 py-1 rounded-[2px]"
+                          >
+                            <Text className="text-white text-[11px] font-semibold">Lihat Board</Text>
                           </Pressable>
                         </View>
                       </View>

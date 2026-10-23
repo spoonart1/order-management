@@ -12,6 +12,7 @@ interface KanbanColumnProps {
   draggingCardId?: string;
   deletingCardId?: string | null;
   isDeletingColumn?: boolean;
+  showDeadline?: boolean;
   onCardPress: (card: CardItem) => void;
   onCardDragStart: (card: CardItem) => void;
   onDeleteCard: (card: CardItem) => void;
@@ -30,6 +31,7 @@ export function KanbanColumn({
   draggingCardId,
   deletingCardId,
   isDeletingColumn = false,
+  showDeadline = true,
   onCardPress,
   onCardDragStart,
   onDeleteCard,
@@ -94,6 +96,7 @@ export function KanbanColumn({
             progressPercent={progressPercent}
             isBeingDragged={draggingCardId === card.id}
             isDeleting={deletingCardId === card.id}
+            showDeadline={showDeadline}
             onPress={() => onCardPress(card)}
             onDragStart={() => onCardDragStart(card)}
             onDelete={() => onDeleteCard(card)}

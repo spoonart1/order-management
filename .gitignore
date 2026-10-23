@@ -43,3 +43,6 @@ example
 # generated native folders
 /ios
 /android
+
+# documentation & specs (local only, excluded from GitHub)
+docs/

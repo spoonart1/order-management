@@ -1,17 +1,28 @@
 import { Chip } from "@/components/ui/Chip";
-import { cardAttachmentService } from "@/services/cardAttachmentService";
+import { DatePickerField } from "@/components/ui/DatePickerField";
+import {
+    cardAttachmentService,
+    MAX_PDF_SIZE_BYTES,
+    MAX_PDF_SIZE_MB,
+    TARGET_IMAGE_MAX_KB,
+} from "@/services/cardAttachmentService";
+import { orderWorkflowService } from "@/services/orderWorkflowService";
 import { Quotation, SaveQuotationPayload, quotationService } from "@/services/quotationService";
 import { QuotationFormModal } from "@/components/quotation/QuotationFormModal";
 import { QuotationPreviewModal } from "@/components/quotation/QuotationPreviewModal";
 import { AttachmentItem, CardItem, ColumnItem, Profile } from "@/store/slices/boardSlice";
 import { formatRupiah } from "@/utils/terbilang";
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { Camera, FileText } from 'lucide-react-native';
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     Image,
+    Linking,
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     Text,
@@ -34,6 +45,7 @@ interface CardDetailModalProps {
         column_id: string;
         assigned_to: string | null;
         notes: string;
+        due_date?: string | null;
     }) => void;
     onAttachmentChange?: () => void;
     /** Kolom default saat membuat kartu baru (mode create, ketika card = null) */
@@ -59,6 +71,7 @@ export function CardDetailModal({
     const [value, setValue] = useState('');
     const [columnId, setColumnId] = useState('');
     const [assignedTo, setAssignedTo] = useState<string | null>(null);
+    const [dueDate, setDueDate] = useState('');
     const [notes, setNotes] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -98,6 +111,7 @@ export function CardDetailModal({
                 setColumnId(card.column_id);
                 setAssignedTo(card.assigned_to || null);
                 setNotes(card.notes || '');
+                setDueDate(card.due_date || orderWorkflowService.getCardDueDate(card) || '');
                 setAttachments(card.card_attachments || []);
 
                 // Ambil data penawaran yang terhubung
@@ -112,6 +126,7 @@ export function CardDetailModal({
                 setValue('');
                 setColumnId(defaultColumnId || columns[0]?.id || '');
                 setAssignedTo(null);
+                setDueDate('');
                 setNotes('');
                 setAttachments([]);
                 setLinkedQuotation(null);
@@ -163,6 +178,14 @@ export function CardDetailModal({
         }
 
         setErrorMessage(null);
+
+        // Jika ada due_date, perbarui juga metadata tag [DEADLINE:...] di notes agar tetap konsisten
+        let finalNotes = notes.trim();
+        if (dueDate) {
+            const clean = finalNotes.replace(/\[DEADLINE:[^\]]+\]/g, '').trim();
+            finalNotes = clean ? `[DEADLINE:${dueDate}] ${clean}` : `[DEADLINE:${dueDate}]`;
+        }
+
         onSave({
             title: title.trim(),
             client_name: clientName.trim(),
@@ -170,11 +193,12 @@ export function CardDetailModal({
             estimated_value: parseFloat(value) || 0,
             column_id: columnId,
             assigned_to: assignedTo,
-            notes: notes.trim(),
+            notes: finalNotes,
+            due_date: dueDate || null,
         });
     };
 
-    // Handler Upload (Memanggil Network Layer Service)
+    // Handler Upload Foto
     const handlePickAndUploadImage = async () => {
         if (!card) return;
 
@@ -197,7 +221,12 @@ export function CardDetailModal({
             const asset = result.assets[0];
 
             // PANGGIL SERVICE LAYER
-            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, asset);
+            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, {
+                uri: asset.uri,
+                fileName: asset.fileName || `foto_${Date.now()}.jpg`,
+                mimeType: asset.mimeType || 'image/jpeg',
+                fileSize: asset.fileSize,
+            });
             setAttachments((prev) => [...prev, newAttachment]);
             onAttachmentChange?.();
         } catch (err: any) {
@@ -205,6 +234,68 @@ export function CardDetailModal({
         } finally {
             setUploading(false);
         }
+    };
+
+    // Handler Upload Dokumen PDF
+    const handlePickAndUploadPdf = async () => {
+        if (!card) return;
+
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled || !result.assets?.length) return;
+
+            const asset = result.assets[0];
+
+            if (asset.size && asset.size > MAX_PDF_SIZE_BYTES) {
+                Alert.alert(
+                    "Ukuran PDF Melebihi Batas",
+                    `Ukuran file PDF (${(asset.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal ${MAX_PDF_SIZE_MB} MB.`
+                );
+                return;
+            }
+
+            setUploading(true);
+
+            // PANGGIL SERVICE LAYER
+            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, {
+                uri: asset.uri,
+                fileName: asset.name,
+                mimeType: asset.mimeType || 'application/pdf',
+                fileSize: asset.size,
+                file: asset.file,
+            });
+            setAttachments((prev) => [...prev, newAttachment]);
+            onAttachmentChange?.();
+        } catch (err: any) {
+            Alert.alert("Gagal Upload PDF", err?.message || "Terjadi kesalahan saat mengunggah dokumen PDF.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Handler Buka / Preview File Lampiran (PDF atau Gambar)
+    const handleOpenAttachment = async (item: AttachmentItem) => {
+        try {
+            if (Platform.OS === 'web') {
+                window.open(item.file_url, '_blank');
+            } else {
+                await Linking.openURL(item.file_url);
+            }
+        } catch (err: any) {
+            Alert.alert("Gagal Membuka File", "Tidak dapat membuka lampiran: " + (err?.message || err));
+        }
+    };
+
+    // Helper Format Ukuran File
+    const formatFileSize = (bytes?: number) => {
+        if (!bytes || bytes <= 0) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
     // Handler Hapus (Memanggil Network Layer Service)
@@ -336,6 +427,20 @@ export function CardDetailModal({
                             />
                         </View>
 
+                        {/* Tenggat Waktu / Deadline (Due Date) */}
+                        <View className="mb-3">
+                            <DatePickerField
+                                label="Tenggat Deadline (Due Date)"
+                                value={dueDate}
+                                onChange={(newDate) => {
+                                    setDueDate(newDate);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
+                                placeholder="Pilih tanggal deadline pengerjaan..."
+                                allowClear
+                            />
+                        </View>
+
                         {/* Pindah Kolom */}
                         <View className="mb-3">
                             <Text className="text-[#1B2225] text-xs font-semibold mb-1.5">
@@ -393,70 +498,173 @@ export function CardDetailModal({
                         {isCreateMode ? (
                             <View className="mb-3 pt-2.5 border-t border-[#E3DDCF]">
                                 <Text className="text-[#8A9296] text-[11px]">
-                                    📷 Foto & lampiran bisa diunggah setelah kartu disimpan.
+                                    📎 Foto & lampiran dokumen bisa diunggah setelah kartu disimpan.
                                 </Text>
                             </View>
                         ) : (
                             <View className="mb-3 pt-2 border-t border-[#E3DDCF]">
                                 <View className="flex-row justify-between items-center mb-2">
                                     <Text className="text-[#1B2225] text-xs font-semibold">
-                                        Galeri Foto & Lampiran ({attachments.length})
+                                        Galeri Foto & Dokumen ({attachments.length})
                                     </Text>
-                                    <Pressable
-                                        onPress={handlePickAndUploadImage}
-                                        disabled={uploading}
-                                        style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
-                                        className="bg-[#1B2225] border border-[#1B2225] px-2.5 py-1 rounded-[3px] flex-row items-center shadow-xs"
-                                    >
-                                        {uploading ? (
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
-                                        ) : (
-                                            <Text className="text-white text-xs font-semibold">
-                                                📷 + Upload Foto
+                                    <View className="flex-row items-center gap-1.5">
+                                        <Pressable
+                                            onPress={handlePickAndUploadImage}
+                                            disabled={uploading}
+                                            style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
+                                            className="bg-[#FAF8F5] border border-[#DDD6C8] hover:bg-[#F2EDE4] px-2 py-1 rounded-[3px] flex-row items-center shadow-2xs"
+                                        >
+                                            <Camera size={11} color="#1B2225" />
+                                            <Text className="text-[#1B2225] text-[11px] font-semibold ml-1">
+                                                + Foto
                                             </Text>
-                                        )}
-                                    </Pressable>
+                                        </Pressable>
+
+                                        <Pressable
+                                            onPress={handlePickAndUploadPdf}
+                                            disabled={uploading}
+                                            style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
+                                            className="bg-[#1B2225] border border-[#1B2225] hover:bg-[#2C373C] px-2.5 py-1 rounded-[3px] flex-row items-center shadow-2xs"
+                                        >
+                                            {uploading ? (
+                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                            ) : (
+                                                <>
+                                                    <FileText size={11} color="#FFFFFF" />
+                                                    <Text className="text-white text-[11px] font-semibold ml-1">
+                                                        + PDF
+                                                    </Text>
+                                                </>
+                                            )}
+                                        </Pressable>
+                                    </View>
                                 </View>
 
-                                {/* List Thumbnail Foto */}
+                                {/* List Thumbnail Foto & Lampiran PDF */}
                                 {attachments.length === 0 ? (
-                                    <Pressable
-                                        className="py-4 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px] bg-white"
-                                        onPress={handlePickAndUploadImage}
-                                        disabled={uploading}
-                                    >
-                                        <Text className="text-[#70787C] text-xs">Belum ada foto yang diunggah</Text>
-                                        <Text className="text-[#8A9296] text-[10px] mt-0.5">
-                                            Unggah foto pengukuran, render 3D, atau bukti pengerjaan
+                                    <View>
+                                        <View className="flex-row gap-2">
+                                            <Pressable
+                                                className="flex-1 py-3 px-2.5 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px] bg-white hover:bg-[#FAF8F5]"
+                                                onPress={handlePickAndUploadImage}
+                                                disabled={uploading}
+                                            >
+                                                <Camera size={18} color="#968363" />
+                                                <Text className="text-[#1B2225] text-xs font-semibold mt-1">Unggah Foto</Text>
+                                                <Text className="text-[#8A9296] text-[10px] mt-0.5 text-center">
+                                                    Pengukuran, visual 3D & workshop
+                                                </Text>
+                                            </Pressable>
+                                            <Pressable
+                                                className="flex-1 py-3 px-2.5 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px] bg-white hover:bg-[#FAF8F5]"
+                                                onPress={handlePickAndUploadPdf}
+                                                disabled={uploading}
+                                            >
+                                                <FileText size={18} color="#DC2626" />
+                                                <Text className="text-[#1B2225] text-xs font-semibold mt-1">Unggah PDF</Text>
+                                                <Text className="text-[#8A9296] text-[10px] mt-0.5 text-center">
+                                                    SPK, denah CAD & spek teknis
+                                                </Text>
+                                            </Pressable>
+                                        </View>
+                                        <Text className="text-[#8A9296] text-[10px] text-center mt-1.5">
+                                            Batas ukuran: <Text className="font-semibold text-[#1B2225] font-mono">PDF maks. {MAX_PDF_SIZE_MB} MB</Text> • Foto otomatis dikompresi (<Text className="font-semibold text-[#1B2225] font-mono">&lt; {TARGET_IMAGE_MAX_KB} KB</Text>)
                                         </Text>
-                                    </Pressable>
+                                    </View>
                                 ) : (
                                     <View className="flex-row flex-wrap gap-2">
-                                        {attachments.map((item) => (
-                                            <View
-                                                key={item.id}
-                                                className="w-20 h-20 rounded-[3px] overflow-hidden bg-white border border-[#DDD6C8] relative"
-                                            >
-                                                <Image
-                                                    source={{ uri: item.file_url }}
-                                                    className="w-full h-full"
-                                                    resizeMode="cover"
-                                                />
-                                                {/* Tombol Hapus Foto */}
-                                                <Pressable
-                                                    onPress={() => handleDeleteAttachment(item)}
-                                                    disabled={deletingId === item.id}
-                                                    style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                                    className="absolute top-1 right-1 w-5 h-5 rounded-[2px] bg-rose-700 items-center justify-center shadow-xs"
+                                        {attachments.map((item) => {
+                                            const isPdf =
+                                                item.file_type === 'pdf' ||
+                                                item.file_name?.toLowerCase().endsWith('.pdf') ||
+                                                item.file_url?.toLowerCase().includes('.pdf');
+
+                                            if (isPdf) {
+                                                return (
+                                                    <View
+                                                        key={item.id}
+                                                        className="w-28 h-24 rounded-[3px] overflow-hidden bg-[#FAF8F5] border border-[#DDD6C8] p-2 relative justify-between shadow-2xs"
+                                                    >
+                                                        <Pressable
+                                                            onPress={() => handleOpenAttachment(item)}
+                                                            className="flex-1 justify-between"
+                                                        >
+                                                            <View className="flex-row items-center justify-between pr-5">
+                                                                <View className="bg-rose-50 border border-rose-200 px-1 py-0.5 rounded-[2px] flex-row items-center">
+                                                                    <FileText size={10} color="#BE123C" />
+                                                                    <Text className="text-rose-700 font-mono text-[9px] font-bold ml-0.5">
+                                                                        PDF
+                                                                    </Text>
+                                                                </View>
+                                                            </View>
+
+                                                            <Text
+                                                                className="text-[#1B2225] text-[11px] font-semibold leading-tight my-1"
+                                                                numberOfLines={2}
+                                                                ellipsizeMode="middle"
+                                                            >
+                                                                {item.file_name || 'Dokumen.pdf'}
+                                                            </Text>
+
+                                                            <View className="flex-row items-center justify-between">
+                                                                <Text className="text-[#8A9296] text-[9px] font-mono">
+                                                                    {formatFileSize(item.file_size) || 'PDF File'}
+                                                                </Text>
+                                                                <Text className="text-[#968363] text-[9px] font-bold">
+                                                                    Buka ↗
+                                                                </Text>
+                                                            </View>
+                                                        </Pressable>
+
+                                                        {/* Tombol Hapus Dokumen */}
+                                                        <Pressable
+                                                            onPress={() => handleDeleteAttachment(item)}
+                                                            disabled={deletingId === item.id}
+                                                            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                            className="absolute top-1 right-1 w-5 h-5 rounded-[2px] bg-rose-700 items-center justify-center shadow-xs"
+                                                        >
+                                                            {deletingId === item.id ? (
+                                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                                            ) : (
+                                                                <Text className="text-white text-[10px] font-bold leading-none">✕</Text>
+                                                            )}
+                                                        </Pressable>
+                                                    </View>
+                                                );
+                                            }
+
+                                            return (
+                                                <View
+                                                    key={item.id}
+                                                    className="w-24 h-24 rounded-[3px] overflow-hidden bg-white border border-[#DDD6C8] relative shadow-2xs"
                                                 >
-                                                    {deletingId === item.id ? (
-                                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                                    ) : (
-                                                        <Text className="text-white text-[10px] font-bold leading-none">✕</Text>
-                                                    )}
-                                                </Pressable>
-                                            </View>
-                                        ))}
+                                                    <Pressable
+                                                        onPress={() => handleOpenAttachment(item)}
+                                                        className="w-full h-full"
+                                                    >
+                                                        <Image
+                                                            source={{ uri: item.file_url }}
+                                                            className="w-full h-full"
+                                                            resizeMode="cover"
+                                                        />
+                                                    </Pressable>
+
+                                                    {/* Tombol Hapus Foto */}
+                                                    <Pressable
+                                                        onPress={() => handleDeleteAttachment(item)}
+                                                        disabled={deletingId === item.id}
+                                                        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                        className="absolute top-1 right-1 w-5 h-5 rounded-[2px] bg-rose-700 items-center justify-center shadow-xs"
+                                                    >
+                                                        {deletingId === item.id ? (
+                                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                                        ) : (
+                                                            <Text className="text-white text-[10px] font-bold leading-none">✕</Text>
+                                                        )}
+                                                    </Pressable>
+                                                </View>
+                                            );
+                                        })}
                                     </View>
                                 )}
                             </View>

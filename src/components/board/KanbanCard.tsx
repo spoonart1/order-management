@@ -1,6 +1,8 @@
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { orderWorkflowService } from '@/services/orderWorkflowService';
 import { CardItem } from '@/store/slices/boardSlice';
-import { FileText, Trash2 } from 'lucide-react-native';
+import { formatIndonesianDate } from '@/utils/terbilang';
+import { Clock, FileText, Trash2 } from 'lucide-react-native';
 import { useRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 
@@ -10,6 +12,7 @@ interface KanbanCardProps {
   progressPercent: number;
   isBeingDragged: boolean;
   isDeleting?: boolean;
+  showDeadline?: boolean;
   onPress: () => void;
   onDragStart: () => void;
   onDelete: () => void;
@@ -21,6 +24,7 @@ export function KanbanCard({
   progressPercent,
   isBeingDragged,
   isDeleting = false,
+  showDeadline = true,
   onPress,
   onDragStart,
   onDelete,
@@ -32,6 +36,12 @@ export function KanbanCard({
   const isDraggingRef = useRef(false);
   const dragEndTimeRef = useRef(0);
   const attachmentCount = card.card_attachments?.length || 0;
+
+  // Deadline & Due Date Status
+  const dueDate = card.due_date || orderWorkflowService.getCardDueDate(card);
+  const diffDays = dueDate ? orderWorkflowService.getDaysRemaining(dueDate) : null;
+  const isOverdue = diffDays !== null && diffDays <= 0;
+  const isNearDue = diffDays !== null && diffDays > 0 && diffDays <= 10;
 
   // Konten kartu yang dirender di dalam wrapper
   const cardContent = (
@@ -80,6 +90,52 @@ export function KanbanCard({
         </Text>
       </View>
 
+      {/* Deadline Pesanan (Hanya muncul jika diizinkan, misal di Board Produksi) */}
+      {showDeadline && dueDate && diffDays !== null && (
+        <View
+          className={`px-2 py-1 rounded-[2px] mb-2 flex-row justify-between items-center border ${
+            isOverdue
+              ? 'bg-rose-50 border-rose-200'
+              : isNearDue
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-[#FAF8F5] border-[#EDE7DC]'
+          }`}
+        >
+          <View className="flex-row items-center">
+            <Clock
+              size={11}
+              color={isOverdue ? '#9E2A2B' : isNearDue ? '#B45309' : '#70787C'}
+            />
+            <Text
+              className={`text-[10px] ml-1 font-mono font-bold ${
+                isOverdue
+                  ? 'text-rose-800'
+                  : isNearDue
+                  ? 'text-amber-800'
+                  : 'text-[#70787C]'
+              }`}
+            >
+              {isOverdue
+                ? `Lewat ${Math.abs(diffDays)} Hari`
+                : isNearDue
+                ? `Tenggat ${diffDays} Hari`
+                : `Sisa ${diffDays} Hari`}
+            </Text>
+          </View>
+          <Text
+            className={`text-[9px] font-mono ${
+              isOverdue
+                ? 'text-rose-700'
+                : isNearDue
+                ? 'text-amber-700'
+                : 'text-[#8A9296]'
+            }`}
+          >
+            {formatIndonesianDate(dueDate)}
+          </Text>
+        </View>
+      )}
+
       {/* Progress Bar */}
       <View className="mb-2">
         <View className="flex-row justify-between mb-1">
@@ -104,11 +160,11 @@ export function KanbanCard({
           </Text>
         </View>
 
-        {/* Badge Galeri Foto jika ada foto terlampir */}
+        {/* Badge Lampiran (Foto & PDF) jika ada file terlampir */}
         {attachmentCount > 0 && (
           <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px] flex-row items-center">
-            <Text className="text-[#968363] text-[10px] font-semibold">
-              📷 {attachmentCount}
+            <Text className="text-[#968363] text-[10px] font-semibold font-mono">
+              📎 {attachmentCount}
             </Text>
           </View>
         )}
