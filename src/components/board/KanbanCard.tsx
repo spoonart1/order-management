@@ -38,13 +38,15 @@ export function KanbanCard({
     <>
       {/* Header Kartu: Nama Project, Klien & Menu Triple Dot */}
       <View className="flex-row justify-between items-start">
-        <View className="flex-1 pr-2 mb-3">
-          <Text className="text-white font-bold text-[14px] mb-1.5">{card.title}</Text>
-          <Text className="text-slate-400 text-[10px]">
+        <View className="flex-1 pr-2 mb-2">
+          <Text className="text-[#1B2225] font-bold text-xs mb-1" numberOfLines={2}>
+            {card.title}
+          </Text>
+          <Text className="text-[#70787C] text-[10px]">
             👤 {card.client_name || 'Tanpa Klien'}
           </Text>
           {card.client_phone ? (
-            <Text className="text-slate-400 text-[10px] mt-1">
+            <Text className="text-[#8A9296] text-[10px] mt-0.5 font-mono">
               📞 {card.client_phone}
             </Text>
           ) : null}
@@ -53,16 +55,16 @@ export function KanbanCard({
         {/* Tombol Triple Vertical Dot (Modal Backdrop Lintas Platform) */}
         <DropdownMenu
           disabled={isDeleting}
-          buttonClassName="w-7 h-7 rounded-lg items-center justify-center bg-slate-900"
+          buttonClassName="w-6 h-6 rounded-[2px] items-center justify-center bg-[#FAF8F5] border border-[#DDD6C8]"
           items={[
             {
               label: 'Detail & Surat Penawaran',
-              icon: <FileText size={13} color="#38BDF8" />,
+              icon: <FileText size={13} color="#968363" />,
               onPress: onPress,
             },
             {
               label: 'Hapus Kartu',
-              icon: <Trash2 size={13} color="#F87171" />,
+              icon: <Trash2 size={13} color="#9E2A2B" />,
               destructive: true,
               onPress: onDelete,
             },
@@ -71,41 +73,41 @@ export function KanbanCard({
       </View>
 
       {/* Nilai Estimasi */}
-      <View className="bg-slate-900 px-2.5 py-1.5 rounded-lg mb-3 flex-row justify-between items-center">
-        <Text className="text-slate-500 text-[10px]">Nilai Est.:</Text>
-        <Text className="text-emerald-400 font-bold text-xs">
+      <View className="bg-[#FAF8F5] border border-[#EDE7DC] px-2 py-1 rounded-[2px] mb-2 flex-row justify-between items-center">
+        <Text className="text-[#70787C] text-[10px]">Nilai Est.:</Text>
+        <Text className="text-emerald-800 font-bold text-xs font-mono">
           {formatRupiah(card.estimated_value)}
         </Text>
       </View>
 
       {/* Progress Bar */}
-      <View className="mb-3">
+      <View className="mb-2">
         <View className="flex-row justify-between mb-1">
-          <Text className="text-slate-500 text-[10px]">Progress Tahapan</Text>
-          <Text className="text-slate-400 text-[10px] font-semibold">
+          <Text className="text-[#70787C] text-[10px]">Progress Tahapan</Text>
+          <Text className="text-[#1B2225] text-[10px] font-bold font-mono">
             {progressPercent}%
           </Text>
         </View>
-        <View className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+        <View className="w-full bg-[#EAE5DA] h-1.5 rounded-[1px] overflow-hidden">
           <View
-            style={{ width: `${progressPercent}%`, backgroundColor: columnColor }}
-            className="h-full rounded-full"
+            style={{ width: `${progressPercent}%`, backgroundColor: columnColor || '#968363' }}
+            className="h-full rounded-[1px]"
           />
         </View>
       </View>
 
       {/* Footer Kartu: PIC Assignee & Badge Attachment Foto */}
-      <View className="flex-row items-center justify-between pt-2 border-t border-slate-900">
-        <View className="bg-slate-800 px-2 py-0.5 rounded-md">
-          <Text className="text-sky-300 text-[9px] font-medium p-1">
+      <View className="flex-row items-center justify-between pt-1.5 border-t border-[#F2EDE4]">
+        <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px]">
+          <Text className="text-[#1B2225] text-[9px] font-medium">
             👤 {card.profiles?.full_name || 'Belum di-assign'}
           </Text>
         </View>
 
         {/* Badge Galeri Foto jika ada foto terlampir */}
         {attachmentCount > 0 && (
-          <View className="bg-slate-800 px-2 py-0.5 rounded-md flex-row items-center">
-            <Text className="text-slate-300 text-[11px]">
+          <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px] flex-row items-center">
+            <Text className="text-[#968363] text-[10px] font-semibold">
               📷 {attachmentCount}
             </Text>
           </View>
@@ -121,15 +123,15 @@ export function KanbanCard({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(2, 6, 23, 0.8)',
-            borderRadius: 12,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            borderRadius: 3,
             zIndex: 60,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <ActivityIndicator size="small" color="#F87171" />
-          <Text className="text-red-400 text-[11px] font-semibold mt-2">
+          <ActivityIndicator size="small" color="#9E2A2B" />
+          <Text className="text-[#9E2A2B] text-[11px] font-semibold mt-1">
             Menghapus kartu...
           </Text>
         </View>
@@ -176,7 +178,7 @@ export function KanbanCard({
           userSelect: 'none',
           position: 'relative',
         }}
-        className="bg-slate-950 border border-slate-800 hover:border-slate-600 p-4 rounded-xl mb-3 shadow-sm transition-all"
+        className="bg-white border border-[#E3DDCF] hover:border-[#968363] p-3 rounded-[3px] mb-2.5 shadow-xs transition-all"
       >
         {cardContent}
       </div>
@@ -198,7 +200,7 @@ export function KanbanCard({
         },
       ]}
       pointerEvents={isDeleting ? 'none' : 'auto'}
-      className="bg-slate-950 border border-slate-800 p-4 rounded-xl mb-3 shadow-sm"
+      className="bg-white border border-[#E3DDCF] p-3 rounded-[3px] mb-2.5 shadow-xs"
     >
       {cardContent}
     </Pressable>

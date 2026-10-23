@@ -322,8 +322,8 @@ export default function BoardScreen() {
 
   if (isLoading && !currentBoard) {
     return (
-      <View className="flex-1 justify-center items-center bg-slate-950">
-        <ActivityIndicator size="large" color="#38BDF8" />
+      <View className="flex-1 justify-center items-center bg-[#F8F6F1]">
+        <ActivityIndicator size="large" color="#968363" />
       </View>
     );
   }
@@ -331,7 +331,7 @@ export default function BoardScreen() {
   const totalColumns = currentBoard?.board_columns.length || 1;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-[#F8F6F1]">
       {/* 1. Header Board & Multi-Board Switcher */}
       <BoardHeader
         title={currentBoard?.name}
@@ -343,19 +343,19 @@ export default function BoardScreen() {
 
       {/* Banner Status Mode Offline */}
       {!isOnline && (
-        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+        <View className="flex-row items-center justify-between bg-[#2B2317] border-b border-[#52442F] px-4 md:px-5 py-2">
           <View className="flex-row items-center">
-            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
-            <Text className="text-amber-200 text-xs font-semibold">
+            <View className="w-2 h-2 rounded-full bg-[#E5B650] mr-2" />
+            <Text className="text-[#F6E3B8] text-xs font-semibold">
               Mode Offline Aktif
             </Text>
-            <Text className="text-amber-400/80 text-xs ml-2">
+            <Text className="text-[#D8BE8A] text-xs ml-2">
               • {pendingSyncCount > 0
                 ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
                 : 'Menampilkan data tersimpan di perangkat lokal'}
             </Text>
           </View>
-          <Text className="text-amber-300 text-[11px] font-medium">
+          <Text className="text-[#E5B650] text-[11px] font-medium font-mono">
             {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
           </Text>
         </View>
@@ -363,15 +363,15 @@ export default function BoardScreen() {
 
       {/* 2. List Kolom Kanban */}
       {isLoading && (!currentBoard || currentBoard.type !== activeBoardType) ? (
-        <View className="flex-1 justify-center items-center bg-slate-950">
-          <ActivityIndicator size="large" color="#38BDF8" />
+        <View className="flex-1 justify-center items-center bg-[#F8F6F1]">
+          <ActivityIndicator size="large" color="#968363" />
         </View>
       ) : (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
-          className="flex-1 p-5"
-          contentContainerStyle={{ paddingRight: 40 }}
+          className="flex-1 p-3 md:p-4"
+          contentContainerStyle={{ paddingRight: 32 }}
         >
           {currentBoard?.board_columns.map((col) => (
             <KanbanColumn
@@ -402,10 +402,10 @@ export default function BoardScreen() {
           {/* Tombol Tambah Kolom di Ujung Kanan Board */}
           <Pressable
             onPress={handleOpenCreateColumn}
-            style={({ pressed }) => [{ width: 260, opacity: pressed ? 0.75 : 1 }]}
-            className="h-14 bg-slate-900/60 border border-dashed border-slate-700 rounded-2xl items-center justify-center mr-6"
+            style={({ pressed }) => [{ width: 240, opacity: pressed ? 0.75 : 1 }]}
+            className="h-12 bg-white hover:bg-[#FAF8F5] border border-dashed border-[#DDD6C8] rounded-[4px] items-center justify-center mr-4 shadow-2xs"
           >
-            <Text className="flex-row text-slate-300 text-xs font-bold px-3">
+            <Text className="text-[#1B2225] text-xs font-bold font-mono px-3">
               + Tambah Kolom Alur
             </Text>
           </Pressable>
