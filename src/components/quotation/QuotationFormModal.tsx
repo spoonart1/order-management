@@ -9,18 +9,14 @@ import {
 import { useAppSelector } from '@/store/hooks';
 import { formatRupiah, terbilang } from '@/utils/terbilang';
 import {
-  Check,
-  ChevronDown,
   Link,
-  Lock,
   Phone,
   Plus,
-  Search,
   Trash2,
   User,
-  X,
+  X
 } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -99,12 +95,12 @@ function SpecFieldWithDropdown({
     <View className="w-full md:w-1/4 px-1.5 mb-2.5">
       <View className="flex-row items-center justify-between mb-1">
         <Text className="text-slate-400 text-[11px] font-medium">{label}</Text>
-        <Pressable
+        {/* <Pressable
           onPress={() => setDropdownOpen(true)}
           className="flex-row items-center bg-slate-800 px-2 py-0.5 rounded border border-slate-700"
         >
           <Text className="text-sky-400 text-[9px] font-semibold mr-0.5">▾ Dropdown</Text>
-        </Pressable>
+        </Pressable> */}
       </View>
 
       <TextInput
@@ -125,16 +121,14 @@ function SpecFieldWithDropdown({
             <Pressable
               key={opt}
               onPress={() => handleSelectOption(opt)}
-              className={`px-1.5 py-0.5 rounded border ${
-                isSelected
-                  ? 'bg-blue-600/30 border-blue-500'
-                  : 'bg-slate-950/80 border-slate-800'
-              }`}
+              className={`px-1.5 py-0.5 rounded border ${isSelected
+                ? 'bg-blue-600/30 border-blue-500'
+                : 'bg-slate-950/80 border-slate-800'
+                }`}
             >
               <Text
-                className={`text-[9px] ${
-                  isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
-                }`}
+                className={`text-[10px] ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
+                  }`}
               >
                 {isSelected ? '✓ ' : '+ '}{opt}
               </Text>
@@ -177,16 +171,14 @@ function SpecFieldWithDropdown({
                     <Pressable
                       key={opt}
                       onPress={() => handleSelectOption(opt)}
-                      className={`p-3 rounded-xl border flex-row items-center justify-between mb-2 ${
-                        isSelected
-                          ? 'bg-blue-600/25 border-blue-500'
-                          : 'bg-slate-950 border-slate-800'
-                      }`}
+                      className={`p-3 rounded-xl border flex-row items-center justify-between mb-2 ${isSelected
+                        ? 'bg-blue-600/25 border-blue-500'
+                        : 'bg-slate-950 border-slate-800'
+                        }`}
                     >
                       <Text
-                        className={`text-xs ${
-                          isSelected ? 'text-blue-300 font-bold' : 'text-slate-200'
-                        }`}
+                        className={`text-xs ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-200'
+                          }`}
                       >
                         {opt}
                       </Text>
@@ -935,16 +927,14 @@ export function QuotationFormModal({
                       <Pressable
                         key={st}
                         onPress={() => setStatus(st)}
-                        className={`px-3 py-1.5 rounded-lg border ${
-                          isSelected
-                            ? 'bg-blue-600/30 border-blue-500'
-                            : 'bg-slate-900 border-slate-700'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg border ${isSelected
+                          ? 'bg-blue-600/30 border-blue-500'
+                          : 'bg-slate-900 border-slate-700'
+                          }`}
                       >
                         <Text
-                          className={`text-xs ${
-                            isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
-                          }`}
+                          className={`text-xs ${isSelected ? 'text-blue-300 font-bold' : 'text-slate-400'
+                            }`}
                         >
                           {labels[st]}
                         </Text>
@@ -1003,16 +993,14 @@ export function QuotationFormModal({
                       <View className="flex-row bg-slate-950 p-0.5 rounded-lg border border-slate-800">
                         <Pressable
                           onPress={() => handleToggleItemType(index, 'kitchen_set')}
-                          className={`px-2.5 py-1 rounded-md flex-row items-center ${
-                            item.item_type === 'kitchen_set'
-                              ? 'bg-blue-600 shadow'
-                              : 'bg-transparent'
-                          }`}
+                          className={`px-2.5 py-1 rounded-md flex-row items-center ${item.item_type === 'kitchen_set'
+                            ? 'bg-blue-600 shadow'
+                            : 'bg-transparent'
+                            }`}
                         >
                           <Text
-                            className={`text-[10px] font-bold ${
-                              item.item_type === 'kitchen_set' ? 'text-white' : 'text-slate-400'
-                            }`}
+                            className={`text-[10px] font-bold ${item.item_type === 'kitchen_set' ? 'text-white' : 'text-slate-400'
+                              }`}
                           >
                             🍳 Kitchen Set
                           </Text>
@@ -1020,16 +1008,14 @@ export function QuotationFormModal({
 
                         <Pressable
                           onPress={() => handleToggleItemType(index, 'other')}
-                          className={`px-2.5 py-1 rounded-md flex-row items-center ${
-                            item.item_type === 'other'
-                              ? 'bg-blue-600 shadow'
-                              : 'bg-transparent'
-                          }`}
+                          className={`px-2.5 py-1 rounded-md flex-row items-center ${item.item_type === 'other'
+                            ? 'bg-blue-600 shadow'
+                            : 'bg-transparent'
+                            }`}
                         >
                           <Text
-                            className={`text-[10px] font-bold ${
-                              item.item_type === 'other' ? 'text-white' : 'text-slate-400'
-                            }`}
+                            className={`text-[10px] font-bold ${item.item_type === 'other' ? 'text-white' : 'text-slate-400'
+                              }`}
                           >
                             📦 Lainnya
                           </Text>
@@ -1156,11 +1142,10 @@ export function QuotationFormModal({
                         value={item.item_type === 'kitchen_set' ? 'SET' : item.unit}
                         editable={item.item_type !== 'kitchen_set'}
                         onChangeText={(t) => handleUpdateItem(index, 'unit', t)}
-                        className={`border text-xs text-center font-semibold p-2 rounded-xl ${
-                          item.item_type === 'kitchen_set'
-                            ? 'bg-slate-900 border-slate-800 text-slate-400 opacity-90'
-                            : 'bg-slate-950 border-slate-800 text-white'
-                        }`}
+                        className={`border text-xs text-center font-semibold p-2 rounded-xl ${item.item_type === 'kitchen_set'
+                          ? 'bg-slate-900 border-slate-800 text-slate-400 opacity-90'
+                          : 'bg-slate-950 border-slate-800 text-white'
+                          }`}
                         placeholder="SET / PCS / M1"
                         placeholderTextColor="#64748B"
                       />
