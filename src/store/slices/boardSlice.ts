@@ -30,6 +30,7 @@ export interface CardItem {
     column_id: string;
     title: string;
     client_name: string | null;
+    client_phone?: string | null;
     estimated_value: number;
     assigned_to: string | null;
     position: number;

@@ -37,11 +37,16 @@ export function KanbanCard({
     <>
       {/* Header Kartu: Nama Project, Klien & Menu Triple Dot */}
       <View className="flex-row justify-between items-start">
-        <View className="flex-1 pr-2">
+        <View className="flex-1 pr-2 mb-3">
           <Text className="text-white font-bold text-[14px] mb-1.5">{card.title}</Text>
-          <Text className="text-slate-400 text-[10px] mb-3">
+          <Text className="text-slate-400 text-[10px]">
             👤 {card.client_name || 'Tanpa Klien'}
           </Text>
+          {card.client_phone ? (
+            <Text className="text-slate-400 text-[10px] mt-1">
+              📞 {card.client_phone}
+            </Text>
+          ) : null}
         </View>
 
         {/* Tombol Triple Vertical Dot (Modal Backdrop Lintas Platform) */}

@@ -5,6 +5,7 @@ export interface UpdateCardPayload {
   cardId: string;
   title: string;
   client_name: string;
+  client_phone: string;
   estimated_value: number;
   column_id: string;
   assigned_to: string | null;
@@ -22,6 +23,7 @@ export interface CreateCardPayload {
   column_id: string;
   title: string;
   client_name: string;
+  client_phone: string;
   estimated_value: number;
   assigned_to: string | null;
   notes: string;
@@ -65,15 +67,7 @@ export const boardService = {
           position,
           color_hex,
           board_cards (
-            id,
-            board_id,
-            column_id,
-            title,
-            client_name,
-            estimated_value,
-            assigned_to,
-            position,
-            notes,
+            *,
             profiles (
               id,
               full_name
@@ -130,7 +124,7 @@ export const boardService = {
   },
 
   /**
-   * Mengubah data detail kartu (title, client, value, PIC, notes, kolom)
+   * Mengubah data detail kartu (title, client, phone, value, PIC, notes, kolom)
    */
   async updateCardDetails(payload: UpdateCardPayload): Promise<void> {
     const { error } = await supabase
@@ -138,6 +132,7 @@ export const boardService = {
       .update({
         title: payload.title,
         client_name: payload.client_name,
+        client_phone: payload.client_phone,
         estimated_value: payload.estimated_value,
         column_id: payload.column_id,
         assigned_to: payload.assigned_to,
@@ -161,6 +156,7 @@ export const boardService = {
       column_id: payload.column_id,
       title: payload.title,
       client_name: payload.client_name || null,
+      client_phone: payload.client_phone || null,
       estimated_value: payload.estimated_value,
       assigned_to: payload.assigned_to,
       notes: payload.notes || null,

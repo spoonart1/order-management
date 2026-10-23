@@ -102,6 +102,7 @@ export default function BoardScreen() {
   const handleSaveDetail = async (updatedData: {
     title: string;
     client_name: string;
+    client_phone: string;
     estimated_value: number;
     column_id: string;
     assigned_to: string | null;

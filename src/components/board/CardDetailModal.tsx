@@ -25,6 +25,7 @@ interface CardDetailModalProps {
     onSave: (updatedData: {
         title: string;
         client_name: string;
+        client_phone: string;
         estimated_value: number;
         column_id: string;
         assigned_to: string | null;
@@ -50,10 +51,12 @@ export function CardDetailModal({
 
     const [title, setTitle] = useState('');
     const [clientName, setClientName] = useState('');
+    const [clientPhone, setClientPhone] = useState('');
     const [value, setValue] = useState('');
     const [columnId, setColumnId] = useState('');
     const [assignedTo, setAssignedTo] = useState<string | null>(null);
     const [notes, setNotes] = useState('');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // State Attachment & Uploading
     const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -62,10 +65,12 @@ export function CardDetailModal({
 
     useEffect(() => {
         if (!visible) return;
+        setErrorMessage(null);
         if (card) {
             setTitle(card.title || '');
             setClientName(card.client_name || '');
-            setValue(card.estimated_value ? String(card.estimated_value) : '0');
+            setClientPhone(card.client_phone || '');
+            setValue(card.estimated_value ? String(card.estimated_value) : '');
             setColumnId(card.column_id);
             setAssignedTo(card.assigned_to || null);
             setNotes(card.notes || '');
@@ -74,6 +79,7 @@ export function CardDetailModal({
             // Mode create: reset form
             setTitle('');
             setClientName('');
+            setClientPhone('');
             setValue('');
             setColumnId(defaultColumnId || columns[0]?.id || '');
             setAssignedTo(null);
@@ -82,14 +88,43 @@ export function CardDetailModal({
         }
     }, [card, visible, defaultColumnId]);
 
+    // Cek apakah sedang di tahap Offering (Penawaran) atau DP (Deal Payment)
+    const selectedColumn = columns.find((c) => c.id === columnId);
+    const selectedTitle = selectedColumn?.title.toLowerCase() || '';
+    const isValueRequired =
+        selectedTitle.includes('offering') ||
+        selectedTitle.includes('penawaran') ||
+        selectedTitle.includes('dp') ||
+        selectedTitle.includes('deal payment');
+
     const handleSubmit = () => {
-        if (!title.trim()) {
-            Alert.alert('Data Belum Lengkap', 'Nama project wajib diisi.');
+        const requiredChecks: { isValid: boolean; label: string }[] = [
+            { isValid: !!title.trim(), label: 'Nama Project' },
+            { isValid: !!clientName.trim(), label: 'Nama Klien & Lokasi' },
+            { isValid: !!clientPhone.trim(), label: 'Nomor HP Client' },
+            {
+                isValid:
+                    !isValueRequired ||
+                    (!!value.trim() && !isNaN(parseFloat(value)) && parseFloat(value) > 0),
+                label: 'Nilai Estimasi (Rp)',
+            },
+            { isValid: !!columnId, label: 'Tahapan Alur (Kolom)' },
+            { isValid: !!assignedTo, label: 'Penanggung Jawab (PIC)' }
+        ];
+
+        const invalidField = requiredChecks.find((check) => !check.isValid);
+        if (invalidField) {
+            const msg = `${invalidField.label} wajib di isi.`;
+            setErrorMessage(msg);
+            Alert.alert('Validasi Gagal', msg);
             return;
         }
+
+        setErrorMessage(null);
         onSave({
             title: title.trim(),
             client_name: clientName.trim(),
+            client_phone: clientPhone.trim(),
             estimated_value: parseFloat(value) || 0,
             column_id: columnId,
             assigned_to: assignedTo,
@@ -171,12 +206,26 @@ export function CardDetailModal({
                     </View>
 
                     <ScrollView className="max-h-[70vh]">
+                        {/* Pesan Error Validasi */}
+                        {errorMessage && (
+                            <View className="mb-4 px-3.5 py-2.5 rounded-xl bg-red-950/70 border border-red-500/60">
+                                <Text className="text-red-400 text-xs font-semibold">
+                                    ⚠️ {errorMessage}
+                                </Text>
+                            </View>
+                        )}
+
                         {/* Nama Project */}
                         <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">Nama Project</Text>
+                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                                Nama Project <Text className="text-red-400">*</Text>
+                            </Text>
                             <TextInput
                                 value={title}
-                                onChangeText={setTitle}
+                                onChangeText={(t) => {
+                                    setTitle(t);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
                                 className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
                                 placeholder="Contoh: Kitchen Set Minimalis"
                                 placeholderTextColor="#64748B"
@@ -185,23 +234,60 @@ export function CardDetailModal({
 
                         {/* Nama Klien */}
                         <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">Nama Klien & Lokasi</Text>
+                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                                Nama Klien & Lokasi <Text className="text-red-400">*</Text>
+                            </Text>
                             <TextInput
                                 value={clientName}
-                                onChangeText={setClientName}
+                                onChangeText={(t) => {
+                                    setClientName(t);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
                                 className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
                                 placeholder="Contoh: Ibu Rini - Pleret"
                                 placeholderTextColor="#64748B"
                             />
                         </View>
 
+                        {/* Nomor HP Client */}
+                        <View className="mb-4">
+                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                                Nomor HP Client <Text className="text-red-400">*</Text>
+                            </Text>
+                            <TextInput
+                                value={clientPhone}
+                                onChangeText={(t) => {
+                                    const digitsOnly = t.replace(/[^0-9]/g, '');
+                                    setClientPhone(digitsOnly);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
+                                keyboardType="phone-pad"
+                                inputMode="numeric"
+                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                placeholder="Contoh: 081234567890"
+                                placeholderTextColor="#64748B"
+                            />
+                        </View>
+
                         {/* Nilai Estimasi */}
                         <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">Nilai Estimasi (Rp)</Text>
+                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                                Nilai Estimasi (Rp){' '}
+                                {isValueRequired ? (
+                                    <Text className="text-red-400">*</Text>
+                                ) : (
+                                    <Text className="text-slate-500 font-normal">(Opsional)</Text>
+                                )}
+                            </Text>
                             <TextInput
                                 value={value}
-                                onChangeText={setValue}
+                                onChangeText={(t) => {
+                                    const digitsOnly = t.replace(/[^0-9]/g, '');
+                                    setValue(digitsOnly);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
                                 keyboardType="numeric"
+                                inputMode="numeric"
                                 className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
                                 placeholder="Contoh: 12688000"
                                 placeholderTextColor="#64748B"
@@ -211,7 +297,7 @@ export function CardDetailModal({
                         {/* Pindah Kolom */}
                         <View className="mb-4">
                             <Text className="text-slate-300 text-xs font-semibold mb-1.5">
-                                Tahapan Alur (Kolom)
+                                Tahapan Alur (Kolom) <Text className="text-red-400">*</Text>
                             </Text>
                             <View className="flex-row flex-wrap">
                                 {columns.map((col) => (
@@ -219,7 +305,10 @@ export function CardDetailModal({
                                         key={col.id}
                                         label={col.title}
                                         selected={columnId === col.id}
-                                        onPress={() => setColumnId(col.id)}
+                                        onPress={() => {
+                                            setColumnId(col.id);
+                                            if (errorMessage) setErrorMessage(null);
+                                        }}
                                         color={col.color_hex}
                                         activeBorderColor="#FFFFFF"
                                         inactiveBorderColor="#334155"
@@ -231,7 +320,7 @@ export function CardDetailModal({
                         {/* Pilih PIC */}
                         <View className="mb-4">
                             <Text className="text-slate-300 text-xs font-semibold mb-1.5">
-                                Penanggung Jawab (PIC)
+                                Penanggung Jawab (PIC) <Text className="text-red-400">*</Text>
                             </Text>
                             <View className="flex-row flex-wrap">
                                 {profiles.map((p) => (
@@ -240,7 +329,10 @@ export function CardDetailModal({
                                         label={p.full_name}
                                         icon="👤"
                                         selected={assignedTo === p.id}
-                                        onPress={() => setAssignedTo(p.id)}
+                                        onPress={() => {
+                                            setAssignedTo(p.id);
+                                            if (errorMessage) setErrorMessage(null);
+                                        }}
                                         activeBorderColor="#FFFFFF"
                                         color="#2563EB"
                                         inactiveBgColor="#020617"
@@ -260,77 +352,82 @@ export function CardDetailModal({
                                 </Text>
                             </View>
                         ) : (
-                        <View className="mb-4 pt-2 border-t border-slate-800">
-                            <View className="flex-row justify-between items-center mb-2">
-                                <Text className="text-slate-300 text-xs font-semibold">
-                                    Galeri Foto & Lampiran ({attachments.length})
-                                </Text>
-                                <Pressable
-                                    onPress={handlePickAndUploadImage}
-                                    disabled={uploading}
-                                    style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
-                                    className="bg-sky-600/20 border border-sky-500/40 px-3 py-1.5 rounded-lg flex-row items-center"
-                                >
-                                    {uploading ? (
-                                        <ActivityIndicator size="small" color="#38BDF8" />
-                                    ) : (
-                                        <Text className="text-sky-400 text-xs font-semibold">
-                                            📷 + Upload Foto
-                                        </Text>
-                                    )}
-                                </Pressable>
-                            </View>
-
-                            {/* List Thumbnail Foto */}
-                            {attachments.length === 0 ? (
-                                <Pressable
-                                    className="py-5 items-center justify-center border border-dashed border-slate-800 rounded-xl bg-slate-950/40"
-                                    onPress={handlePickAndUploadImage}
-                                    disabled={uploading}
-                                >
-                                    <Text className="text-slate-500 text-xs">Belum ada foto yang diunggah</Text>
-                                    <Text className="text-slate-600 text-[10px] mt-0.5">
-                                        Unggah foto pengukuran, render 3D, atau bukti pengerjaan
+                            <View className="mb-4 pt-2 border-t border-slate-800">
+                                <View className="flex-row justify-between items-center mb-2">
+                                    <Text className="text-slate-300 text-xs font-semibold">
+                                        Galeri Foto & Lampiran ({attachments.length})
                                     </Text>
-                                </Pressable>
-                            ) : (
-                                <View className="flex-row flex-wrap gap-2.5">
-                                    {attachments.map((item) => (
-                                        <View
-                                            key={item.id}
-                                            className="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative"
-                                        >
-                                            <Image
-                                                source={{ uri: item.file_url }}
-                                                className="w-full h-full"
-                                                resizeMode="cover"
-                                            />
-                                            {/* Tombol Hapus Foto */}
-                                            <Pressable
-                                                onPress={() => handleDeleteAttachment(item)}
-                                                disabled={deletingId === item.id}
-                                                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 items-center justify-center shadow-md"
-                                            >
-                                                {deletingId === item.id ? (
-                                                    <ActivityIndicator size="small" color="#FFFFFF" />
-                                                ) : (
-                                                    <Text className="text-white text-xs font-bold leading-none">✕</Text>
-                                                )}
-                                            </Pressable>
-                                        </View>
-                                    ))}
+                                    <Pressable
+                                        onPress={handlePickAndUploadImage}
+                                        disabled={uploading}
+                                        style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
+                                        className="bg-sky-600/20 border border-sky-500/40 px-3 py-1.5 rounded-lg flex-row items-center"
+                                    >
+                                        {uploading ? (
+                                            <ActivityIndicator size="small" color="#38BDF8" />
+                                        ) : (
+                                            <Text className="text-sky-400 text-xs font-semibold">
+                                                📷 + Upload Foto
+                                            </Text>
+                                        )}
+                                    </Pressable>
                                 </View>
-                            )}
-                        </View>
+
+                                {/* List Thumbnail Foto */}
+                                {attachments.length === 0 ? (
+                                    <Pressable
+                                        className="py-5 items-center justify-center border border-dashed border-slate-800 rounded-xl bg-slate-950/40"
+                                        onPress={handlePickAndUploadImage}
+                                        disabled={uploading}
+                                    >
+                                        <Text className="text-slate-500 text-xs">Belum ada foto yang diunggah</Text>
+                                        <Text className="text-slate-600 text-[10px] mt-0.5">
+                                            Unggah foto pengukuran, render 3D, atau bukti pengerjaan
+                                        </Text>
+                                    </Pressable>
+                                ) : (
+                                    <View className="flex-row flex-wrap gap-2.5">
+                                        {attachments.map((item) => (
+                                            <View
+                                                key={item.id}
+                                                className="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative"
+                                            >
+                                                <Image
+                                                    source={{ uri: item.file_url }}
+                                                    className="w-full h-full"
+                                                    resizeMode="cover"
+                                                />
+                                                {/* Tombol Hapus Foto */}
+                                                <Pressable
+                                                    onPress={() => handleDeleteAttachment(item)}
+                                                    disabled={deletingId === item.id}
+                                                    style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 items-center justify-center shadow-md"
+                                                >
+                                                    {deletingId === item.id ? (
+                                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                                    ) : (
+                                                        <Text className="text-white text-xs font-bold leading-none">✕</Text>
+                                                    )}
+                                                </Pressable>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
                         )}
 
                         {/* Catatan Proyek */}
                         <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">Catatan Proyek</Text>
+                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                                Catatan Proyek
+                            </Text>
                             <TextInput
                                 value={notes}
-                                onChangeText={setNotes}
+                                onChangeText={(t) => {
+                                    setNotes(t);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
                                 multiline
                                 numberOfLines={3}
                                 className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
