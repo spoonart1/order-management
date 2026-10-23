@@ -1,6 +1,7 @@
 import { checkIsOnline } from '@/lib/network';
 import { supabase } from '@/lib/supabase';
 import { offlineQueueService } from '@/services/offlineQueueService';
+import { quotationService } from '@/services/quotationService';
 
 let isSyncRunning = false;
 
@@ -109,6 +110,31 @@ export const syncService = {
           .eq('id', payload.cardId);
 
         if (error) throw error;
+        break;
+      }
+
+      case 'UPDATE_QUOTATION_STATUS': {
+        const { error } = await supabase
+          .from('quotations')
+          .update({ status: payload.status, updated_at: new Date().toISOString() })
+          .eq('id', payload.id);
+
+        if (error) throw error;
+        break;
+      }
+
+      case 'DELETE_QUOTATION': {
+        await quotationService.deleteQuotation(payload.id);
+        break;
+      }
+
+      case 'CREATE_QUOTATION': {
+        await quotationService.createQuotation(payload.payload);
+        break;
+      }
+
+      case 'UPDATE_QUOTATION': {
+        await quotationService.updateQuotation(payload.id, payload.payload);
         break;
       }
 

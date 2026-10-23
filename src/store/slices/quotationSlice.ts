@@ -112,11 +112,48 @@ const quotationSlice = createSlice({
     clearQuotationError(state) {
       state.error = null;
     },
+    // Optimistic Reducers (0ms UI Response)
+    optimisticUpdateStatus(
+      state,
+      action: PayloadAction<{ id: string; status: 'draft' | 'sent' | 'approved' | 'rejected' }>
+    ) {
+      const q = state.quotations.find((item) => item.id === action.payload.id);
+      if (q) {
+        q.status = action.payload.status;
+      }
+      if (state.currentQuotation?.id === action.payload.id) {
+        state.currentQuotation.status = action.payload.status;
+      }
+    },
+    optimisticDeleteQuotation(state, action: PayloadAction<string>) {
+      state.quotations = state.quotations.filter((q) => q.id !== action.payload);
+      if (state.currentQuotation?.id === action.payload) {
+        state.currentQuotation = null;
+      }
+    },
+    optimisticAddQuotation(state, action: PayloadAction<Quotation>) {
+      const exists = state.quotations.some((q) => q.id === action.payload.id);
+      if (!exists) {
+        state.quotations.unshift(action.payload);
+      }
+    },
+    optimisticUpdateQuotation(state, action: PayloadAction<Quotation>) {
+      const index = state.quotations.findIndex((q) => q.id === action.payload.id);
+      if (index !== -1) {
+        state.quotations[index] = action.payload;
+      }
+      if (state.currentQuotation?.id === action.payload.id) {
+        state.currentQuotation = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
-    // fetchQuotations
+    // fetchQuotations (Resilient & Silent Background Fetch)
     builder.addCase(fetchQuotations.pending, (state) => {
-      state.isLoading = true;
+      // Hanya tampilkan loading spinner jika belum ada data penawaran sama sekali di layar
+      if (state.quotations.length === 0) {
+        state.isLoading = true;
+      }
       state.error = null;
     });
     builder.addCase(fetchQuotations.fulfilled, (state, action) => {
@@ -192,6 +229,10 @@ export const {
   setFilterStatus,
   setSearchQuery,
   clearQuotationError,
+  optimisticUpdateStatus,
+  optimisticDeleteQuotation,
+  optimisticAddQuotation,
+  optimisticUpdateQuotation,
 } = quotationSlice.actions;
 
 export default quotationSlice.reducer;

@@ -1,15 +1,21 @@
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { Pagination } from '@/components/ui/Pagination';
 import { confirmDialog } from '@/lib/confirm';
+import { useNetworkStatus } from '@/lib/network';
+import { offlineQueueService } from '@/services/offlineQueueService';
+import { quotationCacheService } from '@/services/quotationCacheService';
 import {
   Quotation,
   SaveQuotationPayload,
 } from '@/services/quotationService';
+import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   createQuotation,
   deleteQuotation,
   fetchQuotations,
+  optimisticDeleteQuotation,
+  optimisticUpdateStatus,
   updateQuotation,
   updateQuotationStatus,
 } from '@/store/slices/quotationSlice';
@@ -59,6 +65,15 @@ type StatusFilter = 'all' | 'draft' | 'sent' | 'approved' | 'rejected';
 export default function QuotationsScreen() {
   const dispatch = useAppDispatch();
   const { quotations, isLoading } = useAppSelector((state) => state.quotation);
+  const { isOnline } = useNetworkStatus();
+
+  // Status Antrean Mutasi Offline
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  const refreshPendingCount = async () => {
+    const count = await offlineQueueService.getCount();
+    setPendingSyncCount(count);
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
@@ -74,17 +89,41 @@ export default function QuotationsScreen() {
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
 
-  // Load Quotations on mount
+  // Load Quotations on mount & check initial queue
   useEffect(() => {
+    refreshPendingCount();
     dispatch(fetchQuotations());
   }, [dispatch]);
+
+  // Otomatis sinkronkan antrean offline secara senyap di latar belakang saat online kembali (tanpa reload / refresh halaman)
+  useEffect(() => {
+    if (isOnline) {
+      syncService
+        .processQueue((remaining) => {
+          setPendingSyncCount(remaining);
+        })
+        .then(() => {
+          refreshPendingCount();
+          // Simpan snapshot data lokal terbaru tanpa me-reload / me-refresh halaman
+          if (quotations.length > 0) {
+            quotationCacheService.saveQuotationsCache(quotations);
+          }
+        });
+    } else {
+      refreshPendingCount();
+    }
+  }, [isOnline, quotations]);
 
   // Otomatis reset ke halaman 1 jika filter atau kata kunci pencarian berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, activeFilter]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
+    if (isOnline) {
+      await syncService.processQueue((remaining) => setPendingSyncCount(remaining));
+      await refreshPendingCount();
+    }
     dispatch(fetchQuotations());
   };
 
@@ -146,10 +185,14 @@ export default function QuotationsScreen() {
   };
 
   const handleSaveQuotation = async (payload: SaveQuotationPayload) => {
-    if (selectedQuotation) {
-      await dispatch(updateQuotation({ id: selectedQuotation.id, payload })).unwrap();
-    } else {
-      await dispatch(createQuotation(payload)).unwrap();
+    try {
+      if (selectedQuotation) {
+        await dispatch(updateQuotation({ id: selectedQuotation.id, payload })).unwrap();
+      } else {
+        await dispatch(createQuotation(payload)).unwrap();
+      }
+    } finally {
+      refreshPendingCount();
     }
   };
 
@@ -157,10 +200,14 @@ export default function QuotationsScreen() {
     id: string,
     status: 'draft' | 'sent' | 'approved' | 'rejected'
   ) => {
+    // Optimistic Update instan di UI lokal (0ms)
+    dispatch(optimisticUpdateStatus({ id, status }));
     try {
       await dispatch(updateQuotationStatus({ id, status })).unwrap();
     } catch (err: any) {
-      Alert.alert('Gagal Mengubah Status', err);
+      console.warn('[quotations] Info update status:', err);
+    } finally {
+      refreshPendingCount();
     }
   };
 
@@ -174,11 +221,14 @@ export default function QuotationsScreen() {
     });
 
     if (confirmed) {
+      // Optimistic Delete instan di UI lokal (0ms)
+      dispatch(optimisticDeleteQuotation(id));
       try {
         await dispatch(deleteQuotation(id)).unwrap();
       } catch (err: any) {
-        const msg = typeof err === 'string' ? err : err?.message || 'Gagal menghapus surat penawaran.';
-        Alert.alert('Gagal Menghapus', msg);
+        console.warn('[quotations] Info delete quotation:', err);
+      } finally {
+        refreshPendingCount();
       }
     }
   };
@@ -215,6 +265,43 @@ export default function QuotationsScreen() {
 
   return (
     <View className="flex-1 bg-slate-950">
+      {/* 1. Offline & Sync Status Banner */}
+      {!isOnline && (
+        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
+            <Text className="text-amber-200 text-xs font-semibold">
+              Mode Offline Aktif
+            </Text>
+            <Text className="text-amber-400/80 text-xs ml-2">
+              • {pendingSyncCount > 0
+                ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
+                : 'Menampilkan data tersimpan di perangkat lokal'}
+            </Text>
+          </View>
+          <Text className="text-amber-300 text-[11px] font-medium">
+            {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
+          </Text>
+        </View>
+      )}
+
+      {isOnline && pendingSyncCount > 0 && (
+        <View className="flex-row items-center justify-between bg-blue-950/80 border-b border-blue-800/80 px-5 py-2">
+          <View className="flex-row items-center">
+            <ActivityIndicator size="small" color="#38BDF8" className="mr-2.5" />
+            <Text className="text-blue-200 text-xs font-semibold">
+              Menyinkronkan Perubahan ke Cloud
+            </Text>
+            <Text className="text-blue-400/80 text-xs ml-2">
+              • {pendingSyncCount} perubahan sedang disinkronkan...
+            </Text>
+          </View>
+          <Text className="text-sky-300 text-[11px] font-medium">
+            Sinkronisasi
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         className="flex-1 p-4 md:p-6"
         showsVerticalScrollIndicator={false}

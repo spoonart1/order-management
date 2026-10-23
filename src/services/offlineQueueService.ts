@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type MutationType = 'MOVE_CARD' | 'UPDATE_CARD' | 'CREATE_CARD' | 'DELETE_CARD';
+export type MutationType =
+  | 'MOVE_CARD'
+  | 'UPDATE_CARD'
+  | 'CREATE_CARD'
+  | 'DELETE_CARD'
+  | 'UPDATE_QUOTATION_STATUS'
+  | 'DELETE_QUOTATION'
+  | 'CREATE_QUOTATION'
+  | 'UPDATE_QUOTATION';
 
 export interface OfflineMutation {
   id: string;
