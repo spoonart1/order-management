@@ -3,7 +3,7 @@ import { pdfGenerator } from '@/utils/pdfGenerator';
 import { generateQuotationHtml, getQuotationPdfFilename } from '@/utils/quotationPdfTemplate';
 import { formatIndonesianDate, formatRupiah } from '@/utils/terbilang';
 import { Printer, Share2, X } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -27,16 +27,25 @@ export function QuotationPreviewModal({
   onClose,
 }: QuotationPreviewModalProps) {
   const [loading, setLoading] = useState(false);
+  const iframeRef = useRef<any>(null);
 
   if (!quotation) return null;
 
   const htmlContent = generateQuotationHtml(quotation);
   const pdfFilename = getQuotationPdfFilename(quotation);
 
+  const getTargetIframe = () => {
+    if (iframeRef.current) return iframeRef.current;
+    if (typeof document !== 'undefined') {
+      return document.getElementById('quotation-preview-iframe') as HTMLIFrameElement | null;
+    }
+    return null;
+  };
+
   const handlePrint = async () => {
     try {
       setLoading(true);
-      await pdfGenerator.print(htmlContent, pdfFilename);
+      await pdfGenerator.print(htmlContent, pdfFilename, getTargetIframe());
     } catch (err: any) {
       Alert.alert('Gagal Mencetak', err.message || 'Terjadi kesalahan saat mencetak.');
     } finally {
@@ -47,7 +56,7 @@ export function QuotationPreviewModal({
   const handleShare = async () => {
     try {
       setLoading(true);
-      await pdfGenerator.exportAndShare(htmlContent, `${pdfFilename}.pdf`);
+      await pdfGenerator.exportAndShare(htmlContent, `${pdfFilename}.pdf`, getTargetIframe());
     } catch (err: any) {
       Alert.alert('Gagal Membagikan', err.message || 'Terjadi kesalahan saat membagikan PDF.');
     } finally {
@@ -124,6 +133,8 @@ export function QuotationPreviewModal({
               // Di Web: render iframe interaktif dengan A4 styling
               <View className="w-full h-full bg-white rounded-xl overflow-hidden shadow-inner">
                 {React.createElement('iframe', {
+                  ref: iframeRef,
+                  id: 'quotation-preview-iframe',
                   srcDoc: htmlContent,
                   style: {
                     width: '100%',

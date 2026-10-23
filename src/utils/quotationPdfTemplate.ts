@@ -77,25 +77,31 @@ export function generateQuotationHtml(q: Quotation): string {
   <title>${pdfTitle}</title>
   <style>
     @page {
-      size: A4;
-      margin: 20mm 15mm;
+      size: A4 portrait;
+      margin: 15mm 15mm;
     }
-    body {
+    html, body {
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       color: #0f172a;
       font-size: 12px;
       line-height: 1.5;
       margin: 0;
       padding: 0;
+      background-color: #ffffff;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     .page {
       page-break-after: always;
+      break-after: page;
       position: relative;
-      min-height: 250mm;
+      box-sizing: border-box;
       padding: 0 5mm;
+      width: 100%;
     }
     .page:last-child {
       page-break-after: avoid;
+      break-after: avoid;
     }
     .header {
       border-bottom: 2px solid #0f172a;
