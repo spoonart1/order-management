@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, Platform, Pressable, ActivityIndicator } from 'react-native';
-import { EllipsisVertical, Pencil, Trash2 } from 'lucide-react-native';
+import { Pencil, Trash2 } from 'lucide-react-native';
 import { ColumnItem, CardItem } from '@/store/slices/boardSlice';
+import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { KanbanCard } from './KanbanCard';
 
 interface KanbanColumnProps {
@@ -39,16 +40,12 @@ export function KanbanColumn({
   onDragLeave,
   onDrop,
 }: KanbanColumnProps) {
-  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const progressPercent = Math.round((column.position / totalColumns) * 100);
 
   const columnContent = (
     <>
       {/* Header Kolom */}
-      <View
-        style={{ zIndex: 30 }}
-        className="p-4 border-b border-slate-800/80 flex-row items-center justify-between"
-      >
+      <View className="p-4 border-b border-slate-800/80 flex-row items-center justify-between">
         <View className="flex-row items-center flex-1 pr-2">
           <View
             style={{ backgroundColor: column.color_hex }}
@@ -66,86 +63,24 @@ export function KanbanColumn({
             </Text>
           </View>
 
-          {/* Menu Kolom (Edit / Hapus Kolom) */}
-          <View style={{ position: 'relative', zIndex: 40 }}>
-            <Pressable
-              disabled={isDeletingColumn}
-              onPress={() => setColumnMenuOpen((prev) => !prev)}
-              hitSlop={8}
-              className="w-7 h-7 rounded-lg items-center justify-center bg-slate-800/60"
-            >
-              {({ pressed }) => (
-                <View style={{ opacity: pressed ? 0.6 : 1 }}>
-                  <EllipsisVertical size={15} color="#94A3B8" />
-                </View>
-              )}
-            </Pressable>
-
-            {columnMenuOpen && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 32,
-                  right: 0,
-                  minWidth: 145,
-                  backgroundColor: '#0F172A',
-                  borderColor: '#334155',
-                  borderWidth: 1,
-                  borderStyle: 'solid',
-                  borderRadius: 10,
-                  zIndex: 60,
-                  elevation: 10,
-                }}
-                className="py-1 shadow-xl"
-              >
-                <Pressable
-                  onPress={() => {
-                    setColumnMenuOpen(false);
-                    onEditColumn();
-                  }}
-                  className="px-3 py-2"
-                >
-                  {({ pressed }) => (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        opacity: pressed ? 0.7 : 1,
-                      }}
-                    >
-                      <Pencil size={13} color="#38BDF8" />
-                      <Text className="text-slate-200 text-xs font-semibold ml-2">
-                        Edit Kolom
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-
-                <Pressable
-                  onPress={() => {
-                    setColumnMenuOpen(false);
-                    onDeleteColumn();
-                  }}
-                  className="px-3 py-2 border-t border-slate-800/80"
-                >
-                  {({ pressed }) => (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        opacity: pressed ? 0.7 : 1,
-                      }}
-                    >
-                      <Trash2 size={13} color="#F87171" />
-                      <Text className="text-red-400 text-xs font-semibold ml-2">
-                        Hapus Kolom
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              </View>
-            )}
-          </View>
+          {/* Menu Kolom (Edit / Hapus Kolom) dengan Modal Backdrop Lintas Platform */}
+          <DropdownMenu
+            disabled={isDeletingColumn}
+            buttonClassName="w-7 h-7 rounded-lg items-center justify-center bg-slate-800/60"
+            items={[
+              {
+                label: 'Edit Kolom',
+                icon: <Pencil size={13} color="#38BDF8" />,
+                onPress: onEditColumn,
+              },
+              {
+                label: 'Hapus Kolom',
+                icon: <Trash2 size={13} color="#F87171" />,
+                destructive: true,
+                onPress: onDeleteColumn,
+              },
+            ]}
+          />
         </View>
       </View>
 
