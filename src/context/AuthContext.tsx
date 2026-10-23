@@ -23,10 +23,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Sinkronisasi otomatis listener Supabase ke Redux store
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
+            async (event, session) => {
                 dispatch(setSession(session));
                 if (session?.user) {
-                    dispatch(fetchProfile(session.user.id));
+                    // Hindari refetch profil berulang saat TOKEN_REFRESHED (misal saat window focus di desktop)
+                    if (event !== 'TOKEN_REFRESHED') {
+                        dispatch(fetchProfile(session.user.id));
+                    }
                 } else {
                     dispatch(setProfile(null));
                 }

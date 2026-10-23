@@ -6,7 +6,7 @@ import { QuotationPreviewModal } from "@/components/quotation/QuotationPreviewMo
 import { AttachmentItem, CardItem, ColumnItem, Profile } from "@/store/slices/boardSlice";
 import { formatRupiah } from "@/utils/terbilang";
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -72,36 +72,52 @@ export function CardDetailModal({
     const [quotationFormVisible, setQuotationFormVisible] = useState(false);
     const [quotationPreviewVisible, setQuotationPreviewVisible] = useState(false);
 
-    useEffect(() => {
-        if (!visible) return;
-        setErrorMessage(null);
-        if (card) {
-            setTitle(card.title || '');
-            setClientName(card.client_name || '');
-            setClientPhone(card.client_phone || '');
-            setValue(card.estimated_value ? String(card.estimated_value) : '');
-            setColumnId(card.column_id);
-            setAssignedTo(card.assigned_to || null);
-            setNotes(card.notes || '');
-            setAttachments(card.card_attachments || []);
+    const wasVisibleRef = useRef(false);
+    const currentCardIdRef = useRef<string | null | undefined>(undefined);
 
-            // Ambil data penawaran yang terhubung
-            quotationService.getQuotationByCardId(card.id)
-                .then((q) => setLinkedQuotation(q))
-                .catch(() => setLinkedQuotation(null));
-        } else {
-            // Mode create: reset form
-            setTitle('');
-            setClientName('');
-            setClientPhone('');
-            setValue('');
-            setColumnId(defaultColumnId || columns[0]?.id || '');
-            setAssignedTo(null);
-            setNotes('');
-            setAttachments([]);
-            setLinkedQuotation(null);
+    useEffect(() => {
+        const isOpening = !wasVisibleRef.current && visible;
+        const isCardChanged = visible && card?.id !== currentCardIdRef.current;
+
+        if (!visible) {
+            wasVisibleRef.current = false;
+            currentCardIdRef.current = undefined;
+            return;
         }
-    }, [card, visible, defaultColumnId]);
+
+        if (isOpening || isCardChanged) {
+            wasVisibleRef.current = true;
+            currentCardIdRef.current = card?.id;
+            setErrorMessage(null);
+
+            if (card) {
+                setTitle(card.title || '');
+                setClientName(card.client_name || '');
+                setClientPhone(card.client_phone || '');
+                setValue(card.estimated_value ? String(card.estimated_value) : '');
+                setColumnId(card.column_id);
+                setAssignedTo(card.assigned_to || null);
+                setNotes(card.notes || '');
+                setAttachments(card.card_attachments || []);
+
+                // Ambil data penawaran yang terhubung
+                quotationService.getQuotationByCardId(card.id)
+                    .then((q) => setLinkedQuotation(q))
+                    .catch(() => setLinkedQuotation(null));
+            } else {
+                // Mode create: reset form
+                setTitle('');
+                setClientName('');
+                setClientPhone('');
+                setValue('');
+                setColumnId(defaultColumnId || columns[0]?.id || '');
+                setAssignedTo(null);
+                setNotes('');
+                setAttachments([]);
+                setLinkedQuotation(null);
+            }
+        }
+    }, [visible, card?.id, defaultColumnId]);
 
     const handleSaveQuotationFromCard = async (payload: SaveQuotationPayload) => {
         let saved: Quotation;

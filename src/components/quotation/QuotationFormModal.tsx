@@ -258,6 +258,8 @@ export function QuotationFormModal({
   const [isSearchingClient, setIsSearchingClient] = useState(false);
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const isSelectingRef = useRef(false);
+  const wasVisibleRef = useRef(false);
+  const currentQuotationIdRef = useRef<string | null | undefined>(undefined);
 
   // Termin Pembayaran
   const [terms, setTerms] = useState<QuotationTerm[]>([
@@ -286,91 +288,103 @@ export function QuotationFormModal({
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Inisialisasi data form saat modal dibuka
+  // Inisialisasi data form saat modal dibuka (hanya sekali saat modal dibuka, tidak mereset saat window focus)
   useEffect(() => {
-    if (!visible) return;
+    const isOpening = !wasVisibleRef.current && visible;
+    const isQuotationChanged = visible && quotation?.id !== currentQuotationIdRef.current;
 
-    if (quotation) {
-      // Mode Edit
-      setQuotationNo(quotation.quotation_no);
-      setClientName(quotation.client_name);
-      setClientPhone(quotation.client_phone || '');
-      setClientCity(quotation.client_city || 'Yogyakarta');
-      setProjectTitle(quotation.project_title);
-      setWorkDuration(String(quotation.work_duration_days || 20));
-      setValidityDays(String(quotation.validity_days || 20));
-      setMarketingName(quotation.marketing_name || profile?.full_name || 'Marketing Alora');
-      setStatus(quotation.status);
-      setNotes(quotation.notes || '');
-      setSelectedCardId(quotation.card_id || cardId || null);
-      setSelectedCardTitle(quotation.project_title || null);
-      if (quotation.terms && quotation.terms.length > 0) {
-        setTerms(quotation.terms);
-      }
-      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
-        setItems(
-          quotation.quotation_items.map((it) => {
-            const hasSpecs = Boolean(it.material || it.finishing || it.accessories || it.dimensions);
-            return {
-              item_no: it.item_no,
-              item_type: hasSpecs ? 'kitchen_set' : 'other',
-              description: it.description,
-              material: it.material || '',
-              finishing: it.finishing || '',
-              accessories: it.accessories || '',
-              dimensions: it.dimensions || '',
-              quantity: it.quantity,
-              unit: hasSpecs ? 'SET' : (it.unit || 'SET'),
-              unit_price: it.unit_price,
-              amount: it.amount,
-            };
-          })
-        );
-      }
-    } else {
-      // Mode Baru
-      setClientName(defaultClientName);
-      setClientPhone(defaultClientPhone);
-      setProjectTitle(defaultProjectTitle);
-      setClientCity('Yogyakarta');
-      setWorkDuration('20');
-      setValidityDays('20');
-      setMarketingName(profile?.full_name || 'Marketing Alora');
-      setStatus('draft');
-      setNotes('');
-      setSelectedCardId(cardId || null);
-      setSelectedCardTitle(defaultProjectTitle || null);
-      setTerms([
-        { title: 'Termin I', pct: 50, desc: 'DP Mulai Pekerjaan' },
-        { title: 'Termin II', pct: 25, desc: 'Seting Di Lokasi' },
-        { title: 'Termin III', pct: 25, desc: 'Pekerjaan Selesai' },
-      ]);
-      setItems([
-        {
-          item_no: 1,
-          item_type: 'kitchen_set',
-          description: '',
-          material: '',
-          finishing: '',
-          accessories: '',
-          dimensions: '',
-          quantity: 1,
-          unit: 'SET',
-          unit_price: 0,
-          amount: 0,
-        },
-      ]);
-
-      // Generate Auto Number
-      quotationService.generateNextQuotationNumber().then((no) => {
-        setQuotationNo(no);
-      });
+    if (!visible) {
+      wasVisibleRef.current = false;
+      currentQuotationIdRef.current = undefined;
+      return;
     }
 
-    setClientSuggestions([]);
-    setShowClientDropdown(false);
-    setErrorMessage(null);
-  }, [visible, quotation, cardId, defaultClientName, defaultClientPhone, defaultProjectTitle, profile]);
+    if (isOpening || isQuotationChanged) {
+      wasVisibleRef.current = true;
+      currentQuotationIdRef.current = quotation?.id;
+
+      if (quotation) {
+        // Mode Edit
+        setQuotationNo(quotation.quotation_no);
+        setClientName(quotation.client_name);
+        setClientPhone(quotation.client_phone || '');
+        setClientCity(quotation.client_city || 'Yogyakarta');
+        setProjectTitle(quotation.project_title);
+        setWorkDuration(String(quotation.work_duration_days || 20));
+        setValidityDays(String(quotation.validity_days || 20));
+        setMarketingName(quotation.marketing_name || profile?.full_name || 'Marketing Alora');
+        setStatus(quotation.status);
+        setNotes(quotation.notes || '');
+        setSelectedCardId(quotation.card_id || cardId || null);
+        setSelectedCardTitle(quotation.project_title || null);
+        if (quotation.terms && quotation.terms.length > 0) {
+          setTerms(quotation.terms);
+        }
+        if (quotation.quotation_items && quotation.quotation_items.length > 0) {
+          setItems(
+            quotation.quotation_items.map((it) => {
+              const hasSpecs = Boolean(it.material || it.finishing || it.accessories || it.dimensions);
+              return {
+                item_no: it.item_no,
+                item_type: hasSpecs ? 'kitchen_set' : 'other',
+                description: it.description,
+                material: it.material || '',
+                finishing: it.finishing || '',
+                accessories: it.accessories || '',
+                dimensions: it.dimensions || '',
+                quantity: it.quantity,
+                unit: hasSpecs ? 'SET' : (it.unit || 'SET'),
+                unit_price: it.unit_price,
+                amount: it.amount,
+              };
+            })
+          );
+        }
+      } else {
+        // Mode Baru
+        setClientName(defaultClientName);
+        setClientPhone(defaultClientPhone);
+        setProjectTitle(defaultProjectTitle);
+        setClientCity('Yogyakarta');
+        setWorkDuration('20');
+        setValidityDays('20');
+        setMarketingName(profile?.full_name || 'Marketing Alora');
+        setStatus('draft');
+        setNotes('');
+        setSelectedCardId(cardId || null);
+        setSelectedCardTitle(defaultProjectTitle || null);
+        setTerms([
+          { title: 'Termin I', pct: 50, desc: 'DP Mulai Pekerjaan' },
+          { title: 'Termin II', pct: 25, desc: 'Seting Di Lokasi' },
+          { title: 'Termin III', pct: 25, desc: 'Pekerjaan Selesai' },
+        ]);
+        setItems([
+          {
+            item_no: 1,
+            item_type: 'kitchen_set',
+            description: '',
+            material: '',
+            finishing: '',
+            accessories: '',
+            dimensions: '',
+            quantity: 1,
+            unit: 'SET',
+            unit_price: 0,
+            amount: 0,
+          },
+        ]);
+
+        // Generate Auto Number
+        quotationService.generateNextQuotationNumber().then((no) => {
+          setQuotationNo(no);
+        });
+      }
+
+      setClientSuggestions([]);
+      setShowClientDropdown(false);
+      setErrorMessage(null);
+    }
+  }, [visible, quotation?.id, cardId]);
 
   // Efek Auto-Search Klien dari board_cards berdasarkan nama yang diketik
   useEffect(() => {
