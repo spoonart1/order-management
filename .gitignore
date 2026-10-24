@@ -1,48 +1,132 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# ==============================================================================
+# Alora Studio — Git Ignore Configuration
+# ==============================================================================
 
-# dependencies
+# ------------------------------------------------------------------------------
+# 1. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
 node_modules/
+.pnp
+.pnp.js
 
-# Expo
+# ------------------------------------------------------------------------------
+# 2. Expo, Metro & Universal Build Outputs
+# ------------------------------------------------------------------------------
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
+.metro-health-check*
+*.tsbuildinfo
 
-# Native
+# ------------------------------------------------------------------------------
+# 3. Generated Native Android & iOS Folders & Artifacts
+# ------------------------------------------------------------------------------
+/ios/
+/android/
 .kotlin/
 *.orig.*
 *.jks
 *.p8
 *.p12
 *.key
+*.keystore
 *.mobileprovision
+*.apk
+*.aab
+*.ipa
+*.hprof
 
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
+# ------------------------------------------------------------------------------
+# 4. Environment Variables & Local Secrets
+# ------------------------------------------------------------------------------
 .env
 .env*.local
 .env.*
+!.env.example
+*.pem
 
-# typescript
-*.tsbuildinfo
+# ------------------------------------------------------------------------------
+# 5. IDEs, Editors & Developer Tooling
+# ------------------------------------------------------------------------------
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode/*.log
+.claude
 
-example
+# JetBrains / Android Studio / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
 
-# generated native folders
-/ios
-/android
+# Xcode User Data
+*.xcuserstate
+project.xcworkspace/xcuserdata/
+xcuserdata/
 
-# documentation & specs (local only, excluded from GitHub)
+# Sublime Text & TextMate
+*.sublime-project
+*.sublime-workspace
+*.tmproj
+*.tmproject
+
+# ------------------------------------------------------------------------------
+# 6. Operating System Specific Files
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Windows
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+
+# ------------------------------------------------------------------------------
+# 7. Logs, Debug & Crash Diagnostics
+# ------------------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ------------------------------------------------------------------------------
+# 8. Testing & Code Coverage
+# ------------------------------------------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+
+# ------------------------------------------------------------------------------
+# 9. Temporary & Cache Files
+# ------------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+.cache/
+
+# ------------------------------------------------------------------------------
+# 10. Local Documentation & Internal Specs (Excluded from Git / GitHub)
+# ------------------------------------------------------------------------------
 docs/
