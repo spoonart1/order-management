@@ -1,5 +1,5 @@
 import { Drawer } from 'expo-router/drawer';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { useAppSelector } from '../../store/hooks';
 
 export default function BackofficeLayout() {
@@ -19,6 +19,7 @@ export default function BackofficeLayout() {
                 drawerInactiveTintColor: '#A8B2B7',
                 drawerStyle: {
                     backgroundColor: '#1B2225',
+                    width: Platform.OS !== 'web' ? '65%' : undefined,
                 },
                 headerStyle: {
                     backgroundColor: '#1B2225',
