@@ -38,6 +38,15 @@ Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** 
 
 ---
 
+## 📱 Mobile App Preview
+
+| Executive Dashboard | Multi-Board Kanban | Quotations & RAB | Milestone Invoicing |
+| :---: | :---: | :---: | :---: |
+| [![Mobile Dashboard](assets/screenshots/mobile-01-dashboard.png)](assets/screenshots/mobile-01-dashboard.png) | [![Mobile Kanban](assets/screenshots/mobile-02-kanban.png)](assets/screenshots/mobile-02-kanban.png) | [![Mobile Quotations](assets/screenshots/mobile-03-quotations.png)](assets/screenshots/mobile-03-quotations.png) | [![Mobile Invoices](assets/screenshots/mobile-04-invoices.png)](assets/screenshots/mobile-04-invoices.png) |
+| *Real-time studio KPIs* | *Operational card board* | *Drafting & proposal list* | *Payment & invoice tracking* |
+
+---
+
 ## 📶 Offline Mode Support
 
 Built specifically for on-site measurements and workshop environments with spotty or zero internet connectivity:

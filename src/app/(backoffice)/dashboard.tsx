@@ -3,7 +3,7 @@ import { useNetworkStatus } from '@/lib/network';
 import { boardCacheService } from '@/services/boardCacheService';
 import { boardService } from '@/services/boardService';
 import { invoiceCacheService } from '@/services/invoiceCacheService';
-import { Invoice, PaymentReceipt } from '@/services/invoiceService';
+import { PaymentReceipt } from '@/services/invoiceService';
 import { offlineQueueService } from '@/services/offlineQueueService';
 import { orderWorkflowService, ProductionDueStats } from '@/services/orderWorkflowService';
 import { quotationCacheService } from '@/services/quotationCacheService';
@@ -22,20 +22,18 @@ import {
   Clock,
   DollarSign,
   FileCheck,
-  FileText,
   Layers,
   LogOut,
-  Plus,
   RefreshCw,
   TrendingUp,
   User,
-  Wallet,
-  XCircle,
+  Wallet
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -57,6 +55,7 @@ export default function DashboardScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const { isOnline } = useNetworkStatus();
+  const [isMobile, setIsMobile] = useState(false)
 
   // Status Antrean Mutasi Offline
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
@@ -68,6 +67,9 @@ export default function DashboardScreen() {
 
   // Inisialisasi pengambilan data ringkasan seluruh modul saat mount (Instant Cache First)
   useEffect(() => {
+
+    setIsMobile(Platform.OS !== 'web');
+
     let isMounted = true;
     refreshPendingCount();
 
@@ -457,16 +459,14 @@ export default function DashboardScreen() {
                     Order Masuk & Produksi
                   </Text>
                   <View
-                    className={`px-1.5 py-0.5 rounded-[2px] border ${
-                      (prodStats?.totalUrgentCount || 0) > 0
-                        ? 'bg-amber-50 border-amber-300'
-                        : 'bg-[#FAF8F5] border-[#E2DBD0]'
-                    }`}
+                    className={`px-1.5 py-0.5 rounded-[2px] border ${(prodStats?.totalUrgentCount || 0) > 0
+                      ? 'bg-amber-50 border-amber-300'
+                      : 'bg-[#FAF8F5] border-[#E2DBD0]'
+                      }`}
                   >
                     <Text
-                      className={`text-[10px] font-bold font-mono ${
-                        (prodStats?.totalUrgentCount || 0) > 0 ? 'text-amber-800' : 'text-[#1B2225]'
-                      }`}
+                      className={`text-[10px] font-bold font-mono ${(prodStats?.totalUrgentCount || 0) > 0 ? 'text-amber-800' : 'text-[#1B2225]'
+                        }`}
                     >
                       {(prodStats?.totalUrgentCount || 0) > 0 ? '⚠️ KRITIS' : 'PROD'}
                     </Text>
@@ -478,11 +478,10 @@ export default function DashboardScreen() {
                   </Text>
                   <View className="flex-row items-center justify-between border-t border-[#F2EDE4] pt-1.5 mt-1.5">
                     <Text
-                      className={`text-[11px] ${
-                        (prodStats?.totalUrgentCount || 0) > 0
-                          ? 'text-amber-800 font-bold'
-                          : 'text-[#8A9296]'
-                      }`}
+                      className={`text-[11px] ${(prodStats?.totalUrgentCount || 0) > 0
+                        ? 'text-amber-800 font-bold'
+                        : 'text-[#8A9296]'
+                        }`}
                       numberOfLines={1}
                     >
                       {(prodStats?.totalUrgentCount || 0) > 0
@@ -506,13 +505,13 @@ export default function DashboardScreen() {
 
             {/* 3. SHORTCUTS / AKSI CEPAT (Architectural Action Strip) */}
             <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3 mb-3 shadow-xs">
-              <View className="flex-row items-center justify-between mb-2.5">
+              <View className="flex-row items-center justify-between mb-1">
                 <Text className="text-[#1B2225] text-[11px] font-bold uppercase tracking-wider">
                   Aksi Cepat & Navigasi Operasional
                 </Text>
-                <Text className="text-[#8A9296] text-[10px]">Alora Studio Workspace</Text>
               </View>
-              <View className="flex-row flex-wrap gap-2">
+              <Text className="text-[#8A9296] text-[10px]">Alora Studio Workspace</Text>
+              <View className="flex-row flex-wrap gap-2 py-2">
                 <Pressable
                   onPress={() => router.push('/(backoffice)/boards')}
                   style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
@@ -546,7 +545,7 @@ export default function DashboardScreen() {
             <View className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
               {/* Kolom Kiri: Funnel Penawaran (Quotations) */}
               <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 shadow-xs">
-                <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-3">
+                <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-3 flex-wrap gap-2">
                   <View className="flex-row items-center">
                     <FileCheck size={15} color="#968363" />
                     <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
@@ -555,7 +554,7 @@ export default function DashboardScreen() {
                   </View>
                   <Pressable
                     onPress={() => router.push('/(backoffice)/quotations')}
-                    className="flex-row items-center"
+                    className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-1 rounded-[3px]"
                   >
                     <Text className="text-[#968363] text-xs font-semibold mr-1">Kelola</Text>
                     <ArrowRight size={12} color="#968363" />
@@ -607,7 +606,7 @@ export default function DashboardScreen() {
 
               {/* Kolom Kanan: Kesehatan Penagihan Invoice (Billing Health) */}
               <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 shadow-xs">
-                <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-3">
+                <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-3 flex-wrap gap-2">
                   <View className="flex-row items-center">
                     <TrendingUp size={15} color="#065F46" />
                     <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
@@ -616,7 +615,7 @@ export default function DashboardScreen() {
                   </View>
                   <Pressable
                     onPress={() => router.push('/(backoffice)/invoices')}
-                    className="flex-row items-center"
+                    className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-1 rounded-[3px]"
                   >
                     <Text className="text-[#968363] text-xs font-semibold mr-1">Rincian</Text>
                     <ArrowRight size={12} color="#968363" />
@@ -674,14 +673,17 @@ export default function DashboardScreen() {
 
             {/* 5. PERINGATAN JATUH TEMPO (URGENT ATTENTION) */}
             <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 mb-3 shadow-xs">
-              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5">
-                <View className="flex-row items-center">
+              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5 flex-wrap gap-2">
+                <View className="flex-row items-center flex-wrap gap-1.5 flex-1 min-w-[200px]">
                   <AlertTriangle size={14} color="#B45309" />
-                  <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
-                    TAGIHAN JATUH TEMPO & PERLU PERHATIAN
+                  <Text className="text-[#1B2225] font-bold text-xs ml-1 font-mono">
+                    TAGIHAN JATUH TEMPO
                   </Text>
+                  <View className="bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-[2px]">
+                    <Text className="text-amber-800 text-[10px] font-mono font-bold">PERHATIAN</Text>
+                  </View>
                 </View>
-                <Text className="text-[#8A9296] text-[11px]">Mendekati / Lewat Tempo</Text>
+                <Text className="text-[#8A9296] text-[10px] md:text-[11px]">Mendekati / Lewat Tempo</Text>
               </View>
 
               {urgentInvoices.length === 0 ? (
@@ -690,7 +692,7 @@ export default function DashboardScreen() {
                   <Text className="text-[#1B2225] font-semibold text-xs mt-1.5">
                     Semua penagihan dalam batas tempo aman
                   </Text>
-                  <Text className="text-[#70787C] text-[11px] mt-0.5">
+                  <Text className="text-[#70787C] text-[11px] mt-0.5 text-center">
                     Tidak ada tagihan yang melewati batas tempo atau jatuh tempo dalam 7 hari ini.
                   </Text>
                 </View>
@@ -703,37 +705,35 @@ export default function DashboardScreen() {
                         key={inv.id}
                         className="bg-[#FAF8F5] border border-[#E8E2D6] p-2.5 rounded-[3px] flex-col md:flex-row md:items-center justify-between gap-2"
                       >
-                        <View className="flex-row items-center space-x-2">
+                        <View className="flex-row items-center space-x-2 flex-1 min-w-0">
                           <View
-                            className={`px-1.5 py-0.5 rounded-[2px] border mr-2 ${
-                              isOverdue
-                                ? 'bg-rose-50 border-rose-200'
-                                : 'bg-amber-50 border-amber-200'
-                            }`}
+                            className={`px-1.5 py-0.5 rounded-[2px] border mr-2 shrink-0 ${isOverdue
+                              ? 'bg-rose-50 border-rose-200'
+                              : 'bg-amber-50 border-amber-200'
+                              }`}
                           >
                             <Text
-                              className={`text-[9px] font-bold font-mono ${
-                                isOverdue ? 'text-rose-700' : 'text-amber-700'
-                              }`}
+                              className={`text-[9px] font-bold font-mono ${isOverdue ? 'text-rose-700' : 'text-amber-700'
+                                }`}
                             >
                               {isOverdue
                                 ? `LEWAT ${Math.abs(inv.diffDays)} HARI`
                                 : inv.diffDays === 0
-                                ? 'HARI INI'
-                                : `${inv.diffDays} HARI LAGI`}
+                                  ? 'HARI INI'
+                                  : `${inv.diffDays} HARI LAGI`}
                             </Text>
                           </View>
-                          <View>
-                            <Text className="text-[#1B2225] font-bold text-xs">
+                          <View className="flex-1 min-w-0">
+                            <Text className="text-[#1B2225] font-bold text-xs" numberOfLines={1}>
                               {inv.invoice_no} • {inv.client_name}
                             </Text>
-                            <Text className="text-[#70787C] text-[11px]">
+                            <Text className="text-[#70787C] text-[11px]" numberOfLines={1}>
                               Jatuh Tempo: {formatIndonesianDate(inv.due_date!)}
                             </Text>
                           </View>
                         </View>
 
-                        <View className="flex-row items-center justify-between md:justify-end gap-3">
+                        <View className="flex-row items-center justify-between md:justify-end gap-3 shrink-0">
                           <View className="text-right">
                             <Text className="text-[#70787C] text-[10px]">Sisa Piutang:</Text>
                             <Text className="text-[#968363] font-bold text-xs font-mono">
@@ -742,7 +742,7 @@ export default function DashboardScreen() {
                           </View>
                           <Pressable
                             onPress={() => router.push('/(backoffice)/invoices')}
-                            className="bg-[#1B2225] px-2.5 py-1 rounded-[2px]"
+                            className="bg-[#1B2225] hover:bg-[#2C3539] px-2.5 py-1 rounded-[2px]"
                           >
                             <Text className="text-white text-[11px] font-semibold">Tagih</Text>
                           </Pressable>
@@ -756,16 +756,19 @@ export default function DashboardScreen() {
 
             {/* 5B. MONITORING DEADLINE ORDER PRODUKSI (TENGGAT ≤ 10 HARI) */}
             <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 mb-3 shadow-xs">
-              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5">
-                <View className="flex-row items-center">
+              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5 flex-wrap gap-2">
+                <View className="flex-row items-center flex-wrap gap-1.5 flex-1 min-w-[200px]">
                   <Clock size={14} color="#968363" />
-                  <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
-                    ORDER PRODUKSI MENDEKATI DEADLINE (TENGGAT ≤ 10 HARI)
+                  <Text className="text-[#1B2225] font-bold text-xs font-mono ml-1">
+                    ORDER PRODUKSI DEADLINE
                   </Text>
+                  <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px]">
+                    <Text className="text-[#8C7A5C] text-[10px] font-mono font-bold">≤ 10 HARI</Text>
+                  </View>
                   {(prodStats?.totalUrgentCount || 0) > 0 && (
-                    <View className="ml-2 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-[2px]">
+                    <View className="bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded-[2px]">
                       <Text className="text-amber-900 font-mono text-[10px] font-bold">
-                        {prodStats?.totalUrgentCount} Perlu Perhatian
+                        {prodStats?.totalUrgentCount} Kritis
                       </Text>
                     </View>
                   )}
@@ -777,10 +780,10 @@ export default function DashboardScreen() {
                       params: { type: 'production' },
                     })
                   }
-                  className="flex-row items-center"
+                  className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-1 rounded-[3px]"
                 >
                   <Text className="text-[#968363] text-[11px] font-semibold mr-1">Board Produksi</Text>
-                  <ArrowRight size={12} color="#968363" />
+                  <ArrowRight size={11} color="#968363" />
                 </Pressable>
               </View>
 
@@ -790,7 +793,7 @@ export default function DashboardScreen() {
                   <Text className="text-[#1B2225] font-semibold text-xs mt-1.5">
                     Semua order produksi dalam batas tenggat aman
                   </Text>
-                  <Text className="text-[#70787C] text-[11px] mt-0.5">
+                  <Text className="text-[#70787C] text-[11px] mt-0.5 text-center">
                     Tidak ada order masuk atau pengerjaan produksi yang mendekati deadline (tenggat ≤ 10 hari).
                   </Text>
                 </View>
@@ -803,36 +806,34 @@ export default function DashboardScreen() {
                         key={order.id}
                         className="bg-[#FAF8F5] border border-[#E8E2D6] p-2.5 rounded-[3px] flex-col md:flex-row md:items-center justify-between gap-2"
                       >
-                        <View className="flex-row items-center space-x-2">
+                        <View className="flex-row items-center space-x-2 flex-1 min-w-0">
                           <View
-                            className={`px-1.5 py-0.5 rounded-[2px] border mr-2 ${
-                              isOverdue
-                                ? 'bg-rose-50 border-rose-200'
-                                : 'bg-amber-50 border-amber-200'
-                            }`}
+                            className={`px-1.5 py-0.5 rounded-[2px] border mr-2 shrink-0 ${isOverdue
+                              ? 'bg-rose-50 border-rose-200'
+                              : 'bg-amber-50 border-amber-200'
+                              }`}
                           >
                             <Text
-                              className={`text-[9px] font-bold font-mono ${
-                                isOverdue ? 'text-rose-700' : 'text-amber-700'
-                              }`}
+                              className={`text-[9px] font-bold font-mono ${isOverdue ? 'text-rose-700' : 'text-amber-700'
+                                }`}
                             >
                               {isOverdue
                                 ? `LEWAT ${Math.abs(order.diff_days)} HARI`
                                 : order.diff_days === 0
-                                ? 'HARI INI'
-                                : `${order.diff_days} HARI LAGI`}
+                                  ? 'HARI INI'
+                                  : `${order.diff_days} HARI LAGI`}
                             </Text>
                           </View>
-                          <View>
-                            <Text className="text-[#1B2225] font-bold text-xs">
+                          <View className="flex-1 min-w-0">
+                            <Text className="text-[#1B2225] font-bold text-xs" numberOfLines={1}>
                               {order.title} • {order.client_name || 'Tanpa Klien'}
                             </Text>
                             <View className="flex-row items-center gap-1.5 mt-0.5">
                               <View
                                 style={{ backgroundColor: order.column_color || '#968363' }}
-                                className="w-1.5 h-1.5 rounded-full"
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
                               />
-                              <Text className="text-[#70787C] text-[11px]">
+                              <Text className="text-[#70787C] text-[11px]" numberOfLines={1}>
                                 Tahapan: {order.column_title} • Deadline:{' '}
                                 <Text className="font-mono font-semibold text-[#1B2225]">
                                   {formatIndonesianDate(order.due_date)}
@@ -842,7 +843,7 @@ export default function DashboardScreen() {
                           </View>
                         </View>
 
-                        <View className="flex-row items-center justify-between md:justify-end gap-3">
+                        <View className="flex-row items-center justify-between md:justify-end gap-3 shrink-0">
                           <View className="text-right">
                             <Text className="text-[#70787C] text-[10px]">Nilai Proyek:</Text>
                             <Text className="text-emerald-800 font-bold text-xs font-mono">
@@ -870,19 +871,19 @@ export default function DashboardScreen() {
 
             {/* 6. RIWAYAT MUTASI PEMBAYARAN TERAKHIR (RECENT PAYMENTS) */}
             <View className="bg-white border border-[#E3DDCF] rounded-[4px] p-3.5 mb-3 shadow-xs">
-              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5">
+              <View className="flex-row items-center justify-between pb-2.5 border-b border-[#F0EBE1] mb-2.5 flex-wrap gap-2">
                 <View className="flex-row items-center">
                   <Wallet size={14} color="#065F46" />
                   <Text className="text-[#1B2225] font-bold text-xs ml-2 font-mono">
-                    RIWAYAT PEMBAYARAN TERMIN TERBARU
+                    RIWAYAT PEMBAYARAN TERMIN
                   </Text>
                 </View>
                 <Pressable
                   onPress={() => router.push('/(backoffice)/invoices')}
-                  className="flex-row items-center"
+                  className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-1 rounded-[3px]"
                 >
-                  <Text className="text-[#968363] text-xs font-semibold mr-1">Semua Invoice</Text>
-                  <ArrowRight size={12} color="#968363" />
+                  <Text className="text-[#968363] text-[11px] font-semibold mr-1">Semua Invoice</Text>
+                  <ArrowRight size={11} color="#968363" />
                 </Pressable>
               </View>
 
@@ -891,31 +892,45 @@ export default function DashboardScreen() {
                   <Text className="text-[#70787C] text-xs">Belum ada mutasi pembayaran tercatat.</Text>
                 </View>
               ) : (
-                <View className="space-y-1.5">
+                <View className="space-y-3">
                   {recentPayments.map((p) => (
                     <View
                       key={p.id}
-                      className="bg-[#FAF8F5] border border-[#E8E2D6] p-2.5 rounded-[3px] flex-row items-center justify-between"
+                      className={`bg-[#FAF8F5] border border-[#E8E2D6] p-2.5 md:p-3 rounded-[3px] shadow-2xs ${isMobile ? 'mb-3' : ''}`}
                     >
-                      <View className="flex-1 mr-3">
-                        <View className="flex-row items-center space-x-2">
-                          <Text className="text-[#968363] font-mono text-xs font-bold mr-2">
-                            {p.receipt_no}
-                          </Text>
-                          <Text className="text-[#1B2225] font-semibold text-xs" numberOfLines={1}>
-                            {p.clientName} ({p.invoiceNo})
+                      {/* Baris Atas: Klien & Nominal Kas Masuk */}
+                      <View className="flex-row items-start justify-between gap-2 mb-1.5">
+                        <View className="flex-1 min-w-0">
+                          <View className="flex-row items-center flex-wrap gap-1.5">
+                            <Text className="text-[#1B2225] font-bold text-xs" numberOfLines={1}>
+                              {p.clientName}
+                            </Text>
+                            <View className="bg-white border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px]">
+                              <Text className="text-[#968363] font-mono text-[10px] font-bold">
+                                {p.invoiceNo}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text className="text-[#70787C] text-[11px] mt-0.5" numberOfLines={1}>
+                            {p.stage_name} • {formatIndonesianDate(p.payment_date)}
                           </Text>
                         </View>
-                        <Text className="text-[#70787C] text-[11px] mt-0.5">
-                          {p.stage_name} • {formatIndonesianDate(p.payment_date)}
-                        </Text>
+
+                        <View className="items-end shrink-0">
+                          <Text className="text-emerald-800 font-bold text-xs md:text-sm font-mono">
+                            + {formatRupiah(p.amount)}
+                          </Text>
+                        </View>
                       </View>
 
-                      <View className="items-end">
-                        <Text className="text-emerald-800 font-bold text-xs md:text-sm font-mono">
-                          + {formatRupiah(p.amount)}
+                      {/* Baris Bawah: Nomor Kuitansi & Metode Pembayaran */}
+                      <View className="flex-row items-center justify-between pt-1.5 border-t border-[#F0EBE1] flex-wrap gap-1">
+                        <Text className="text-[#8A9296] text-[10px] font-mono">
+                          Kuitansi: <Text className="text-[#1B2225] font-semibold">{p.receipt_no}</Text>
                         </Text>
-                        <Text className="text-[#8A9296] text-[10px]">{p.payment_method}</Text>
+                        <Text className="text-[#70787C] text-[10px] font-medium" numberOfLines={1}>
+                          {p.payment_method}
+                        </Text>
                       </View>
                     </View>
                   ))}
