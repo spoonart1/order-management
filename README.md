@@ -1,8 +1,9 @@
 # Alora Studio
 
-> **Open-source operational management & mini-ERP for interior design studios, architects, and custom furniture workshops.**
+> **Open-source operational management & mini-ERP for interior design studios, architects, and custom furniture workshops — with full offline mode support.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Offline Support](https://img.shields.io/badge/Offline_Mode-Supported-2ea44f?style=flat-square)](#-offline-mode-support)
 [![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo_SDK-57-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -15,7 +16,35 @@
 
 **Alora Studio** is an open-source, universal backoffice application built to manage the end-to-end workflow of interior designers and workshop fabricators — from client leads and formal quotations to production tracking and milestone billing.
 
-Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** with **100% Offline-First** support.
+Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** with complete **Offline-First** capability for remote job sites and workshop floors.
+
+---
+
+## 🖥️ Web App Preview
+
+<p align="center">
+  <img src="assets/screenshots/01-dashboard.png" alt="Alora Studio - Executive Operational Dashboard" width="100%"/>
+</p>
+
+| Multi-Board Kanban | Quotations & RAB Pipeline |
+| :---: | :---: |
+| [![Kanban Board](assets/screenshots/02-kanban-board.png)](assets/screenshots/02-kanban-board.png) | [![Quotations](assets/screenshots/03-quotations.png)](assets/screenshots/03-quotations.png) |
+| *Track leads and auto-transfer DP orders to production* | *Itemized room specifications & status tracking* |
+
+| Official Quotation PDF Preview | Milestone Invoicing & Payments |
+| :---: | :---: |
+| [![Quotation Preview](assets/screenshots/04-quotation-preview.png)](assets/screenshots/04-quotation-preview.png) | [![Invoices](assets/screenshots/05-invoices.png)](assets/screenshots/05-invoices.png) |
+| *Print-ready PDF layout with specification tables* | *Progressive term billing (DP to Final Settlement)* |
+
+---
+
+## 📶 Offline Mode Support
+
+Built specifically for on-site measurements and workshop environments with spotty or zero internet connectivity:
+- **Instant 0ms Loading**: Dashboards, boards, quotations, and invoices load immediately from persistent local cache (*AsyncStorage*).
+- **Offline Actions & Outbox Queue**: Create, edit, and move cards or update data freely while offline; changes are saved locally to an outbox queue.
+- **Silent Background Auto-Sync**: Queued mutations automatically synchronize with Supabase in the background as soon as connectivity is restored — no page reload required.
+- **Real-Time Offline Status**: Clear visual banner alerts the user when offline and displays pending sync counts.
 
 ---
 
@@ -32,7 +61,6 @@ Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** 
   - PDF document support (up to **10 MB**) for blueprints and contracts with instant preview.
 - **Quotation & RAB Engine**: Room-by-room itemized specifications, automated tax/discount calculations, Indonesian Rupiah formatting, and print-ready PDF export.
 - **Milestone Invoicing**: Progressive term billing (DP, Milestone 1, Milestone 2, Final Settlement) with payment receipts and status tracking.
-- **Offline-First Resilience**: Instant 0ms loading from local cache (*AsyncStorage*) with automatic background outbox sync.
 
 ---
 
@@ -45,6 +73,7 @@ Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** 
 | **State & Cache** | Redux Toolkit, AsyncStorage, SWR Pattern |
 | **Backend** | Supabase (PostgreSQL, Storage, Auth, Row Level Security) |
 | **Media & Native** | `expo-image-manipulator`, `expo-document-picker`, `expo-print`, `expo-sharing` |
+| **Connectivity** | `@react-native-community/netinfo`, Custom Outbox Queue Sync |
 | **Language** | TypeScript (Strict Mode) |
 
 ---
