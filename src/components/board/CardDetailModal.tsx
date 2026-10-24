@@ -1,17 +1,28 @@
 import { Chip } from "@/components/ui/Chip";
-import { cardAttachmentService } from "@/services/cardAttachmentService";
+import { DatePickerField } from "@/components/ui/DatePickerField";
+import {
+    cardAttachmentService,
+    MAX_PDF_SIZE_BYTES,
+    MAX_PDF_SIZE_MB,
+    TARGET_IMAGE_MAX_KB,
+} from "@/services/cardAttachmentService";
+import { orderWorkflowService } from "@/services/orderWorkflowService";
 import { Quotation, SaveQuotationPayload, quotationService } from "@/services/quotationService";
 import { QuotationFormModal } from "@/components/quotation/QuotationFormModal";
 import { QuotationPreviewModal } from "@/components/quotation/QuotationPreviewModal";
 import { AttachmentItem, CardItem, ColumnItem, Profile } from "@/store/slices/boardSlice";
 import { formatRupiah } from "@/utils/terbilang";
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { Camera, FileText } from 'lucide-react-native';
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     Image,
+    Linking,
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     Text,
@@ -34,6 +45,7 @@ interface CardDetailModalProps {
         column_id: string;
         assigned_to: string | null;
         notes: string;
+        due_date?: string | null;
     }) => void;
     onAttachmentChange?: () => void;
     /** Kolom default saat membuat kartu baru (mode create, ketika card = null) */
@@ -59,6 +71,7 @@ export function CardDetailModal({
     const [value, setValue] = useState('');
     const [columnId, setColumnId] = useState('');
     const [assignedTo, setAssignedTo] = useState<string | null>(null);
+    const [dueDate, setDueDate] = useState('');
     const [notes, setNotes] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -98,6 +111,7 @@ export function CardDetailModal({
                 setColumnId(card.column_id);
                 setAssignedTo(card.assigned_to || null);
                 setNotes(card.notes || '');
+                setDueDate(card.due_date || orderWorkflowService.getCardDueDate(card) || '');
                 setAttachments(card.card_attachments || []);
 
                 // Ambil data penawaran yang terhubung
@@ -112,6 +126,7 @@ export function CardDetailModal({
                 setValue('');
                 setColumnId(defaultColumnId || columns[0]?.id || '');
                 setAssignedTo(null);
+                setDueDate('');
                 setNotes('');
                 setAttachments([]);
                 setLinkedQuotation(null);
@@ -163,6 +178,14 @@ export function CardDetailModal({
         }
 
         setErrorMessage(null);
+
+        // Jika ada due_date, perbarui juga metadata tag [DEADLINE:...] di notes agar tetap konsisten
+        let finalNotes = notes.trim();
+        if (dueDate) {
+            const clean = finalNotes.replace(/\[DEADLINE:[^\]]+\]/g, '').trim();
+            finalNotes = clean ? `[DEADLINE:${dueDate}] ${clean}` : `[DEADLINE:${dueDate}]`;
+        }
+
         onSave({
             title: title.trim(),
             client_name: clientName.trim(),
@@ -170,11 +193,12 @@ export function CardDetailModal({
             estimated_value: parseFloat(value) || 0,
             column_id: columnId,
             assigned_to: assignedTo,
-            notes: notes.trim(),
+            notes: finalNotes,
+            due_date: dueDate || null,
         });
     };
 
-    // Handler Upload (Memanggil Network Layer Service)
+    // Handler Upload Foto
     const handlePickAndUploadImage = async () => {
         if (!card) return;
 
@@ -197,7 +221,12 @@ export function CardDetailModal({
             const asset = result.assets[0];
 
             // PANGGIL SERVICE LAYER
-            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, asset);
+            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, {
+                uri: asset.uri,
+                fileName: asset.fileName || `foto_${Date.now()}.jpg`,
+                mimeType: asset.mimeType || 'image/jpeg',
+                fileSize: asset.fileSize,
+            });
             setAttachments((prev) => [...prev, newAttachment]);
             onAttachmentChange?.();
         } catch (err: any) {
@@ -205,6 +234,68 @@ export function CardDetailModal({
         } finally {
             setUploading(false);
         }
+    };
+
+    // Handler Upload Dokumen PDF
+    const handlePickAndUploadPdf = async () => {
+        if (!card) return;
+
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled || !result.assets?.length) return;
+
+            const asset = result.assets[0];
+
+            if (asset.size && asset.size > MAX_PDF_SIZE_BYTES) {
+                Alert.alert(
+                    "Ukuran PDF Melebihi Batas",
+                    `Ukuran file PDF (${(asset.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal ${MAX_PDF_SIZE_MB} MB.`
+                );
+                return;
+            }
+
+            setUploading(true);
+
+            // PANGGIL SERVICE LAYER
+            const newAttachment = await cardAttachmentService.uploadAttachment(card.id, {
+                uri: asset.uri,
+                fileName: asset.name,
+                mimeType: asset.mimeType || 'application/pdf',
+                fileSize: asset.size,
+                file: asset.file,
+            });
+            setAttachments((prev) => [...prev, newAttachment]);
+            onAttachmentChange?.();
+        } catch (err: any) {
+            Alert.alert("Gagal Upload PDF", err?.message || "Terjadi kesalahan saat mengunggah dokumen PDF.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Handler Buka / Preview File Lampiran (PDF atau Gambar)
+    const handleOpenAttachment = async (item: AttachmentItem) => {
+        try {
+            if (Platform.OS === 'web') {
+                window.open(item.file_url, '_blank');
+            } else {
+                await Linking.openURL(item.file_url);
+            }
+        } catch (err: any) {
+            Alert.alert("Gagal Membuka File", "Tidak dapat membuka lampiran: " + (err?.message || err));
+        }
+    };
+
+    // Helper Format Ukuran File
+    const formatFileSize = (bytes?: number) => {
+        if (!bytes || bytes <= 0) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
     // Handler Hapus (Memanggil Network Layer Service)
@@ -224,15 +315,15 @@ export function CardDetailModal({
 
     return (
         <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-            <View className="flex-1 bg-black/80 justify-center items-center p-4">
-                <View className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            <View className="flex-1 bg-black/60 justify-center items-center p-4">
+                <View className="w-full max-w-lg bg-[#F8F6F1] border border-[#DDD6C8] rounded-[4px] p-5 shadow-2xl">
                     {/* Header Modal */}
-                    <View className="flex-row justify-between items-center mb-5 pb-3 border-b border-slate-800">
+                    <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-[#E3DDCF]">
                         <View>
-                            <Text className="text-white text-lg font-bold">
+                            <Text className="text-[#1B2225] text-base font-bold font-mono">
                                 {isCreateMode ? 'Tambah Kartu Baru' : 'Detail Kartu Pesanan'}
                             </Text>
-                            <Text className="text-slate-400 text-xs">
+                            <Text className="text-[#70787C] text-xs">
                                 {isCreateMode
                                     ? 'Isi informasi pesanan baru'
                                     : 'Edit informasi, alur tahapan & galeri foto'}
@@ -241,26 +332,26 @@ export function CardDetailModal({
                         <Pressable
                             onPress={onClose}
                             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-                            className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+                            className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center"
                         >
-                            <Text className="text-slate-400 font-bold">✕</Text>
+                            <Text className="text-[#1B2225] font-bold text-xs">✕</Text>
                         </Pressable>
                     </View>
 
                     <ScrollView className="max-h-[70vh]">
                         {/* Pesan Error Validasi */}
                         {errorMessage && (
-                            <View className="mb-4 px-3.5 py-2.5 rounded-xl bg-red-950/70 border border-red-500/60">
-                                <Text className="text-red-400 text-xs font-semibold">
+                            <View className="mb-3 px-3 py-2 rounded-[3px] bg-rose-50 border border-rose-200">
+                                <Text className="text-rose-700 text-xs font-semibold">
                                     ⚠️ {errorMessage}
                                 </Text>
                             </View>
                         )}
 
                         {/* Nama Project */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">
-                                Nama Project <Text className="text-red-400">*</Text>
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                                Nama Project <Text className="text-rose-600">*</Text>
                             </Text>
                             <TextInput
                                 value={title}
@@ -268,16 +359,16 @@ export function CardDetailModal({
                                     setTitle(t);
                                     if (errorMessage) setErrorMessage(null);
                                 }}
-                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-medium"
                                 placeholder="Contoh: Kitchen Set Minimalis"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#8A9296"
                             />
                         </View>
 
                         {/* Nama Klien */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">
-                                Nama Klien & Lokasi <Text className="text-red-400">*</Text>
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                                Nama Klien & Lokasi <Text className="text-rose-600">*</Text>
                             </Text>
                             <TextInput
                                 value={clientName}
@@ -285,16 +376,16 @@ export function CardDetailModal({
                                     setClientName(t);
                                     if (errorMessage) setErrorMessage(null);
                                 }}
-                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-medium"
                                 placeholder="Contoh: Ibu Rini - Pleret"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#8A9296"
                             />
                         </View>
 
                         {/* Nomor HP Client */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">
-                                Nomor HP Client <Text className="text-red-400">*</Text>
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
+                                Nomor HP Client <Text className="text-rose-600">*</Text>
                             </Text>
                             <TextInput
                                 value={clientPhone}
@@ -305,20 +396,20 @@ export function CardDetailModal({
                                 }}
                                 keyboardType="phone-pad"
                                 inputMode="numeric"
-                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-mono"
                                 placeholder="Contoh: 081234567890"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#8A9296"
                             />
                         </View>
 
                         {/* Nilai Estimasi */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                                 Nilai Estimasi (Rp){' '}
                                 {isValueRequired ? (
-                                    <Text className="text-red-400">*</Text>
+                                    <Text className="text-rose-600">*</Text>
                                 ) : (
-                                    <Text className="text-slate-500 font-normal">(Opsional)</Text>
+                                    <Text className="text-[#8A9296] font-normal">(Opsional)</Text>
                                 )}
                             </Text>
                             <TextInput
@@ -330,16 +421,30 @@ export function CardDetailModal({
                                 }}
                                 keyboardType="numeric"
                                 inputMode="numeric"
-                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-mono"
                                 placeholder="Contoh: 12688000"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#8A9296"
+                            />
+                        </View>
+
+                        {/* Tenggat Waktu / Deadline (Due Date) */}
+                        <View className="mb-3">
+                            <DatePickerField
+                                label="Tenggat Deadline (Due Date)"
+                                value={dueDate}
+                                onChange={(newDate) => {
+                                    setDueDate(newDate);
+                                    if (errorMessage) setErrorMessage(null);
+                                }}
+                                placeholder="Pilih tanggal deadline pengerjaan..."
+                                allowClear
                             />
                         </View>
 
                         {/* Pindah Kolom */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1.5">
-                                Tahapan Alur (Kolom) <Text className="text-red-400">*</Text>
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1.5">
+                                Tahapan Alur (Kolom) <Text className="text-rose-600">*</Text>
                             </Text>
                             <View className="flex-row flex-wrap">
                                 {columns.map((col) => (
@@ -352,17 +457,19 @@ export function CardDetailModal({
                                             if (errorMessage) setErrorMessage(null);
                                         }}
                                         color={col.color_hex}
-                                        activeBorderColor="#FFFFFF"
-                                        inactiveBorderColor="#334155"
+                                        activeBorderColor={col.color_hex}
+                                        inactiveBgColor="#FAF8F5"
+                                        inactiveBorderColor="#DDD6C8"
+                                        inactiveTextColor="#4D555A"
                                     />
                                 ))}
                             </View>
                         </View>
 
                         {/* Pilih PIC */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1.5">
-                                Penanggung Jawab (PIC) <Text className="text-red-400">*</Text>
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1.5">
+                                Penanggung Jawab (PIC) <Text className="text-rose-600">*</Text>
                             </Text>
                             <View className="flex-row flex-wrap">
                                 {profiles.map((p) => (
@@ -375,85 +482,189 @@ export function CardDetailModal({
                                             setAssignedTo(p.id);
                                             if (errorMessage) setErrorMessage(null);
                                         }}
-                                        activeBorderColor="#FFFFFF"
-                                        color="#2563EB"
-                                        inactiveBgColor="#020617"
-                                        inactiveBorderColor="#334155"
+                                        color="#1B2225"
+                                        activeBorderColor="#1B2225"
+                                        inactiveBgColor="#FAF8F5"
+                                        inactiveBorderColor="#DDD6C8"
+                                        inactiveTextColor="#4D555A"
                                     />
                                 ))}
                             </View>
                         </View>
 
                         {/* ======================================================== */}
-                        {/* BAGIAN GALERI FOTO & LAMPIRAN (TASK 3.8)                 */}
+                        {/* BAGIAN GALERI FOTO & LAMPIRAN                            */}
                         {/* ======================================================== */}
                         {isCreateMode ? (
-                            <View className="mb-4 pt-3 border-t border-slate-800">
-                                <Text className="text-slate-500 text-[11px]">
-                                    📷 Foto & lampiran bisa diunggah setelah kartu disimpan.
+                            <View className="mb-3 pt-2.5 border-t border-[#E3DDCF]">
+                                <Text className="text-[#8A9296] text-[11px]">
+                                    📎 Foto & lampiran dokumen bisa diunggah setelah kartu disimpan.
                                 </Text>
                             </View>
                         ) : (
-                            <View className="mb-4 pt-2 border-t border-slate-800">
+                            <View className="mb-3 pt-2 border-t border-[#E3DDCF]">
                                 <View className="flex-row justify-between items-center mb-2">
-                                    <Text className="text-slate-300 text-xs font-semibold">
-                                        Galeri Foto & Lampiran ({attachments.length})
+                                    <Text className="text-[#1B2225] text-xs font-semibold">
+                                        Galeri Foto & Dokumen ({attachments.length})
                                     </Text>
-                                    <Pressable
-                                        onPress={handlePickAndUploadImage}
-                                        disabled={uploading}
-                                        style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
-                                        className="bg-sky-600/20 border border-sky-500/40 px-3 py-1.5 rounded-lg flex-row items-center"
-                                    >
-                                        {uploading ? (
-                                            <ActivityIndicator size="small" color="#38BDF8" />
-                                        ) : (
-                                            <Text className="text-sky-400 text-xs font-semibold">
-                                                📷 + Upload Foto
+                                    <View className="flex-row items-center gap-1.5">
+                                        <Pressable
+                                            onPress={handlePickAndUploadImage}
+                                            disabled={uploading}
+                                            style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
+                                            className="bg-[#FAF8F5] border border-[#DDD6C8] hover:bg-[#F2EDE4] px-2 py-1 rounded-[3px] flex-row items-center shadow-2xs"
+                                        >
+                                            <Camera size={11} color="#1B2225" />
+                                            <Text className="text-[#1B2225] text-[11px] font-semibold ml-1">
+                                                + Foto
                                             </Text>
-                                        )}
-                                    </Pressable>
+                                        </Pressable>
+
+                                        <Pressable
+                                            onPress={handlePickAndUploadPdf}
+                                            disabled={uploading}
+                                            style={({ pressed }) => [{ opacity: pressed || uploading ? 0.7 : 1 }]}
+                                            className="bg-[#1B2225] border border-[#1B2225] hover:bg-[#2C373C] px-2.5 py-1 rounded-[3px] flex-row items-center shadow-2xs"
+                                        >
+                                            {uploading ? (
+                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                            ) : (
+                                                <>
+                                                    <FileText size={11} color="#FFFFFF" />
+                                                    <Text className="text-white text-[11px] font-semibold ml-1">
+                                                        + PDF
+                                                    </Text>
+                                                </>
+                                            )}
+                                        </Pressable>
+                                    </View>
                                 </View>
 
-                                {/* List Thumbnail Foto */}
+                                {/* List Thumbnail Foto & Lampiran PDF */}
                                 {attachments.length === 0 ? (
-                                    <Pressable
-                                        className="py-5 items-center justify-center border border-dashed border-slate-800 rounded-xl bg-slate-950/40"
-                                        onPress={handlePickAndUploadImage}
-                                        disabled={uploading}
-                                    >
-                                        <Text className="text-slate-500 text-xs">Belum ada foto yang diunggah</Text>
-                                        <Text className="text-slate-600 text-[10px] mt-0.5">
-                                            Unggah foto pengukuran, render 3D, atau bukti pengerjaan
-                                        </Text>
-                                    </Pressable>
-                                ) : (
-                                    <View className="flex-row flex-wrap gap-2.5">
-                                        {attachments.map((item) => (
-                                            <View
-                                                key={item.id}
-                                                className="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative"
+                                    <View>
+                                        <View className="flex-row gap-2">
+                                            <Pressable
+                                                className="flex-1 py-3 px-2.5 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px] bg-white hover:bg-[#FAF8F5]"
+                                                onPress={handlePickAndUploadImage}
+                                                disabled={uploading}
                                             >
-                                                <Image
-                                                    source={{ uri: item.file_url }}
-                                                    className="w-full h-full"
-                                                    resizeMode="cover"
-                                                />
-                                                {/* Tombol Hapus Foto */}
-                                                <Pressable
-                                                    onPress={() => handleDeleteAttachment(item)}
-                                                    disabled={deletingId === item.id}
-                                                    style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 items-center justify-center shadow-md"
+                                                <Camera size={18} color="#968363" />
+                                                <Text className="text-[#1B2225] text-xs font-semibold mt-1">Unggah Foto</Text>
+                                                <Text className="text-[#8A9296] text-[10px] mt-0.5 text-center">
+                                                    Pengukuran, visual 3D & workshop
+                                                </Text>
+                                            </Pressable>
+                                            <Pressable
+                                                className="flex-1 py-3 px-2.5 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px] bg-white hover:bg-[#FAF8F5]"
+                                                onPress={handlePickAndUploadPdf}
+                                                disabled={uploading}
+                                            >
+                                                <FileText size={18} color="#DC2626" />
+                                                <Text className="text-[#1B2225] text-xs font-semibold mt-1">Unggah PDF</Text>
+                                                <Text className="text-[#8A9296] text-[10px] mt-0.5 text-center">
+                                                    SPK, denah CAD & spek teknis
+                                                </Text>
+                                            </Pressable>
+                                        </View>
+                                        <Text className="text-[#8A9296] text-[10px] text-center mt-1.5">
+                                            Batas ukuran: <Text className="font-semibold text-[#1B2225] font-mono">PDF maks. {MAX_PDF_SIZE_MB} MB</Text> • Foto otomatis dikompresi (<Text className="font-semibold text-[#1B2225] font-mono">&lt; {TARGET_IMAGE_MAX_KB} KB</Text>)
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <View className="flex-row flex-wrap gap-2">
+                                        {attachments.map((item) => {
+                                            const isPdf =
+                                                item.file_type === 'pdf' ||
+                                                item.file_name?.toLowerCase().endsWith('.pdf') ||
+                                                item.file_url?.toLowerCase().includes('.pdf');
+
+                                            if (isPdf) {
+                                                return (
+                                                    <View
+                                                        key={item.id}
+                                                        className="w-28 h-24 rounded-[3px] overflow-hidden bg-[#FAF8F5] border border-[#DDD6C8] p-2 relative justify-between shadow-2xs"
+                                                    >
+                                                        <Pressable
+                                                            onPress={() => handleOpenAttachment(item)}
+                                                            className="flex-1 justify-between"
+                                                        >
+                                                            <View className="flex-row items-center justify-between pr-5">
+                                                                <View className="bg-rose-50 border border-rose-200 px-1 py-0.5 rounded-[2px] flex-row items-center">
+                                                                    <FileText size={10} color="#BE123C" />
+                                                                    <Text className="text-rose-700 font-mono text-[9px] font-bold ml-0.5">
+                                                                        PDF
+                                                                    </Text>
+                                                                </View>
+                                                            </View>
+
+                                                            <Text
+                                                                className="text-[#1B2225] text-[11px] font-semibold leading-tight my-1"
+                                                                numberOfLines={2}
+                                                                ellipsizeMode="middle"
+                                                            >
+                                                                {item.file_name || 'Dokumen.pdf'}
+                                                            </Text>
+
+                                                            <View className="flex-row items-center justify-between">
+                                                                <Text className="text-[#8A9296] text-[9px] font-mono">
+                                                                    {formatFileSize(item.file_size) || 'PDF File'}
+                                                                </Text>
+                                                                <Text className="text-[#968363] text-[9px] font-bold">
+                                                                    Buka ↗
+                                                                </Text>
+                                                            </View>
+                                                        </Pressable>
+
+                                                        {/* Tombol Hapus Dokumen */}
+                                                        <Pressable
+                                                            onPress={() => handleDeleteAttachment(item)}
+                                                            disabled={deletingId === item.id}
+                                                            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                            className="absolute top-1 right-1 w-5 h-5 rounded-[2px] bg-rose-700 items-center justify-center shadow-xs"
+                                                        >
+                                                            {deletingId === item.id ? (
+                                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                                            ) : (
+                                                                <Text className="text-white text-[10px] font-bold leading-none">✕</Text>
+                                                            )}
+                                                        </Pressable>
+                                                    </View>
+                                                );
+                                            }
+
+                                            return (
+                                                <View
+                                                    key={item.id}
+                                                    className="w-24 h-24 rounded-[3px] overflow-hidden bg-white border border-[#DDD6C8] relative shadow-2xs"
                                                 >
-                                                    {deletingId === item.id ? (
-                                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                                    ) : (
-                                                        <Text className="text-white text-xs font-bold leading-none">✕</Text>
-                                                    )}
-                                                </Pressable>
-                                            </View>
-                                        ))}
+                                                    <Pressable
+                                                        onPress={() => handleOpenAttachment(item)}
+                                                        className="w-full h-full"
+                                                    >
+                                                        <Image
+                                                            source={{ uri: item.file_url }}
+                                                            className="w-full h-full"
+                                                            resizeMode="cover"
+                                                        />
+                                                    </Pressable>
+
+                                                    {/* Tombol Hapus Foto */}
+                                                    <Pressable
+                                                        onPress={() => handleDeleteAttachment(item)}
+                                                        disabled={deletingId === item.id}
+                                                        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                                                        className="absolute top-1 right-1 w-5 h-5 rounded-[2px] bg-rose-700 items-center justify-center shadow-xs"
+                                                    >
+                                                        {deletingId === item.id ? (
+                                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                                        ) : (
+                                                            <Text className="text-white text-[10px] font-bold leading-none">✕</Text>
+                                                        )}
+                                                    </Pressable>
+                                                </View>
+                                            );
+                                        })}
                                     </View>
                                 )}
                             </View>
@@ -461,14 +672,14 @@ export function CardDetailModal({
 
                         {/* Surat Penawaran Resmi */}
                         {!isCreateMode && card && (
-                            <View className="mb-4 bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl">
-                                <View className="flex-row items-center justify-between mb-2">
-                                    <Text className="text-slate-300 text-xs font-semibold">
+                            <View className="mb-3 bg-white border border-[#DDD6C8] p-3 rounded-[3px] shadow-2xs">
+                                <View className="flex-row items-center justify-between mb-1.5">
+                                    <Text className="text-[#1B2225] text-xs font-semibold">
                                         Surat Penawaran Resmi
                                     </Text>
                                     {linkedQuotation && (
-                                        <View className="bg-sky-950/80 border border-sky-800 px-2 py-0.5 rounded-md">
-                                            <Text className="text-sky-400 text-[10px] font-bold">
+                                        <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-0.5 rounded-[2px]">
+                                            <Text className="text-[#968363] text-[10px] font-bold font-mono">
                                                 {linkedQuotation.quotation_no}
                                             </Text>
                                         </View>
@@ -477,40 +688,40 @@ export function CardDetailModal({
 
                                 {linkedQuotation ? (
                                     <View>
-                                        <Text className="text-emerald-400 font-bold text-sm mb-1">
+                                        <Text className="text-emerald-800 font-bold text-sm mb-1 font-mono">
                                             {formatRupiah(linkedQuotation.total_amount)}
                                         </Text>
-                                        <Text className="text-slate-400 text-[11px] mb-3">
+                                        <Text className="text-[#70787C] text-[11px] mb-2.5">
                                             Status: {linkedQuotation.status.toUpperCase()} • {linkedQuotation.quotation_items?.length || 0} Item Spesifikasi
                                         </Text>
                                         <View className="flex-row space-x-2">
                                             <Pressable
                                                 onPress={() => setQuotationPreviewVisible(true)}
                                                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                                className="flex-1 bg-slate-800 py-2 rounded-lg items-center mr-2 border border-slate-700"
+                                                className="flex-1 bg-[#FAF8F5] py-1.5 rounded-[3px] items-center mr-2 border border-[#DDD6C8]"
                                             >
-                                                <Text className="text-sky-300 text-xs font-semibold">👁️ Preview PDF</Text>
+                                                <Text className="text-[#1B2225] text-xs font-semibold">👁️ Preview PDF</Text>
                                             </Pressable>
                                             <Pressable
                                                 onPress={() => setQuotationFormVisible(true)}
                                                 style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                                className="flex-1 bg-blue-600/20 py-2 rounded-lg items-center border border-blue-500/40"
+                                                className="flex-1 bg-[#1B2225] py-1.5 rounded-[3px] items-center border border-[#1B2225]"
                                             >
-                                                <Text className="text-blue-300 text-xs font-semibold">✏️ Edit Penawaran</Text>
+                                                <Text className="text-white text-xs font-semibold">✏️ Edit Penawaran</Text>
                                             </Pressable>
                                         </View>
                                     </View>
                                 ) : (
                                     <View className="items-center py-2">
-                                        <Text className="text-slate-500 text-xs mb-2 text-center">
+                                        <Text className="text-[#70787C] text-xs mb-2 text-center">
                                             Belum ada Surat Penawaran resmi untuk proyek ini.
                                         </Text>
                                         <Pressable
                                             onPress={() => setQuotationFormVisible(true)}
                                             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                                            className="bg-blue-600/20 border border-blue-500/40 px-3.5 py-2 rounded-xl flex-row items-center"
+                                            className="bg-[#FAF8F5] border border-[#DDD6C8] px-3 py-1.5 rounded-[3px] flex-row items-center"
                                         >
-                                            <Text className="text-sky-300 text-xs font-bold">📄 + Buat Surat Penawaran</Text>
+                                            <Text className="text-[#1B2225] text-xs font-bold">📄 + Buat Surat Penawaran</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -518,8 +729,8 @@ export function CardDetailModal({
                         )}
 
                         {/* Catatan Proyek */}
-                        <View className="mb-4">
-                            <Text className="text-slate-300 text-xs font-semibold mb-1">
+                        <View className="mb-3">
+                            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
                                 Catatan Proyek
                             </Text>
                             <TextInput
@@ -530,28 +741,28 @@ export function CardDetailModal({
                                 }}
                                 multiline
                                 numberOfLines={3}
-                                className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+                                className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
                                 placeholder="Catatan bahan, request aksesoris, dll."
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#8A9296"
                                 textAlignVertical="top"
                             />
                         </View>
                     </ScrollView>
 
                     {/* Tombol Aksi */}
-                    <View className="flex-row justify-end mt-4 pt-3 border-t border-slate-800">
+                    <View className="flex-row justify-end mt-3 pt-2.5 border-t border-[#E3DDCF]">
                         <Pressable
                             onPress={onClose}
                             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                            className="px-4 py-2.5 rounded-xl bg-slate-800 mr-2"
+                            className="px-3.5 py-1.5 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] mr-2"
                         >
-                            <Text className="text-slate-300 font-semibold text-xs">Batal</Text>
+                            <Text className="text-[#1B2225] font-semibold text-xs">Batal</Text>
                         </Pressable>
                         <Pressable
                             onPress={handleSubmit}
                             disabled={saving}
                             style={({ pressed }) => [{ opacity: pressed || saving ? 0.8 : 1 }]}
-                            className="px-5 py-2.5 rounded-xl bg-blue-600 items-center justify-center shadow-lg"
+                            className="px-4 py-1.5 rounded-[3px] bg-[#1B2225] hover:bg-[#2C373C] items-center justify-center shadow-xs"
                         >
                             {saving ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />

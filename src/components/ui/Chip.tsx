@@ -36,19 +36,19 @@ export const Chip: React.FC<ChipProps> = ({
   onPress,
   color,
   activeBgColor,
-  inactiveBgColor = '#0F172A',
-  activeBorderColor = '#FFFFFF',
-  inactiveBorderColor = '#334155',
+  inactiveBgColor = '#FAF8F5',
+  activeBorderColor,
+  inactiveBorderColor = '#DDD6C8',
   activeTextColor = '#FFFFFF',
-  inactiveTextColor = '#94A3B8',
+  inactiveTextColor = '#4D555A',
   icon,
   className = '',
   style,
   textStyle,
   disabled = false,
 }) => {
-  const bg = selected ? (activeBgColor || color || '#2563EB') : inactiveBgColor;
-  const border = selected ? (activeBorderColor || '#FFFFFF') : inactiveBorderColor;
+  const bg = selected ? (activeBgColor || color || '#1B2225') : inactiveBgColor;
+  const border = selected ? (activeBorderColor || color || '#1B2225') : inactiveBorderColor;
   const textCol = selected ? activeTextColor : inactiveTextColor;
 
   return (
@@ -63,12 +63,12 @@ export const Chip: React.FC<ChipProps> = ({
             {
               flexDirection: 'row',
               alignItems: 'center',
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 3,
               backgroundColor: bg,
               borderColor: border,
-              borderWidth: 1.5,
+              borderWidth: 1,
               borderStyle: 'solid',
               opacity: pressed ? 0.8 : 1,
             },
@@ -76,9 +76,9 @@ export const Chip: React.FC<ChipProps> = ({
           ]}
         >
           {icon ? (
-            <View style={{ marginRight: 6 }}>
+            <View style={{ marginRight: 5 }}>
               {typeof icon === 'string' ? (
-                <Text style={{ fontSize: 12 }}>{icon}</Text>
+                <Text style={{ fontSize: 11 }}>{icon}</Text>
               ) : (
                 icon
               )}
@@ -86,7 +86,7 @@ export const Chip: React.FC<ChipProps> = ({
           ) : null}
           <Text
             style={[
-              { color: textCol, fontSize: 12, fontWeight: selected ? '700' : '600' },
+              { color: textCol, fontSize: 11, fontWeight: selected ? '700' : '500' },
               textStyle,
             ]}
           >

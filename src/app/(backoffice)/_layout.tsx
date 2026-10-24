@@ -10,33 +10,34 @@ export default function BackofficeLayout() {
             screenOptions={{
                 headerShown: true,
                 drawerItemStyle: {
-                    marginVertical: 5,
-                    marginHorizontal: 0,
-                    width: '100%',
-                    borderRadius: 0,
+                    marginVertical: 4,
+                    marginHorizontal: 8,
+                    borderRadius: 4,
                 },
-                drawerActiveTintColor: '#fff',
-                drawerActiveBackgroundColor: '#1E293B',
-                drawerInactiveTintColor: '#38BDF8',
+                drawerActiveTintColor: '#FFFFFF',
+                drawerActiveBackgroundColor: '#968363',
+                drawerInactiveTintColor: '#A8B2B7',
                 drawerStyle: {
-                    backgroundColor: '#0F172A',
+                    backgroundColor: '#1B2225',
                 },
                 headerStyle: {
-                    backgroundColor: '#0F172A',
+                    backgroundColor: '#1B2225',
+                    borderBottomColor: '#2C3539',
+                    borderBottomWidth: 1,
                 },
-                headerTintColor: '#F8FAFC',
+                headerTintColor: '#F8F6F1',
                 headerRight: () => (
                     <View style={{ marginRight: 16 }}>
                         <View
                             style={{
                                 width: 32,
                                 height: 32,
-                                borderRadius: 8,
+                                borderRadius: 4,
                                 backgroundColor: '#FFFFFF',
                                 padding: 2,
                                 overflow: 'hidden',
                                 borderWidth: 1,
-                                borderColor: '#334155',
+                                borderColor: '#3A454B',
                             }}
                         >
                             <Image

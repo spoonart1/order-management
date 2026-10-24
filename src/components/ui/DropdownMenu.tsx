@@ -31,7 +31,7 @@ interface DropdownMenuProps {
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   items,
   disabled = false,
-  buttonClassName = 'w-7 h-7 rounded-lg items-center justify-center bg-slate-900',
+  buttonClassName = 'w-6 h-6 rounded-[2px] items-center justify-center bg-[#FAF8F5] border border-[#DDD6C8]',
 }) => {
   const triggerRef = useRef<View>(null);
   const [visible, setVisible] = useState(false);
@@ -51,7 +51,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       node.measureInWindow((x: number, y: number, width: number, height: number) => {
         const calculatedRight = Math.max(8, screenWidth - (x + width));
         setPosition({
-          top: y + height + 6,
+          top: y + height + 4,
           right: calculatedRight,
         });
         setVisible(true);
@@ -77,7 +77,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
         >
           {({ pressed }) => (
             <View style={{ opacity: pressed ? 0.6 : 1 }}>
-              <EllipsisVertical size={15} color="#94A3B8" />
+              <EllipsisVertical size={13} color="#70787C" />
             </View>
           )}
         </Pressable>
@@ -100,15 +100,15 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 position: 'absolute',
                 top: position.top,
                 right: position.right,
-                minWidth: 145,
-                backgroundColor: '#0F172A',
-                borderColor: '#334155',
+                minWidth: 150,
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E3DDCF',
                 borderWidth: 1,
                 borderStyle: 'solid',
-                borderRadius: 10,
-                elevation: 12,
+                borderRadius: 3,
+                elevation: 8,
               }}
-              className="py-1 shadow-2xl"
+              className="py-1 shadow-md"
             >
               {items.map((item, idx) => (
                 <Pressable
@@ -118,9 +118,9 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                     setVisible(false);
                     item.onPress();
                   }}
-                  className={`px-3 py-2.5 ${
-                    idx > 0 ? 'border-t border-slate-800/80' : ''
-                  }`}
+                  className={`px-3 py-2 ${
+                    idx > 0 ? 'border-t border-[#F0EBE1]' : ''
+                  } hover:bg-[#FAF8F5]`}
                 >
                   {({ pressed }) => (
                     <View
@@ -133,7 +133,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                       {item.icon ? <View style={{ marginRight: 8 }}>{item.icon}</View> : null}
                       <Text
                         style={{
-                          color: item.destructive ? '#F87171' : '#E2E8F0',
+                          color: item.destructive ? '#9E2A2B' : '#1B2225',
                           fontSize: 12,
                           fontWeight: '600',
                         }}

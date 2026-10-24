@@ -224,17 +224,19 @@ export function PaymentRecordModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/80 justify-center items-center p-3 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 w-full max-w-xl max-h-[92%] rounded-2xl overflow-hidden shadow-2xl flex-col">
+      <View className="flex-1 bg-black/60 justify-center items-center p-3 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-xl max-h-[92%] rounded-[4px] overflow-hidden shadow-2xl flex-col">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950">
-            <View className="flex-row items-center space-x-2">
-              <View className="w-8 h-8 rounded-lg bg-emerald-500/10 items-center justify-center mr-2">
-                <CreditCard size={18} color="#34D399" />
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center mr-2.5">
+                <CreditCard size={16} color="#968363" />
               </View>
               <View>
-                <Text className="text-white font-bold text-base">Catat Mutasi Pembayaran</Text>
-                <Text className="text-slate-400 text-xs">
+                <Text className="text-[#1B2225] font-bold text-sm tracking-wide">
+                  Catat Mutasi Pembayaran
+                </Text>
+                <Text className="text-[#70787C] text-[11px] font-mono mt-0.5">
                   {invoice.invoice_no} • {invoice.client_name}
                 </Text>
               </View>
@@ -242,70 +244,72 @@ export function PaymentRecordModal({
 
             <Pressable
               onPress={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+              className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1]"
             >
-              <X size={16} color="#94A3B8" />
+              <X size={15} color="#70787C" />
             </Pressable>
           </View>
 
           {/* Error Banner */}
           {errorMessage && (
-            <View className="bg-rose-500/15 border-b border-rose-500/30 px-5 py-2.5 flex-row items-center justify-between">
-              <Text className="text-rose-300 text-xs flex-1">{errorMessage}</Text>
+            <View className="bg-rose-50 border-b border-rose-200 px-5 py-2.5 flex-row items-center justify-between">
+              <Text className="text-rose-800 text-xs flex-1">{errorMessage}</Text>
               <Pressable onPress={() => setErrorMessage(null)}>
-                <X size={14} color="#FDA4AF" />
+                <X size={14} color="#9E2A2B" />
               </Pressable>
             </View>
           )}
 
           {/* Form Scrollable */}
-          <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+          <ScrollView className="flex-1 p-4 md:p-5" showsVerticalScrollIndicator={false}>
             {/* KARTU STATUS SALDO INVOICE */}
-            <View className="mb-5 bg-slate-950/80 border border-slate-800 p-4 rounded-xl flex-row justify-between items-center">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-3.5 rounded-[3px] flex-row justify-between items-center shadow-xs">
               <View>
-                <Text className="text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                <Text className="text-[#8A9296] text-[10px] font-bold uppercase tracking-wider">
                   Total Tagihan
                 </Text>
-                <Text className="text-white font-bold text-sm mt-0.5">
+                <Text className="text-[#1B2225] font-mono font-bold text-sm mt-0.5">
                   {formatRupiah(invoice.total)}
                 </Text>
               </View>
 
               <View>
-                <Text className="text-emerald-400 text-[11px] font-semibold uppercase tracking-wider">
+                <Text className="text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
                   Sudah Terbayar
                 </Text>
-                <Text className="text-emerald-400 font-bold text-sm mt-0.5">
+                <Text className="text-emerald-700 font-mono font-bold text-sm mt-0.5">
                   {formatRupiah(invoice.paid_amount)}
                 </Text>
               </View>
 
               <View>
-                <Text className="text-rose-400 text-[11px] font-semibold uppercase tracking-wider">
+                <Text className="text-rose-700 text-[10px] font-bold uppercase tracking-wider">
                   Sisa Tagihan
                 </Text>
-                <Text className="text-rose-400 font-black text-sm mt-0.5">
+                <Text className="text-rose-700 font-mono font-black text-sm mt-0.5">
                   {formatRupiah(invoice.balance_due)}
                 </Text>
               </View>
             </View>
 
             {/* PRESET CHIPS TAHAPAN TERMIN */}
-            <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold mb-2">
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-3.5 rounded-[3px]">
+              <Text className="text-[#1B2225] text-xs font-bold uppercase tracking-wider mb-2">
                 Pilih Tahapan Termin / Skema Cepat:
               </Text>
               <View className="flex-row flex-wrap gap-2">
                 <Pressable
                   onPress={() => handleSelectPresetTerm('dp50')}
-                  className={`px-3 py-1.5 rounded-xl border ${stageName.includes('DP 50%')
-                    ? 'bg-blue-600/30 border-blue-500'
-                    : 'bg-slate-950 border-slate-800'
-                    }`}
+                  className={`px-3 py-1.5 rounded-[3px] border ${
+                    stageName.includes('DP 50%')
+                      ? 'bg-[#1B2225] border-[#1B2225]'
+                      : 'bg-[#FAF8F5] border-[#DDD6C8] hover:bg-[#F2ECE1]'
+                  }`}
                 >
                   <Text
-                    className={`text-xs font-bold ${stageName.includes('DP 50%') ? 'text-sky-300' : 'text-slate-400'
-                      }`}
+                    className={`text-xs font-semibold ${
+                      stageName.includes('DP 50%') ? 'text-white' : 'text-[#70787C]'
+                    }`}
                   >
                     DP 50% ({formatRupiah(Math.round(invoice.total * 0.5))})
                   </Text>
@@ -313,14 +317,16 @@ export function PaymentRecordModal({
 
                 <Pressable
                   onPress={() => handleSelectPresetTerm('term25')}
-                  className={`px-3 py-1.5 rounded-xl border ${stageName.includes('Termin II')
-                    ? 'bg-blue-600/30 border-blue-500'
-                    : 'bg-slate-950 border-slate-800'
-                    }`}
+                  className={`px-3 py-1.5 rounded-[3px] border ${
+                    stageName.includes('Termin II')
+                      ? 'bg-[#1B2225] border-[#1B2225]'
+                      : 'bg-[#FAF8F5] border-[#DDD6C8] hover:bg-[#F2ECE1]'
+                  }`}
                 >
                   <Text
-                    className={`text-xs font-bold ${stageName.includes('Termin II') ? 'text-sky-300' : 'text-slate-400'
-                      }`}
+                    className={`text-xs font-semibold ${
+                      stageName.includes('Termin II') ? 'text-white' : 'text-[#70787C]'
+                    }`}
                   >
                     Termin II 25% ({formatRupiah(Math.round(invoice.total * 0.25))})
                   </Text>
@@ -328,14 +334,16 @@ export function PaymentRecordModal({
 
                 <Pressable
                   onPress={() => handleSelectPresetTerm('pelunasan')}
-                  className={`px-3 py-1.5 rounded-xl border ${stageName.includes('Pelunasan')
-                    ? 'bg-emerald-600/30 border-emerald-500'
-                    : 'bg-slate-950 border-slate-800'
-                    }`}
+                  className={`px-3 py-1.5 rounded-[3px] border ${
+                    stageName.includes('Pelunasan')
+                      ? 'bg-emerald-800 border-emerald-800'
+                      : 'bg-[#FAF8F5] border-[#DDD6C8] hover:bg-[#F2ECE1]'
+                  }`}
                 >
                   <Text
-                    className={`text-xs font-bold ${stageName.includes('Pelunasan') ? 'text-emerald-300' : 'text-slate-400'
-                      }`}
+                    className={`text-xs font-semibold ${
+                      stageName.includes('Pelunasan') ? 'text-white' : 'text-[#70787C]'
+                    }`}
                   >
                     Pelunasan ({formatRupiah(invoice.balance_due)})
                   </Text>
@@ -343,149 +351,148 @@ export function PaymentRecordModal({
               </View>
             </View>
 
-            {/* INPUT DETAIL PEMBAYARAN */}
-            <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">
-                Label Tahapan Termin <Text className="text-rose-400">*</Text>
-              </Text>
-              <TextInput
-                value={stageName}
-                onChangeText={setStageName}
-                className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                placeholder="Contoh: Termin I (DP 50%)"
-                placeholderTextColor="#64748B"
-              />
-            </View>
-
-            {/* NOMINAL BAYAR & TERBILANG */}
-            <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">
-                Nominal Pembayaran (Rp) <Text className="text-rose-400">*</Text>
-              </Text>
-              <TextInput
-                value={amount}
-                onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, ''))}
-                keyboardType="numeric"
-                className="bg-slate-950 border border-slate-800 text-emerald-400 p-2.5 rounded-xl text-sm font-bold"
-                placeholder="0"
-                placeholderTextColor="#64748B"
-              />
-              {numericAmount > 0 && (
-                <Text className="text-slate-400 text-xs italic mt-1.5 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                  "{terbilangText}"
+            {/* FORM DETAIL PEMBAYARAN */}
+            <View className="mb-4 bg-white border border-[#E3DDCF] p-3.5 rounded-[3px]">
+              {/* INPUT DETAIL PEMBAYARAN */}
+              <View className="mb-3.5">
+                <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                  Label Tahapan Termin <Text className="text-rose-500">*</Text>
                 </Text>
-              )}
-            </View>
-
-            {/* TANGGAL & METODE */}
-            <View className="flex-row flex-wrap -mx-1.5 mb-4">
-              <View className="w-full md:w-1/2 px-1.5 mb-3">
-                <DatePickerField
-                  label="Tanggal Pembayaran"
-                  required
-                  value={paymentDate}
-                  onChange={setPaymentDate}
-                  placeholder="Pilih tanggal pembayaran..."
+                <TextInput
+                  value={stageName}
+                  onChangeText={setStageName}
+                  className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
+                  placeholder="Contoh: Termin I (DP 50%)"
+                  placeholderTextColor="#8A9296"
                 />
               </View>
 
-              <View className="w-full md:w-1/2 px-1.5 mb-3">
-                <Text className="text-slate-300 text-xs font-semibold mb-1">
-                  Metode Pembayaran
+              {/* NOMINAL BAYAR & TERBILANG */}
+              <View className="mb-3.5">
+                <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                  Nominal Pembayaran (Rp) <Text className="text-rose-500">*</Text>
                 </Text>
-                <Text
-                  className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                >
-                  {paymentMethod}
+                <TextInput
+                  value={amount}
+                  onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  className="bg-[#FAF8F5] border border-[#DDD6C8] text-emerald-800 p-2.5 rounded-[3px] text-sm font-mono font-bold"
+                  placeholder="0"
+                  placeholderTextColor="#8A9296"
+                />
+                {numericAmount > 0 && (
+                  <Text className="text-[#70787C] text-xs italic mt-1.5 bg-[#FAF8F5] p-2 rounded-[3px] border border-[#EDE7DC]">
+                    "{terbilangText}"
+                  </Text>
+                )}
+              </View>
+
+              {/* TANGGAL & METODE */}
+              <View className="flex-row flex-wrap -mx-1.5 mb-1">
+                <View className="w-full md:w-1/2 px-1.5 mb-3">
+                  <DatePickerField
+                    label="Tanggal Pembayaran"
+                    required
+                    value={paymentDate}
+                    onChange={setPaymentDate}
+                    placeholder="Pilih tanggal pembayaran..."
+                  />
+                </View>
+
+                <View className="w-full md:w-1/2 px-1.5 mb-3">
+                  <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                    Metode Pembayaran
+                  </Text>
+                  <Text className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs">
+                    {paymentMethod}
+                  </Text>
+                </View>
+              </View>
+
+              {/* KETERANGAN */}
+              <View className="mb-3.5">
+                <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                  Keterangan / Catatan Transaksi
+                </Text>
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs"
+                  placeholder="Catatan mutasi, referensi transfer bank, dsb."
+                  placeholderTextColor="#8A9296"
+                />
+              </View>
+
+              {/* UPLOAD BUKTI TRANSFER */}
+              <View className="mb-3.5">
+                <Text className="text-[#70787C] text-xs font-semibold mb-1.5">
+                  Bukti Pembayaran / Struk Transfer (Opsional)
+                </Text>
+
+                {selectedAsset ? (
+                  <View className="relative bg-[#FAF8F5] p-2.5 rounded-[3px] border border-[#DDD6C8] flex-row items-center">
+                    <Image
+                      source={{ uri: selectedAsset.uri }}
+                      className="w-16 h-16 rounded-[2px] bg-[#EDE7DC]"
+                      resizeMode="cover"
+                    />
+                    <View className="flex-1 ml-3">
+                      <Text className="text-[#1B2225] text-xs font-medium" numberOfLines={1}>
+                        {selectedAsset.fileName || 'Bukti Transfer'}
+                      </Text>
+                      <Text className="text-emerald-700 text-[10px] font-mono mt-0.5">
+                        ✓ Foto siap diunggah
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => setSelectedAsset(null)}
+                      className="p-2 rounded-[3px] bg-rose-50 border border-rose-200"
+                    >
+                      <Trash2 size={14} color="#9E2A2B" />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={handlePickProofImage}
+                    className="border border-dashed border-[#DDD6C8] hover:border-[#968363] rounded-[3px] p-4 items-center justify-center bg-[#FAF8F5]"
+                  >
+                    <Upload size={18} color="#968363" />
+                    <Text className="text-[#1B2225] text-xs font-semibold mt-1.5">
+                      Pilih / Ambil Foto Bukti Transfer
+                    </Text>
+                    <Text className="text-[#8A9296] text-[10px] mt-0.5">
+                      Format JPG, PNG (Maks 5MB)
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {/* DITERIMA / DISAHKAN OLEH */}
+              <View>
+                <Text className="text-[#70787C] text-xs font-semibold mb-1">
+                  Diterima / Disahkan Oleh
+                </Text>
+                <Text className="bg-[#FAF8F5] border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-medium">
+                  {receivedBy}
                 </Text>
               </View>
-            </View>
-
-            {/* KETERANGAN */}
-            <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">
-                Keterangan / Catatan Transaksi
-              </Text>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-                placeholder="Catatan mutasi, referensi transfer bank, dsb."
-                placeholderTextColor="#64748B"
-              />
-            </View>
-
-            {/* UPLOAD BUKTI TRANSFER */}
-            <View className="mb-4">
-              <Text className="text-slate-300 text-xs font-semibold mb-1.5">
-                Bukti Pembayaran / Struk Transfer (Opsional)
-              </Text>
-
-              {selectedAsset ? (
-                <View className="relative bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex-row items-center">
-                  <Image
-                    source={{ uri: selectedAsset.uri }}
-                    className="w-16 h-16 rounded-lg bg-slate-800"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1 ml-3">
-                    <Text className="text-white text-xs font-medium" numberOfLines={1}>
-                      {selectedAsset.fileName || 'Bukti Transfer'}
-                    </Text>
-                    <Text className="text-emerald-400 text-[10px] mt-0.5">
-                      ✓ Foto siap diunggah
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => setSelectedAsset(null)}
-                    className="p-2 rounded-lg bg-rose-500/20"
-                  >
-                    <Trash2 size={14} color="#FB7185" />
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={handlePickProofImage}
-                  className="border-2 border-dashed border-slate-700 hover:border-sky-500/50 rounded-xl p-4 items-center justify-center bg-slate-950/40"
-                >
-                  <Upload size={20} color="#38BDF8" />
-                  <Text className="text-sky-300 text-xs font-semibold mt-1.5">
-                    Pilih / Ambil Foto Bukti Transfer
-                  </Text>
-                  <Text className="text-slate-500 text-[10px] mt-0.5">
-                    Format JPG, PNG (Maks 5MB)
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
-            {/* DITERIMA / DISAHKAN OLEH */}
-            <View className="mb-2">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">
-                Diterima / Disahkan Oleh
-              </Text>
-              <Text
-                className="bg-slate-950 border border-slate-800 text-white p-2.5 rounded-xl text-xs"
-              >
-                {receivedBy}
-              </Text>
             </View>
           </ScrollView>
 
           {/* Footer Modal Action Buttons */}
-          <View className="flex-row items-center justify-end px-5 py-3.5 border-t border-slate-800 bg-slate-950">
+          <View className="flex-row items-center justify-end px-5 py-3 border-t border-[#E3DDCF] bg-white">
             <Pressable
               onPress={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 mr-2.5"
+              className="px-4 py-2 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] mr-2 hover:bg-[#F2ECE1]"
             >
-              <Text className="text-slate-300 font-semibold text-xs">Batal</Text>
+              <Text className="text-[#70787C] font-semibold text-xs">Batal</Text>
             </Pressable>
 
             <Pressable
               onPress={handleSubmit}
               disabled={isSubmitting}
-              className="flex-row items-center px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-500"
+              className="flex-row items-center px-4 py-2 rounded-[3px] bg-[#1B2225] hover:bg-[#2C3539] active:bg-[#2C3539]"
             >
               {isSubmitting ? (
                 <>

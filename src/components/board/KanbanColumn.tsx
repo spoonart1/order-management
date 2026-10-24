@@ -12,6 +12,7 @@ interface KanbanColumnProps {
   draggingCardId?: string;
   deletingCardId?: string | null;
   isDeletingColumn?: boolean;
+  showDeadline?: boolean;
   onCardPress: (card: CardItem) => void;
   onCardDragStart: (card: CardItem) => void;
   onDeleteCard: (card: CardItem) => void;
@@ -30,6 +31,7 @@ export function KanbanColumn({
   draggingCardId,
   deletingCardId,
   isDeletingColumn = false,
+  showDeadline = true,
   onCardPress,
   onCardDragStart,
   onDeleteCard,
@@ -45,20 +47,20 @@ export function KanbanColumn({
   const columnContent = (
     <>
       {/* Header Kolom */}
-      <View className="p-4 border-b border-slate-800/80 flex-row items-center justify-between">
+      <View className="p-3 border-b border-[#E3DDCF] flex-row items-center justify-between">
         <View className="flex-row items-center flex-1 pr-2">
           <View
-            style={{ backgroundColor: column.color_hex }}
-            className="w-2.5 h-2.5 rounded-full mr-2.5"
+            style={{ backgroundColor: column.color_hex || '#968363' }}
+            className="w-2 h-2 rounded-[1px] mr-2"
           />
-          <Text className="text-white font-bold text-sm" numberOfLines={1}>
+          <Text className="text-[#1B2225] font-bold text-xs uppercase font-mono tracking-wider" numberOfLines={1}>
             {column.title}
           </Text>
         </View>
 
         <View className="flex-row items-center">
-          <View className="bg-slate-800 px-2 py-0.5 rounded-full mr-1.5">
-            <Text className="text-slate-400 text-xs font-semibold">
+          <View className="bg-[#FAF8F5] border border-[#DDD6C8] px-1.5 py-0.5 rounded-[2px] mr-1.5">
+            <Text className="text-[#70787C] text-[10px] font-bold font-mono">
               {column.board_cards.length}
             </Text>
           </View>
@@ -66,16 +68,16 @@ export function KanbanColumn({
           {/* Menu Kolom (Edit / Hapus Kolom) dengan Modal Backdrop Lintas Platform */}
           <DropdownMenu
             disabled={isDeletingColumn}
-            buttonClassName="w-7 h-7 rounded-lg items-center justify-center bg-slate-800/60"
+            buttonClassName="w-6 h-6 rounded-[2px] items-center justify-center bg-[#FAF8F5] border border-[#DDD6C8]"
             items={[
               {
                 label: 'Edit Kolom',
-                icon: <Pencil size={13} color="#38BDF8" />,
+                icon: <Pencil size={12} color="#968363" />,
                 onPress: onEditColumn,
               },
               {
                 label: 'Hapus Kolom',
-                icon: <Trash2 size={13} color="#F87171" />,
+                icon: <Trash2 size={12} color="#9E2A2B" />,
                 destructive: true,
                 onPress: onDeleteColumn,
               },
@@ -85,7 +87,7 @@ export function KanbanColumn({
       </View>
 
       {/* List Kartu */}
-      <ScrollView className="flex-1 p-3">
+      <ScrollView className="flex-1 p-2.5">
         {column.board_cards.map((card) => (
           <KanbanCard
             key={card.id}
@@ -94,6 +96,7 @@ export function KanbanColumn({
             progressPercent={progressPercent}
             isBeingDragged={draggingCardId === card.id}
             isDeleting={deletingCardId === card.id}
+            showDeadline={showDeadline}
             onPress={() => onCardPress(card)}
             onDragStart={() => onCardDragStart(card)}
             onDelete={() => onDeleteCard(card)}
@@ -104,12 +107,12 @@ export function KanbanColumn({
         {isColumnHovered && (
           <View
             style={{ pointerEvents: 'none' } as any}
-            className="h-32 border-2 border-dashed border-sky-400 bg-sky-950/40 rounded-xl mb-3 items-center justify-center"
+            className="h-28 border border-dashed border-[#968363] bg-[#F2EDE4]/70 rounded-[3px] mb-2.5 items-center justify-center"
           >
-            <Text className="text-sky-300 text-xs font-bold">
+            <Text className="text-[#968363] text-xs font-bold font-mono">
               ⬇ Lepaskan kartu di sini
             </Text>
-            <Text className="text-sky-400/70 text-[10px] mt-1">
+            <Text className="text-[#70787C] text-[10px] mt-0.5">
               Pindah ke alur {column.title}
             </Text>
           </View>
@@ -117,21 +120,21 @@ export function KanbanColumn({
 
         {/* Kolom Kosong */}
         {column.board_cards.length === 0 && !isColumnHovered && (
-          <View className="py-8 items-center justify-center border border-dashed border-slate-800/80 rounded-xl">
-            <Text className="text-slate-600 text-xs">Belum ada kartu</Text>
+          <View className="py-6 items-center justify-center border border-dashed border-[#DDD6C8] rounded-[3px]">
+            <Text className="text-[#8A9296] text-xs">Belum ada kartu</Text>
           </View>
         )}
       </ScrollView>
 
       {/* Tombol Tambah Kartu */}
-      <View className="p-3 border-t border-slate-800/80">
+      <View className="p-2.5 border-t border-[#E3DDCF]">
         <Pressable
           disabled={isDeletingColumn}
           onPress={onAddCard}
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          className="py-2.5 rounded-xl border border-dashed border-slate-700 items-center justify-center"
+          className="py-2 bg-white hover:bg-[#FAF8F5] rounded-[3px] border border-dashed border-[#DDD6C8] items-center justify-center shadow-2xs"
         >
-          <Text className="text-slate-400 text-xs font-semibold">+ Tambah Kartu</Text>
+          <Text className="text-[#1B2225] text-xs font-semibold">+ Tambah Kartu</Text>
         </Pressable>
       </View>
 
@@ -144,15 +147,15 @@ export function KanbanColumn({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(2, 6, 23, 0.82)',
-            borderRadius: 16,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            borderRadius: 4,
             zIndex: 70,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <ActivityIndicator size="small" color="#F87171" />
-          <Text className="text-red-400 text-xs font-semibold mt-2">
+          <ActivityIndicator size="small" color="#9E2A2B" />
+          <Text className="text-[#9E2A2B] text-xs font-semibold mt-1">
             Menghapus kolom...
           </Text>
         </View>
@@ -183,14 +186,14 @@ export function KanbanColumn({
           onDrop(e);
         }}
         style={{
-          width: 290,
+          width: 285,
           position: 'relative',
           pointerEvents: isDeletingColumn ? 'none' : 'auto',
         }}
-        className={`bg-slate-900 border rounded-2xl mr-4 flex flex-col max-h-full transition-all ${
+        className={`bg-[#FBF9F5] border rounded-[4px] mr-3 flex flex-col max-h-full transition-all ${
           isColumnHovered
-            ? 'border-sky-400 bg-slate-900/95 ring-2 ring-sky-500/20'
-            : 'border-slate-800'
+            ? 'border-[#968363] bg-[#F5EFE6] ring-1 ring-[#968363]/30'
+            : 'border-[#E3DDCF] shadow-xs'
         }`}
       >
         {columnContent}
@@ -201,9 +204,9 @@ export function KanbanColumn({
   // Jika Native Mobile (Android & iOS)
   return (
     <View
-      style={{ width: 290, position: 'relative' }}
+      style={{ width: 285, position: 'relative' }}
       pointerEvents={isDeletingColumn ? 'none' : 'auto'}
-      className="bg-slate-900 border border-slate-800 rounded-2xl mr-4 flex-col max-h-full"
+      className="bg-[#FBF9F5] border border-[#E3DDCF] rounded-[4px] mr-3 flex-col max-h-full shadow-xs"
     >
       {columnContent}
     </View>

@@ -9,6 +9,7 @@ import { offlineQueueService } from '@/services/offlineQueueService';
 import { profileService } from '@/services/profileService';
 import { syncService } from '@/services/syncService';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   CardItem,
   ColumnItem,
@@ -26,7 +27,7 @@ import {
   updateCardDetails,
   updateColumn,
 } from '@/store/slices/boardSlice';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -36,13 +37,69 @@ import {
   View,
 } from 'react-native';
 
+const BOARD_DEFAULT_METAS: Record<BoardType, { name: string; desc: string }> = {
+  marketing: {
+    name: 'Board Marketing',
+    desc: 'Pipeline prospek, penawaran harga, dan deal DP klien',
+  },
+  production: {
+    name: 'Board Produksi',
+    desc: 'Alur pengerjaan produksi interior, workshop, dan instalasi lapangan',
+  },
+  general: {
+    name: 'Board General',
+    desc: 'Manajemen operasional umum dan tugas internal studio',
+  },
+};
+
 export default function BoardScreen() {
   const dispatch = useAppDispatch();
+  const params = useLocalSearchParams<{ type?: BoardType }>();
   const { currentBoard, isLoading } = useAppSelector((state) => state.board);
   const { isOnline } = useNetworkStatus();
 
   // Active Board Tab ('marketing' | 'production' | 'general')
-  const [activeBoardType, setActiveBoardType] = useState<BoardType>('marketing');
+  const [activeBoardType, setActiveBoardType] = useState<BoardType>(
+    params.type && ['marketing', 'production', 'general'].includes(params.type)
+      ? (params.type as BoardType)
+      : 'marketing'
+  );
+
+  const handleSelectBoardType = (type: BoardType) => {
+    setActiveBoardType(type);
+    router.setParams({ type });
+  };
+
+  // Sinkronisasi tab saat layar Board mendapatkan fokus atau menerima parameter navigasi
+  useFocusEffect(
+    useCallback(() => {
+      const targetType: BoardType =
+        params.type && ['marketing', 'production', 'general'].includes(params.type)
+          ? (params.type as BoardType)
+          : activeBoardType;
+
+      if (targetType !== activeBoardType) {
+        setActiveBoardType(targetType);
+      }
+
+      // 1. Muat seketika dari cache lokal untuk tipe yang ditargetkan (0ms render)
+      boardCacheService.getBoardCache(targetType).then((cached) => {
+        if (cached) {
+          dispatch(setBoardFromCache(cached));
+        }
+      });
+
+      // 2. Ambil data terbaru dari server di latar belakang (Stale-While-Revalidate)
+      dispatch(fetchBoardByType(targetType));
+      refreshPendingCount();
+    }, [params.type, activeBoardType, dispatch])
+  );
+
+  useEffect(() => {
+    if (params.type && ['marketing', 'production', 'general'].includes(params.type)) {
+      setActiveBoardType(params.type as BoardType);
+    }
+  }, [params.type]);
 
   // Drag State (Web)
   const [draggingCard, setDraggingCard] = useState<CardItem | null>(null);
@@ -171,6 +228,7 @@ export default function BoardScreen() {
     column_id: string;
     assigned_to: string | null;
     notes: string;
+    due_date?: string | null;
   }) => {
     if (!currentBoard) return;
 
@@ -185,6 +243,25 @@ export default function BoardScreen() {
           })
         );
         setIsModalVisible(false);
+
+        // Update snapshot cache board lokal seketika agar dashboard langsung sinkron tanpa refresh web
+        if (currentBoard) {
+          const updatedColumns = currentBoard.board_columns.map((col) => ({
+            ...col,
+            board_cards: col.board_cards.map((c) =>
+              c.id === selectedCard.id
+                ? {
+                    ...c,
+                    ...updatedData,
+                  }
+                : c
+            ),
+          }));
+          boardCacheService.saveBoardCache(activeBoardType, {
+            ...currentBoard,
+            board_columns: updatedColumns,
+          });
+        }
 
         // 2. Dispatch thunk (online: Supabase; offline: antrean offline)
         await dispatch(
@@ -320,58 +397,58 @@ export default function BoardScreen() {
     }
   };
 
-  if (isLoading && !currentBoard) {
-    return (
-      <View className="flex-1 justify-center items-center bg-slate-950">
-        <ActivityIndicator size="large" color="#38BDF8" />
-      </View>
-    );
-  }
-
-  const totalColumns = currentBoard?.board_columns.length || 1;
+  const totalColumns = currentBoard?.type === activeBoardType ? currentBoard.board_columns.length : 1;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-[#F8F6F1]">
       {/* 1. Header Board & Multi-Board Switcher */}
       <BoardHeader
-        title={currentBoard?.name}
-        description={currentBoard?.description}
+        title={
+          currentBoard?.type === activeBoardType
+            ? currentBoard.name
+            : BOARD_DEFAULT_METAS[activeBoardType].name
+        }
+        description={
+          currentBoard?.type === activeBoardType
+            ? currentBoard.description
+            : BOARD_DEFAULT_METAS[activeBoardType].desc
+        }
         activeBoardType={activeBoardType}
-        onSelectBoardType={(type) => setActiveBoardType(type)}
+        onSelectBoardType={handleSelectBoardType}
         onRefresh={handleRefresh}
       />
 
       {/* Banner Status Mode Offline */}
       {!isOnline && (
-        <View className="flex-row items-center justify-between bg-amber-950/80 border-b border-amber-800/80 px-5 py-2">
+        <View className="flex-row items-center justify-between bg-[#2B2317] border-b border-[#52442F] px-4 md:px-5 py-2">
           <View className="flex-row items-center">
-            <View className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5" />
-            <Text className="text-amber-200 text-xs font-semibold">
+            <View className="w-2 h-2 rounded-full bg-[#E5B650] mr-2" />
+            <Text className="text-[#F6E3B8] text-xs font-semibold">
               Mode Offline Aktif
             </Text>
-            <Text className="text-amber-400/80 text-xs ml-2">
+            <Text className="text-[#D8BE8A] text-xs ml-2">
               • {pendingSyncCount > 0
                 ? `${pendingSyncCount} perubahan tersimpan di perangkat lokal`
                 : 'Menampilkan data tersimpan di perangkat lokal'}
             </Text>
           </View>
-          <Text className="text-amber-300 text-[11px] font-medium">
+          <Text className="text-[#E5B650] text-[11px] font-medium font-mono">
             {pendingSyncCount > 0 ? `${pendingSyncCount} Antre` : 'Lokal Cache'}
           </Text>
         </View>
       )}
 
       {/* 2. List Kolom Kanban */}
-      {isLoading && (!currentBoard || currentBoard.type !== activeBoardType) ? (
-        <View className="flex-1 justify-center items-center bg-slate-950">
-          <ActivityIndicator size="large" color="#38BDF8" />
+      {!currentBoard || currentBoard.type !== activeBoardType ? (
+        <View className="flex-1 justify-center items-center bg-[#F8F6F1]">
+          <ActivityIndicator size="large" color="#968363" />
         </View>
       ) : (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
-          className="flex-1 p-5"
-          contentContainerStyle={{ paddingRight: 40 }}
+          className="flex-1 p-3 md:p-4"
+          contentContainerStyle={{ paddingRight: 32 }}
         >
           {currentBoard?.board_columns.map((col) => (
             <KanbanColumn
@@ -382,6 +459,7 @@ export default function BoardScreen() {
               draggingCardId={draggingCard?.id}
               deletingCardId={deletingCardId}
               isDeletingColumn={deletingColumnId === col.id}
+              showDeadline={activeBoardType !== 'marketing'}
               onCardPress={(card) => {
                 setSelectedCard(card);
                 setIsModalVisible(true);
@@ -402,10 +480,10 @@ export default function BoardScreen() {
           {/* Tombol Tambah Kolom di Ujung Kanan Board */}
           <Pressable
             onPress={handleOpenCreateColumn}
-            style={({ pressed }) => [{ width: 260, opacity: pressed ? 0.75 : 1 }]}
-            className="h-14 bg-slate-900/60 border border-dashed border-slate-700 rounded-2xl items-center justify-center mr-6"
+            style={({ pressed }) => [{ width: 240, opacity: pressed ? 0.75 : 1 }]}
+            className="h-12 bg-white hover:bg-[#FAF8F5] border border-dashed border-[#DDD6C8] rounded-[4px] items-center justify-center mr-4 shadow-2xs"
           >
-            <Text className="flex-row text-slate-300 text-xs font-bold px-3">
+            <Text className="text-[#1B2225] text-xs font-bold font-mono px-3">
               + Tambah Kolom Alur
             </Text>
           </Pressable>

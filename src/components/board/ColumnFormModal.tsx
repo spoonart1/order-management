@@ -66,15 +66,15 @@ export function ColumnFormModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/80 justify-center items-center p-4">
-        <View className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+      <View className="flex-1 bg-black/60 justify-center items-center p-4">
+        <View className="w-full max-w-md bg-[#F8F6F1] border border-[#DDD6C8] rounded-[4px] p-5 shadow-2xl">
           {/* Header */}
-          <View className="flex-row justify-between items-center mb-5 pb-3 border-b border-slate-800">
+          <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-[#E3DDCF]">
             <View>
-              <Text className="text-white text-lg font-bold">
+              <Text className="text-[#1B2225] text-base font-bold font-mono">
                 {isCreateMode ? 'Tambah Kolom Baru' : 'Edit Kolom Tahapan'}
               </Text>
-              <Text className="text-slate-400 text-xs">
+              <Text className="text-[#70787C] text-xs">
                 {isCreateMode
                   ? 'Tambahkan tahapan alur baru ke dalam board ini'
                   : 'Ubah judul dan warna indikator tahapan'}
@@ -83,29 +83,29 @@ export function ColumnFormModal({
             <Pressable
               onPress={onClose}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+              className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center"
             >
-              <Text className="text-slate-400 font-bold">✕</Text>
+              <Text className="text-[#1B2225] font-bold text-xs">✕</Text>
             </Pressable>
           </View>
 
           {/* Nama Kolom */}
           <View className="mb-4">
-            <Text className="text-slate-300 text-xs font-semibold mb-1.5">
+            <Text className="text-[#1B2225] text-xs font-semibold mb-1">
               Judul Kolom Tahapan
             </Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              className="bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-sm"
+              className="bg-white border border-[#DDD6C8] text-[#1B2225] p-2.5 rounded-[3px] text-xs font-medium"
               placeholder="Contoh: Quality Control / Finishing"
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#8A9296"
             />
           </View>
 
           {/* Pilih Warna Indikator */}
-          <View className="mb-5">
-            <Text className="text-slate-300 text-xs font-semibold mb-2">
+          <View className="mb-4">
+            <Text className="text-[#1B2225] text-xs font-semibold mb-2">
               Warna Indikator Kolom
             </Text>
             <View className="flex-row flex-wrap">
@@ -115,17 +115,17 @@ export function ColumnFormModal({
                   <Pressable
                     key={item.hex}
                     onPress={() => setColorHex(item.hex)}
-                    className="mr-3 mb-3"
+                    className="mr-2.5 mb-2.5"
                   >
                     {({ pressed }) => (
                       <View
                         style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 17,
+                          width: 30,
+                          height: 30,
+                          borderRadius: 3,
                           backgroundColor: item.hex,
-                          borderWidth: isSelected ? 2.5 : 1,
-                          borderColor: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.15)',
+                          borderWidth: isSelected ? 2 : 1,
+                          borderColor: isSelected ? '#1B2225' : '#DDD6C8',
                           borderStyle: 'solid',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -144,19 +144,19 @@ export function ColumnFormModal({
           </View>
 
           {/* Tombol Aksi */}
-          <View className="flex-row justify-end pt-3 border-t border-slate-800">
+          <View className="flex-row justify-end pt-3 border-t border-[#E3DDCF]">
             <Pressable
               onPress={onClose}
               style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 mr-2"
+              className="px-3.5 py-1.5 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] mr-2"
             >
-              <Text className="text-slate-300 font-semibold text-xs">Batal</Text>
+              <Text className="text-[#1B2225] font-semibold text-xs">Batal</Text>
             </Pressable>
             <Pressable
               onPress={handleSubmit}
               disabled={saving}
               style={({ pressed }) => [{ opacity: pressed || saving ? 0.8 : 1 }]}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 items-center justify-center shadow-lg"
+              className="px-4 py-1.5 rounded-[3px] bg-[#1B2225] hover:bg-[#2C373C] items-center justify-center shadow-xs"
             >
               {saving ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />

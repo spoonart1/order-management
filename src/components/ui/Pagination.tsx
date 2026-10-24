@@ -62,30 +62,32 @@ export function Pagination({
 
   return (
     <View
-      className={`flex-col md:flex-row items-center justify-between gap-3 pt-4 pb-2 border-t border-slate-800 ${className}`}
+      className={`flex-col md:flex-row items-center justify-between gap-3 pt-3.5 pb-2 border-t border-[#E3DDCF] ${className}`}
     >
       {/* Teks Informasi Data */}
-      <Text className="text-slate-400 text-xs">
-        Menampilkan <Text className="text-slate-200 font-semibold">{startItem}–{endItem}</Text> dari{' '}
-        <Text className="text-slate-200 font-semibold">{totalItems}</Text> data
+      <Text className="text-[#70787C] text-xs">
+        Menampilkan <Text className="text-[#1B2225] font-semibold">{startItem}–{endItem}</Text> dari{' '}
+        <Text className="text-[#1B2225] font-semibold">{totalItems}</Text> data
       </Text>
 
       {/* Navigasi Tombol Pagination */}
-      <View className="flex-row items-center space-x-1.5">
+      <View className="flex-row items-center space-x-1">
         {/* Tombol Sebelumnya */}
         <Pressable
           onPress={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          className={`flex-row items-center px-2.5 py-1.5 rounded-lg border mr-1 ${currentPage <= 1
-              ? 'bg-slate-900/50 border-slate-800/50 opacity-40'
-              : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-            }`}
+          className={`flex-row items-center px-2.5 py-1 rounded-[3px] border mr-1 ${
+            currentPage <= 1
+              ? 'bg-[#FAF8F5] border-[#E8E2D6] opacity-40'
+              : 'bg-white border-[#DDD6C8] hover:bg-[#FAF8F5]'
+          }`}
         >
-          <ChevronLeft size={14} color={currentPage <= 1 ? '#64748B' : '#CBD5E1'} />
+          <ChevronLeft size={13} color={currentPage <= 1 ? '#A0A7AB' : '#1B2225'} />
           <Text
-            className={`text-xs ml-1 font-medium ${currentPage <= 1 ? 'text-slate-600' : 'text-slate-300'
-              }`}
+            className={`text-xs ml-1 font-medium ${
+              currentPage <= 1 ? 'text-[#A0A7AB]' : 'text-[#1B2225]'
+            }`}
           >
             Prev
           </Text>
@@ -96,8 +98,8 @@ export function Pagination({
           {pageNumbers.map((page, idx) => {
             if (typeof page === 'string') {
               return (
-                <View key={`ellipsis-${idx}`} className="w-7 h-7 items-center justify-center">
-                  <Text className="text-slate-500 text-xs">...</Text>
+                <View key={`ellipsis-${idx}`} className="w-6 h-6 items-center justify-center">
+                  <Text className="text-[#8A9296] text-xs">...</Text>
                 </View>
               );
             }
@@ -108,14 +110,16 @@ export function Pagination({
                 key={`page-${page}`}
                 onPress={() => onPageChange(page)}
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-                className={`w-7 h-7 rounded-lg items-center justify-center border mx-0.5 ${isActive
-                    ? 'bg-sky-600 border-sky-500'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                  }`}
+                className={`w-6 h-6 rounded-[3px] items-center justify-center border mx-0.5 ${
+                  isActive
+                    ? 'bg-[#1B2225] border-[#1B2225]'
+                    : 'bg-white border-[#DDD6C8] hover:bg-[#FAF8F5]'
+                }`}
               >
                 <Text
-                  className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-slate-400'
-                    }`}
+                  className={`text-xs font-semibold ${
+                    isActive ? 'text-white' : 'text-[#1B2225]'
+                  }`}
                 >
                   {page}
                 </Text>
@@ -129,18 +133,20 @@ export function Pagination({
           onPress={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          className={`flex-row items-center px-2.5 py-1.5 rounded-lg border ml-1 ${currentPage >= totalPages
-              ? 'bg-slate-900/50 border-slate-800/50 opacity-40'
-              : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-            }`}
+          className={`flex-row items-center px-2.5 py-1 rounded-[3px] border ml-1 ${
+            currentPage >= totalPages
+              ? 'bg-[#FAF8F5] border-[#E8E2D6] opacity-40'
+              : 'bg-white border-[#DDD6C8] hover:bg-[#FAF8F5]'
+          }`}
         >
           <Text
-            className={`text-xs mr-1 font-medium ${currentPage >= totalPages ? 'text-slate-600' : 'text-slate-300'
-              }`}
+            className={`text-xs mr-1 font-medium ${
+              currentPage >= totalPages ? 'text-[#A0A7AB]' : 'text-[#1B2225]'
+            }`}
           >
             Next
           </Text>
-          <ChevronRight size={14} color={currentPage >= totalPages ? '#64748B' : '#CBD5E1'} />
+          <ChevronRight size={13} color={currentPage >= totalPages ? '#A0A7AB' : '#1B2225'} />
         </Pressable>
       </View>
     </View>

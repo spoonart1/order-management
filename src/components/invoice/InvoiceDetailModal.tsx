@@ -100,27 +100,27 @@ export function InvoiceDetailModal({
     switch (invoice.status) {
       case 'paid':
         return (
-          <View className="flex-row items-center bg-emerald-500/20 border border-emerald-500/40 px-3 py-1 rounded-full">
-            <CheckCircle2 size={12} color="#34D399" />
-            <Text className="text-emerald-300 text-xs font-bold ml-1.5 uppercase">
+          <View className="flex-row items-center bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-[2px]">
+            <CheckCircle2 size={10} color="#059669" />
+            <Text className="text-emerald-800 text-[10px] font-bold ml-1 uppercase font-mono">
               LUNAS (PAID)
             </Text>
           </View>
         );
       case 'partial':
         return (
-          <View className="flex-row items-center bg-sky-500/20 border border-sky-500/40 px-3 py-1 rounded-full">
-            <Clock size={12} color="#38BDF8" />
-            <Text className="text-sky-300 text-xs font-bold ml-1.5 uppercase">
+          <View className="flex-row items-center bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-[2px]">
+            <Clock size={10} color="#B45309" />
+            <Text className="text-amber-800 text-[10px] font-bold ml-1 uppercase font-mono">
               SEBAGIAN (PARTIAL)
             </Text>
           </View>
         );
       case 'cancelled':
         return (
-          <View className="flex-row items-center bg-slate-700/50 border border-slate-600 px-3 py-1 rounded-full">
-            <AlertCircle size={12} color="#94A3B8" />
-            <Text className="text-slate-400 text-xs font-bold ml-1.5 uppercase">
+          <View className="flex-row items-center bg-[#FAF8F5] border border-[#DDD6C8] px-2 py-0.5 rounded-[2px]">
+            <AlertCircle size={10} color="#70787C" />
+            <Text className="text-[#70787C] text-[10px] font-bold ml-1 uppercase font-mono">
               DIBATALKAN
             </Text>
           </View>
@@ -128,9 +128,9 @@ export function InvoiceDetailModal({
       case 'unpaid':
       default:
         return (
-          <View className="flex-row items-center bg-rose-500/20 border border-rose-500/40 px-3 py-1 rounded-full">
-            <AlertCircle size={12} color="#FB7185" />
-            <Text className="text-rose-300 text-xs font-bold ml-1.5 uppercase">
+          <View className="flex-row items-center bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-[2px]">
+            <AlertCircle size={10} color="#9E2A2B" />
+            <Text className="text-rose-800 text-[10px] font-bold ml-1 uppercase font-mono">
               BELUM BAYAR (UNPAID)
             </Text>
           </View>
@@ -139,83 +139,84 @@ export function InvoiceDetailModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-black/80 justify-center items-center p-3 md:p-6">
-        <View className="bg-slate-900 border border-slate-800 w-full max-w-4xl max-h-[92%] rounded-2xl overflow-hidden shadow-2xl flex-col">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View className="flex-1 bg-black/60 justify-center items-center p-3 md:p-6">
+        <View className="bg-[#F8F6F1] border border-[#DDD6C8] w-full max-w-4xl max-h-[92%] rounded-[4px] overflow-hidden shadow-2xl flex-col">
           {/* Header Modal */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950">
-            <View className="flex-row items-center space-x-3">
-              <View className="w-9 h-9 rounded-xl bg-sky-500/10 items-center justify-center mr-2 border border-sky-500/20">
-                <Receipt size={18} color="#38BDF8" />
+          <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-[#E3DDCF] bg-white">
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center mr-2.5">
+                <Receipt size={16} color="#968363" />
               </View>
               <View>
                 <View className="flex-row items-center">
-                  <Text className="text-white font-bold text-lg font-mono mr-2.5">
+                  <Text className="text-[#1B2225] font-bold text-base font-mono mr-2">
                     {invoice.invoice_no}
                   </Text>
                   {renderStatusBadge()}
                 </View>
-                <Text className="text-slate-400 text-xs mt-0.5">
-                  Ditujukan kepada {invoice.client_name}
+                <Text className="text-[#70787C] text-xs mt-0.5">
+                  Ditujukan kepada <Text className="font-semibold text-[#1B2225]">{invoice.client_name}</Text>
                 </Text>
               </View>
             </View>
 
             <Pressable
               onPress={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 items-center justify-center"
+              className="w-7 h-7 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] items-center justify-center hover:bg-[#F2ECE1]"
             >
-              <X size={16} color="#94A3B8" />
+              <X size={15} color="#70787C" />
             </Pressable>
           </View>
 
           {/* Modal Body Scrollable */}
-          <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
+          <ScrollView className="flex-1 p-4 md:p-5" showsVerticalScrollIndicator={false}>
             {/* SALDO & PROGRESS CARD */}
-            <View className="bg-slate-950 border border-slate-800 p-5 rounded-2xl mb-6 shadow-md">
-              <View className="flex-row flex-wrap justify-between items-center pb-4 border-b border-slate-800/80 gap-3">
+            <View className="bg-white border border-[#E3DDCF] p-4 rounded-[3px] mb-3.5 shadow-xs">
+              <View className="flex-row flex-wrap justify-between items-center pb-3 border-b border-[#EFEAE1] gap-3">
                 <View>
-                  <Text className="text-slate-400 text-xs uppercase font-semibold">
+                  <Text className="text-[#8A9296] text-[10px] uppercase font-bold tracking-wider">
                     Total Nilai Tagihan
                   </Text>
-                  <Text className="text-white font-black text-xl mt-1">
+                  <Text className="text-[#1B2225] font-mono font-bold text-lg mt-0.5">
                     {formatRupiah(invoice.total)}
                   </Text>
                 </View>
 
                 <View>
-                  <Text className="text-emerald-400 text-xs uppercase font-semibold">
+                  <Text className="text-emerald-700 text-[10px] uppercase font-bold tracking-wider">
                     Total Sudah Dibayar
                   </Text>
-                  <Text className="text-emerald-400 font-black text-xl mt-1">
+                  <Text className="text-emerald-700 font-mono font-bold text-lg mt-0.5">
                     {formatRupiah(invoice.paid_amount)}
                   </Text>
                 </View>
 
                 <View>
-                  <Text className="text-rose-400 text-xs uppercase font-semibold">
+                  <Text className="text-rose-700 text-[10px] uppercase font-bold tracking-wider">
                     Sisa Piutang (Balance Due)
                   </Text>
-                  <Text className="text-rose-400 font-black text-xl mt-1">
+                  <Text className="text-rose-700 font-mono font-black text-lg mt-0.5">
                     {formatRupiah(invoice.balance_due)}
                   </Text>
                 </View>
               </View>
 
               {/* Progress Bar */}
-              <View className="mt-4">
-                <View className="flex-row justify-between items-center mb-1.5">
-                  <Text className="text-slate-400 text-xs">Progress Pelunasan</Text>
-                  <Text className="text-sky-300 font-bold text-xs">{paidPct}% Lunas</Text>
+              <View className="mt-3">
+                <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-[#70787C] text-xs">Progress Pelunasan</Text>
+                  <Text className="text-[#1B2225] font-mono font-bold text-xs">{paidPct}% Lunas</Text>
                 </View>
-                <View className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <View className="w-full bg-[#FAF8F5] border border-[#EDE7DC] h-2 rounded-[2px] overflow-hidden">
                   <View
-                    className={`h-full ${paidPct >= 100
-                        ? 'bg-emerald-500'
+                    className={`h-full ${
+                      paidPct >= 100
+                        ? 'bg-emerald-600'
                         : paidPct > 0
-                          ? 'bg-sky-500'
-                          : 'bg-slate-700'
-                      }`}
+                        ? 'bg-[#1B2225]'
+                        : 'bg-[#DDD6C8]'
+                    }`}
                     style={{ width: `${paidPct}%` }}
                   />
                 </View>
@@ -223,37 +224,37 @@ export function InvoiceDetailModal({
             </View>
 
             {/* INFORMASI KLIEN & REKENING (DUAL COLUMN) */}
-            <View className="flex-row flex-wrap -mx-2 mb-6">
+            <View className="flex-row flex-wrap -mx-1.5 mb-3.5">
               {/* Kolom Kiri: Data Klien */}
-              <View className="w-full md:w-1/2 px-2 mb-4 md:mb-0">
-                <View className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl h-full">
-                  <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-2.5">
+              <View className="w-full md:w-1/2 px-1.5 mb-3 md:mb-0">
+                <View className="bg-white border border-[#E3DDCF] p-3.5 rounded-[3px] h-full shadow-xs">
+                  <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider mb-2">
                     Informasi Klien (Bill To)
                   </Text>
                   <View className="space-y-1.5">
                     <View className="flex-row items-center">
-                      <User size={13} color="#94A3B8" />
-                      <Text className="text-white text-xs font-semibold ml-2">
+                      <User size={13} color="#968363" />
+                      <Text className="text-[#1B2225] text-xs font-semibold ml-2">
                         {invoice.client_name}
                       </Text>
                     </View>
                     {invoice.client_phone && (
-                      <Text className="text-slate-400 text-xs ml-5">
+                      <Text className="text-[#70787C] text-xs ml-5 font-mono">
                         WhatsApp: {invoice.client_phone}
                       </Text>
                     )}
                     {invoice.client_address && (
-                      <Text className="text-slate-400 text-xs ml-5">
+                      <Text className="text-[#70787C] text-xs ml-5">
                         Alamat: {invoice.client_address}
                       </Text>
                     )}
-                    <View className="flex-row items-center pt-2">
-                      <Calendar size={13} color="#94A3B8" />
-                      <Text className="text-slate-400 text-xs ml-2">
+                    <View className="flex-row items-center pt-1.5">
+                      <Calendar size={13} color="#968363" />
+                      <Text className="text-[#70787C] text-xs ml-2">
                         Terbit: {formatIndonesianDate(invoice.issue_date)}
                       </Text>
                       {invoice.due_date && (
-                        <Text className="text-slate-500 text-xs ml-2">
+                        <Text className="text-[#8A9296] text-xs ml-2">
                           • Jatuh Tempo: {formatIndonesianDate(invoice.due_date)}
                         </Text>
                       )}
@@ -263,32 +264,32 @@ export function InvoiceDetailModal({
               </View>
 
               {/* Kolom Kanan: Rekening Pembayaran */}
-              <View className="w-full md:w-1/2 px-2">
-                <View className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl h-full">
-                  <View className="flex-row items-center justify-between mb-2.5">
-                    <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider">
+              <View className="w-full md:w-1/2 px-1.5">
+                <View className="bg-white border border-[#E3DDCF] p-3.5 rounded-[3px] h-full shadow-xs">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider">
                       Rekening Pembayaran Resmi
                     </Text>
 
                     <Pressable
                       onPress={handleCopyBank}
-                      className={`flex-row items-center px-2.5 py-1 rounded-lg border ${
+                      className={`flex-row items-center px-2 py-0.5 rounded-[2px] border ${
                         copiedBank
-                          ? 'bg-emerald-600/30 border-emerald-500'
-                          : 'bg-slate-900 border-slate-700 hover:border-sky-500/50'
+                          ? 'bg-emerald-50 border-emerald-300'
+                          : 'bg-[#FAF8F5] border-[#DDD6C8] hover:bg-[#F2ECE1]'
                       }`}
                     >
                       {copiedBank ? (
                         <>
-                          <Check size={11} color="#34D399" />
-                          <Text className="text-emerald-300 text-[10px] font-semibold ml-1">
+                          <Check size={10} color="#059669" />
+                          <Text className="text-emerald-800 text-[10px] font-semibold ml-1">
                             Tersalin
                           </Text>
                         </>
                       ) : (
                         <>
-                          <Copy size={11} color="#38BDF8" />
-                          <Text className="text-sky-300 text-[10px] font-semibold ml-1">
+                          <Copy size={10} color="#70787C" />
+                          <Text className="text-[#70787C] text-[10px] font-semibold ml-1">
                             Salin
                           </Text>
                         </>
@@ -296,17 +297,17 @@ export function InvoiceDetailModal({
                     </Pressable>
                   </View>
 
-                  <View className="space-y-1">
-                    <Text className="text-white text-xs font-bold">
+                  <View className="space-y-0.5">
+                    <Text className="text-[#1B2225] text-xs font-bold">
                       {invoice.bank_name || 'Bank Mandiri'}
                     </Text>
-                    <Text className="text-emerald-400 text-sm font-mono font-bold tracking-wider">
+                    <Text className="text-emerald-800 text-sm font-mono font-bold tracking-wider">
                       {invoice.bank_account_no || '1370026994893'}
                     </Text>
-                    <Text className="text-slate-300 text-xs">
+                    <Text className="text-[#70787C] text-xs">
                       a.n. {invoice.bank_account_holder || 'M.LAFRAN PANE'}
                     </Text>
-                    <Text className="text-slate-500 text-[11px] pt-1">
+                    <Text className="text-[#8A9296] text-[10px] pt-1">
                       Disahkan oleh: {invoice.authorized_by || 'M Lafran Pane'}
                     </Text>
                   </View>
@@ -315,36 +316,36 @@ export function InvoiceDetailModal({
             </View>
 
             {/* TABEL RINCIAN ITEM TAGIHAN */}
-            <View className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl mb-6">
-              <Text className="text-sky-400 font-bold text-xs uppercase tracking-wider mb-3">
+            <View className="bg-white border border-[#E3DDCF] p-3.5 rounded-[3px] mb-3.5 shadow-xs">
+              <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider mb-2.5">
                 Rincian Item Tagihan ({invoice.invoice_items?.length || 0} Item)
               </Text>
 
-              <View className="border border-slate-800 rounded-xl overflow-hidden">
+              <View className="border border-[#E3DDCF] rounded-[2px] overflow-hidden">
                 {/* Table Header */}
-                <View className="flex-row bg-slate-900 px-3 py-2 border-b border-slate-800">
-                  <Text className="w-10 text-slate-400 text-[11px] font-bold">No</Text>
-                  <Text className="flex-1 text-slate-400 text-[11px] font-bold">Deskripsi</Text>
-                  <Text className="w-16 text-center text-slate-400 text-[11px] font-bold">Qty</Text>
-                  <Text className="w-28 text-right text-slate-400 text-[11px] font-bold">Harga</Text>
-                  <Text className="w-32 text-right text-slate-400 text-[11px] font-bold">Jumlah</Text>
+                <View className="flex-row bg-[#FAF8F5] px-3 py-2 border-b border-[#E3DDCF]">
+                  <Text className="w-10 text-[#70787C] text-[10px] font-bold uppercase tracking-wider font-mono">No</Text>
+                  <Text className="flex-1 text-[#70787C] text-[10px] font-bold uppercase tracking-wider">Deskripsi</Text>
+                  <Text className="w-16 text-center text-[#70787C] text-[10px] font-bold uppercase tracking-wider">Qty</Text>
+                  <Text className="w-28 text-right text-[#70787C] text-[10px] font-bold uppercase tracking-wider">Harga</Text>
+                  <Text className="w-32 text-right text-[#70787C] text-[10px] font-bold uppercase tracking-wider">Jumlah</Text>
                 </View>
 
                 {/* Table Rows */}
                 {(invoice.invoice_items || []).map((it, idx) => (
                   <View
                     key={it.id || idx}
-                    className="flex-row px-3 py-2.5 border-b border-slate-800/60 bg-slate-950/40"
+                    className="flex-row px-3 py-2 border-b border-[#EFEAE1] bg-white items-center"
                   >
-                    <Text className="w-10 text-slate-500 text-xs font-mono">{it.item_no}</Text>
-                    <Text className="flex-1 text-white text-xs font-medium">{it.description}</Text>
-                    <Text className="w-16 text-center text-slate-300 text-xs">
+                    <Text className="w-10 text-[#8A9296] text-xs font-mono">{it.item_no}</Text>
+                    <Text className="flex-1 text-[#1B2225] text-xs font-medium">{it.description}</Text>
+                    <Text className="w-16 text-center text-[#70787C] text-xs font-mono">
                       {it.quantity} {it.unit}
                     </Text>
-                    <Text className="w-28 text-right text-slate-300 text-xs font-mono">
+                    <Text className="w-28 text-right text-[#70787C] text-xs font-mono">
                       {formatRupiah(it.unit_price)}
                     </Text>
-                    <Text className="w-32 text-right text-emerald-400 text-xs font-bold font-mono">
+                    <Text className="w-32 text-right text-[#1B2225] text-xs font-bold font-mono">
                       {formatRupiah(it.amount)}
                     </Text>
                   </View>
@@ -353,13 +354,13 @@ export function InvoiceDetailModal({
             </View>
 
             {/* RIWAYAT MUTASI PEMBAYARAN & KWITANSI */}
-            <View className="bg-slate-950/80 border border-slate-800 p-4 rounded-xl mb-6">
+            <View className="bg-white border border-[#E3DDCF] p-3.5 rounded-[3px] mb-2 shadow-xs">
               <View className="flex-row items-center justify-between mb-3">
                 <View>
-                  <Text className="text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                  <Text className="text-[#1B2225] font-bold text-xs uppercase tracking-wider">
                     Riwayat Mutasi Pembayaran & Kwitansi
                   </Text>
-                  <Text className="text-slate-400 text-[11px] mt-0.5">
+                  <Text className="text-[#8A9296] text-[10px] font-mono mt-0.5">
                     {invoice.payments?.length || 0} transaksi tercatat
                   </Text>
                 </View>
@@ -367,54 +368,54 @@ export function InvoiceDetailModal({
                 {invoice.balance_due > 0 && (
                   <Pressable
                     onPress={() => onOpenPaymentRecord(invoice)}
-                    className="flex-row items-center bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-xl shadow-sm"
+                    className="flex-row items-center bg-[#1B2225] hover:bg-[#2C3539] px-3 py-1.5 rounded-[3px]"
                   >
-                    <Plus size={13} color="#FFFFFF" />
+                    <Plus size={12} color="#FFFFFF" />
                     <Text className="text-white font-bold text-xs ml-1">Catat Mutasi</Text>
                   </Pressable>
                 )}
               </View>
 
               {(!invoice.payments || invoice.payments.length === 0) ? (
-                <View className="py-6 items-center justify-center bg-slate-900/50 rounded-xl border border-slate-800/60">
-                  <CreditCard size={28} color="#475569" />
-                  <Text className="text-slate-400 text-xs mt-2">
+                <View className="py-6 items-center justify-center bg-[#FAF8F5] rounded-[2px] border border-[#EDE7DC]">
+                  <CreditCard size={24} color="#8A9296" />
+                  <Text className="text-[#70787C] text-xs mt-2">
                     Belum ada pembayaran yang dicatat untuk invoice ini.
                   </Text>
                   {invoice.balance_due > 0 && (
                     <Pressable
                       onPress={() => onOpenPaymentRecord(invoice)}
-                      className="mt-3 bg-sky-500/20 border border-sky-500/40 px-3.5 py-1.5 rounded-xl"
+                      className="mt-2.5 bg-white border border-[#DDD6C8] px-3 py-1.5 rounded-[3px] hover:bg-[#F2ECE1]"
                     >
-                      <Text className="text-sky-300 font-bold text-xs">
+                      <Text className="text-[#1B2225] font-bold text-xs">
                         + Catat Pembayaran Sekarang
                       </Text>
                     </Pressable>
                   )}
                 </View>
               ) : (
-                <View className="space-y-3">
+                <View className="space-y-2">
                   {invoice.payments.map((p) => (
                     <View
                       key={p.id}
-                      className="bg-slate-900 border border-slate-800/80 p-3.5 rounded-xl flex-col md:flex-row md:items-center justify-between gap-3"
+                      className="bg-[#FAF8F5] border border-[#DDD6C8] p-3 rounded-[3px] flex-col md:flex-row md:items-center justify-between gap-2.5"
                     >
                       <View className="flex-1">
-                        <View className="flex-row items-center mb-1">
-                          <Text className="text-white font-bold text-sm mr-2">
+                        <View className="flex-row items-center mb-0.5">
+                          <Text className="text-[#1B2225] font-bold text-xs mr-2">
                             {p.stage_name}
                           </Text>
-                          <Text className="text-emerald-400 font-mono font-bold text-sm">
+                          <Text className="text-emerald-700 font-mono font-bold text-xs">
                             {formatRupiah(p.amount)}
                           </Text>
                         </View>
 
-                        <Text className="text-slate-400 text-xs">
+                        <Text className="text-[#70787C] text-[11px] font-mono">
                           Kwitansi: #{p.receipt_no} • {formatIndonesianDate(p.payment_date)} • {p.payment_method}
                         </Text>
 
                         {p.description && (
-                          <Text className="text-slate-400 text-[11px] italic mt-0.5">
+                          <Text className="text-[#8A9296] text-[11px] italic mt-0.5">
                             "{p.description}"
                           </Text>
                         )}
@@ -423,10 +424,10 @@ export function InvoiceDetailModal({
                         {p.proof_url && (
                           <Pressable
                             onPress={() => Linking.openURL(p.proof_url!)}
-                            className="flex-row items-center mt-2 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 w-fit"
+                            className="flex-row items-center mt-1.5 bg-white px-2 py-1 rounded-[2px] border border-[#DDD6C8] w-fit"
                           >
-                            <ExternalLink size={12} color="#38BDF8" />
-                            <Text className="text-sky-400 text-[11px] font-semibold ml-1.5">
+                            <ExternalLink size={11} color="#968363" />
+                            <Text className="text-[#1B2225] text-[10px] font-semibold ml-1">
                               Lihat Bukti Transfer
                             </Text>
                           </Pressable>
@@ -438,10 +439,10 @@ export function InvoiceDetailModal({
                         {onOpenReceiptPdf && (
                           <Pressable
                             onPress={() => onOpenReceiptPdf(p, invoice)}
-                            className="flex-row items-center bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/30"
+                            className="flex-row items-center bg-white hover:bg-[#F2ECE1] px-2.5 py-1.5 rounded-[3px] border border-[#DDD6C8]"
                           >
-                            <Printer size={13} color="#38BDF8" />
-                            <Text className="text-sky-300 text-xs font-semibold ml-1">
+                            <Printer size={12} color="#70787C" />
+                            <Text className="text-[#1B2225] text-xs font-semibold ml-1">
                               Cetak Kwitansi
                             </Text>
                           </Pressable>
@@ -449,9 +450,9 @@ export function InvoiceDetailModal({
 
                         <Pressable
                           onPress={() => handleDeletePayment(p)}
-                          className="p-1.5 rounded-lg hover:bg-rose-500/20 bg-slate-800"
+                          className="p-1.5 rounded-[2px] hover:bg-rose-100 bg-rose-50 border border-rose-200"
                         >
-                          <Trash2 size={13} color="#FB7185" />
+                          <Trash2 size={12} color="#9E2A2B" />
                         </Pressable>
                       </View>
                     </View>
@@ -462,15 +463,15 @@ export function InvoiceDetailModal({
           </ScrollView>
 
           {/* Footer Action Buttons */}
-          <View className="flex-row flex-wrap items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950 gap-2">
+          <View className="flex-row flex-wrap items-center justify-between px-5 py-3 border-t border-[#E3DDCF] bg-white gap-2">
             <View className="flex-row items-center">
               {onOpenInvoicePdf && (
                 <Pressable
                   onPress={() => onOpenInvoicePdf(invoice)}
-                  className="flex-row items-center bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-xl border border-slate-700 mr-2"
+                  className="flex-row items-center bg-[#FAF8F5] hover:bg-[#F2ECE1] px-3.5 py-2 rounded-[3px] border border-[#DDD6C8] mr-2"
                 >
-                  <Printer size={14} color="#94A3B8" />
-                  <Text className="text-slate-200 font-bold text-xs ml-1.5">
+                  <Printer size={13} color="#70787C" />
+                  <Text className="text-[#1B2225] font-semibold text-xs ml-1.5">
                     Cetak / Simpan PDF Invoice
                   </Text>
                 </Pressable>
@@ -480,17 +481,17 @@ export function InvoiceDetailModal({
             <View className="flex-row items-center space-x-2">
               <Pressable
                 onPress={onClose}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700"
+                className="px-4 py-2 rounded-[3px] bg-[#FAF8F5] border border-[#DDD6C8] hover:bg-[#F2ECE1]"
               >
-                <Text className="text-slate-300 font-semibold text-xs">Tutup</Text>
+                <Text className="text-[#70787C] font-semibold text-xs">Tutup</Text>
               </Pressable>
 
               {invoice.balance_due > 0 && (
                 <Pressable
                   onPress={() => onOpenPaymentRecord(invoice)}
-                  className="flex-row items-center px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500"
+                  className="flex-row items-center px-4 py-2 rounded-[3px] bg-[#1B2225] hover:bg-[#2C3539]"
                 >
-                  <Plus size={14} color="#FFFFFF" />
+                  <Plus size={13} color="#FFFFFF" />
                   <Text className="text-white font-bold text-xs ml-1.5">
                     Catat Mutasi Pembayaran
                   </Text>

@@ -36,6 +36,8 @@ export interface CardItem {
     assigned_to: string | null;
     position: number;
     notes?: string | null;
+    due_date?: string | null;
+    source_card_id?: string | null;
     profiles?: Profile | null;
     card_attachments?: AttachmentItem[];
 }
@@ -287,6 +289,7 @@ export const boardSlice = createSlice({
                         assigned_to: payload.assigned_to,
                         notes: payload.notes,
                         column_id: payload.column_id,
+                        ...(payload.due_date !== undefined ? { due_date: payload.due_date } : {}),
                     });
                     updatedCard = { ...card };
                 }
