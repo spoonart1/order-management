@@ -51,13 +51,8 @@ expo-env.d.ts
 # 5. IDEs, Editors & Developer Tooling
 # ------------------------------------------------------------------------------
 # VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.vscode/*.log
-.claude
+.vscode/
+.claude/
 
 # JetBrains / Android Studio / WebStorm
 .idea/
