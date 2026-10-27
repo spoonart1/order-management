@@ -1,130 +1,213 @@
+
 # Alora Studio
 
-> **Open-source operational management & mini-ERP for interior design studios, architects, and custom furniture workshops — with full offline mode support.**
+**An open-source operations management app for interior design studios, architects, and custom furniture workshops.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Offline Support](https://img.shields.io/badge/Offline_Mode-Supported-2ea44f?style=flat-square)](#-offline-mode-support)
-[![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo_SDK-57-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database_%26_Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
-[![TailwindCSS](https://img.shields.io/badge/NativeWind-Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://www.nativewind.dev/)
+Alora Studio helps teams manage their day-to-day operations in one place, from client acquisition and quotations to production tracking, invoicing, and payment collection.
 
----
+Built with React Native and Expo, the application supports web, iOS, and Android. Its offline-first approach is designed for teams working on job sites and workshop floors where internet connectivity may be unreliable.
 
-## 📌 Overview
+## Overview
 
-**Alora Studio** is an open-source, universal backoffice application built to manage the end-to-end workflow of interior designers and workshop fabricators — from client leads and formal quotations to production tracking and milestone billing.
+Alora Studio brings key business workflows together:
 
-Runs seamlessly on **Web Desktop**, **Tablets**, and **Mobile (iOS & Android)** with complete **Offline-First** capability for remote job sites and workshop floors.
+- **Sales management:** Track leads and manage the sales pipeline.
+- **Quotations and RAB:** Prepare itemized project estimates, room specifications, and quotations.
+- **Production management:** Track project progress, deadlines, and operational tasks.
+- **Invoicing and payments:** Manage payment milestones, outstanding balances, and receipts.
+- **Offline-first workflows:** Continue working with locally cached data when connectivity is unavailable, with queued changes synchronized when connectivity returns.
 
----
-
-## 🖥️ Web App Preview
-
-<p align="center">
-  <img src="assets/screenshots/01-dashboard.png" alt="Alora Studio - Executive Operational Dashboard" width="100%"/>
-</p>
-
-| Multi-Board Kanban | Quotations & RAB Pipeline |
-| :---: | :---: |
-| [![Kanban Board](assets/screenshots/02-kanban-board.png)](assets/screenshots/02-kanban-board.png) | [![Quotations](assets/screenshots/03-quotations.png)](assets/screenshots/03-quotations.png) |
-| *Track leads and auto-transfer DP orders to production* | *Itemized room specifications & status tracking* |
-
-| Official Quotation PDF Preview | Milestone Invoicing & Payments |
-| :---: | :---: |
-| [![Quotation Preview](assets/screenshots/04-quotation-preview.png)](assets/screenshots/04-quotation-preview.png) | [![Invoices](assets/screenshots/05-invoices.png)](assets/screenshots/05-invoices.png) |
-| *Print-ready PDF layout with specification tables* | *Progressive term billing (DP to Final Settlement)* |
+The project is built around real operational workflows in the interior design and custom furniture industry.
 
 ---
 
-## 📱 Mobile App Preview
+## Web App Preview
 
-| Executive Dashboard | Multi-Board Kanban | Quotations & RAB | Milestone Invoicing |
-| :---: | :---: | :---: | :---: |
-| [![Mobile Dashboard](assets/screenshots/mobile-01-dashboard.png)](assets/screenshots/mobile-01-dashboard.png) | [![Mobile Kanban](assets/screenshots/mobile-02-kanban.png)](assets/screenshots/mobile-02-kanban.png) | [![Mobile Quotations](assets/screenshots/mobile-03-quotations.png)](assets/screenshots/mobile-03-quotations.png) | [![Mobile Invoices](assets/screenshots/mobile-04-invoices.png)](assets/screenshots/mobile-04-invoices.png) |
-| *Real-time studio KPIs* | *Operational card board* | *Drafting & proposal list* | *Payment & invoice tracking* |
+Multi-Board Kanban  | Quotations & RAB Pipeline
+--- | ---
+ | 
+Track leads and auto-transfer DP orders to production  | Itemized room specifications & status tracking
 
----
-
-## 📶 Offline Mode Support
-
-Built specifically for on-site measurements and workshop environments with spotty or zero internet connectivity:
-- **Instant 0ms Loading**: Dashboards, boards, quotations, and invoices load immediately from persistent local cache (*AsyncStorage*).
-- **Offline Actions & Outbox Queue**: Create, edit, and move cards or update data freely while offline; changes are saved locally to an outbox queue.
-- **Silent Background Auto-Sync**: Queued mutations automatically synchronize with Supabase in the background as soon as connectivity is restored — no page reload required.
-- **Real-Time Offline Status**: Clear visual banner alerts the user when offline and displays pending sync counts.
+Official Quotation PDF Preview  | Milestone Invoicing & Payments
+--- | ---
+ | 
+Print-ready PDF layout with specification tables  | Progressive term billing (DP to Final Settlement)
 
 ---
 
-## ✨ Features
+## Mobile App Preview
 
-- **Executive Dashboard**: Real-time financial KPIs (Billed, Paid, Balance Due), sales pipeline value, and urgent production deadline tracking ($\le$ 10 days).
-- **Multi-Board Kanban**:
-  - *Marketing Board*: Track prospective client leads to deal closure.
-  - *Automated Workflow*: Moving a card to **DP** automatically copies it to the **Production Board** with deadlines calculated from the quotation.
-  - *Production Board*: Monitor shop-floor and on-site phases with deadline urgency tags.
-  - *General Board*: Studio operations and internal tasks.
-- **Smart Attachments**:
-  - Auto-compressed images (**< 600 KB**) for site photos and 3D renders.
-  - PDF document support (up to **10 MB**) for blueprints and contracts with instant preview.
-- **Quotation & RAB Engine**: Room-by-room itemized specifications, automated tax/discount calculations, Indonesian Rupiah formatting, and print-ready PDF export.
-- **Milestone Invoicing**: Progressive term billing (DP, Milestone 1, Milestone 2, Final Settlement) with payment receipts and status tracking.
+Executive Dashboard  | Multi-Board Kanban  | Quotations & RAB  | Milestone Invoicing
+--- | --- | --- | ---
+ |  |  |
+Real-time studio KPIs  | Operational card board  | Drafting & proposal list  | Payment & invoice tracking
 
 ---
 
-## 🛠️ Tech Stack
+## Offline Mode
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React Native 0.86, React 19, Expo SDK 57, Expo Router (File-based Routing) |
-| **Styling** | NativeWind v4 (Tailwind CSS), Lucide Icons |
-| **State & Cache** | Redux Toolkit, AsyncStorage, SWR Pattern |
-| **Backend** | Supabase (PostgreSQL, Storage, Auth, Row Level Security) |
-| **Media & Native** | `expo-image-manipulator`, `expo-document-picker`, `expo-print`, `expo-sharing` |
-| **Connectivity** | `@react-native-community/netinfo`, Custom Outbox Queue Sync |
-| **Language** | TypeScript (Strict Mode) |
+The application is designed to support work in environments with intermittent or unavailable internet access.
+
+- **Local data access:** Frequently accessed operational data is cached locally using AsyncStorage.
+- **Queued offline changes:** Supported create, edit, and move operations can be queued locally while offline.
+- **Automatic synchronization:** Queued mutations are synchronized with Supabase when connectivity is restored.
+- **Connectivity awareness:** The interface displays offline status and pending synchronization counts.
+
+Offline behavior depends on the operation and synchronization state. Data consistency and error recovery are important considerations when working with locally queued changes.
+
+## Features
+
+### Sales and Operations
+
+- Executive dashboard with billed revenue, payments received, outstanding balances, sales pipeline value, and production deadlines.
+- Multiple Kanban boards for marketing, production, and general studio operations.
+- Workflow automation that transfers qualifying orders from the sales pipeline to production.
+- Production tracking for workshop and on-site activities.
+
+### Quotations and Project Estimates
+
+- Room-by-room itemized specifications.
+- Automated tax and discount calculations.
+- Indonesian Rupiah (IDR) formatting.
+- Print-ready quotation PDF generation.
+
+### Documents and Attachments
+
+- Image compression for site photos and project renders.
+- PDF attachments for blueprints, contracts, and related documents.
+- Document preview and sharing support.
+
+### Invoicing and Payments
+
+- Milestone-based billing for down payments (DP), intermediate milestones, and final settlement.
+- Invoice and payment status tracking.
+- Payment receipts and outstanding balance monitoring.
 
 ---
 
-## 🚀 Quick Start
+## Tech Stack
 
-### 1. Prerequisites
-- Node.js `v20+`
-- npm or yarn
+| Area | Technology |
+| --- | --- |
+| Mobile and Web | React Native, Expo |
+| Language | TypeScript (strict mode) |
+| Routing | Expo Router |
+| Styling | NativeWind, Tailwind CSS |
+| State Management | Redux Toolkit |
+| Local Storage | AsyncStorage |
+| Backend | Supabase |
+| Database | PostgreSQL |
+| Authentication and Authorization | Supabase Auth, Row Level Security |
+| File Storage | Supabase Storage |
+| Connectivity | NetInfo |
+| Image Processing | expo-image-manipulator |
+| Document Handling | expo-document-picker |
+| PDF Generation | expo-print |
+| Sharing | expo-sharing |
+| Offline Synchronization | Custom outbox queue |
 
-### 2. Installation
+---
+
+## Getting Started
+
+### Prerequisites
+
+Before running the application, make sure you have:
+
+- Node.js 20 or later
+- npm
+- A Supabase project
+- Expo-compatible development tools for your target platform
+
+### 1. Clone the Repository
+
 ```bash
-# Clone repository
 git clone https://github.com/spoonart1/order-management.git
-cd order-management/AloraStudio
+cd order-management
+```
 
-# Install dependencies
+### 2. Install Dependencies
+
+```bash
 npm install
 ```
 
-### 3. Environment Setup
-Create a `.env` file in the root folder:
+### 3. Configure Environment Variables
+
+Create a `.env` file in the repository root, alongside `package.json`.
+
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 ```
 
-### 4. Run Application
+Replace the placeholder values with the corresponding credentials from your Supabase project.
+
+**Security note:** Only use a Supabase publishable key intended for client-side use. Never expose a Supabase secret key or service-role key in a mobile or web application.
+
+### 4. Start the Development Server
+
 ```bash
-# Start Expo Metro Bundler
 npx expo start
+```
 
-# Run on Web Browser
+Run the application on the web:
+
+```bash
 npx expo start --web
+```
 
-# Run on Android / iOS
+Run on Android:
+
+```bash
 npx expo start --android
+```
+
+Run on iOS:
+
+```bash
 npx expo start --ios
 ```
 
+Running on a simulator or physical device may require additional platform-specific development tools.
+
+### 5. Supabase Configuration
+
+Configure your Supabase project to match the application's database schema, authentication requirements, storage configuration, and Row Level Security policies.
+
+Environment variables alone do not initialize the database schema or configure authorization policies.
+
 ---
 
-## 📄 License
+## Project Structure
 
-This project is licensed under the [MIT License](LICENSE).
+The application source code is organized under `src/`, with application assets and public resources maintained in their respective directories.
+
+```text
+order-management/
+├── assets/
+├── public/
+├── src/
+├── app.json
+├── package.json
+├── tsconfig.json
+├── babel.config.js
+├── metro.config.js
+└── README.md
+```
+
+The exact module organization and application entry points can be explored in the source code.
+
+## Design Considerations
+
+The project focuses on several practical engineering concerns:
+
+- **Cross-platform delivery:** Sharing application logic across web, iOS, and Android.
+- **Operational workflows:** Modeling business processes that span sales, production, and finance.
+- **Offline resilience:** Supporting local changes and deferred synchronization.
+- **Backend integration:** Using Supabase for data persistence, authentication, and file storage.
+- **Maintainability:** Using TypeScript and centralized state management to support ongoing development.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
